@@ -59,7 +59,7 @@ class data_requests_table extends table_sql {
     /** @var bool Whether this table is being rendered for managing data requests. */
     protected $manage = false;
 
-    /** @var stdClass[] Array of data request persistents. */
+    /** @var \tool_dataprivacy\data_request[] Array of data request persistents. */
     protected $datarequests = [];
 
     /**
@@ -206,14 +206,24 @@ class data_requests_table extends table_sql {
                 $actiontext = get_string('denyrequest', 'tool_dataprivacy');
                 $actions[] = new action_menu_link_secondary($actionurl, null, $actiontext, $actiondata);
                 break;
-        }
-
-        if ($status == api::DATAREQUEST_STATUS_COMPLETE) {
-            $userid = $data->foruser->id;
-            $usercontext = \context_user::instance($userid, IGNORE_MISSING);
-            if ($usercontext && api::can_download_data_request_for_user($userid, $data->requestedbyuser->id)) {
-                $actions[] = api::get_download_link($usercontext, $requestid);
-            }
+            case api::DATAREQUEST_STATUS_DOWNLOAD_READY:
+                $userid = $data->foruser->id;
+                $usercontext = \context_user::instance($userid, IGNORE_MISSING);
+                // If user has permission to view download link, show relevant action item.
+                if ($usercontext && api::can_download_data_request_for_user($userid, $data->requestedbyuser->id)) {
+                    if (api::is_request_expired($this->datarequests[$data->id])) {
+                        // Show expiry message.
+                        $expiredurl = new moodle_url('#');
+                        $expiredtext = get_string('downloadexpiredaction', 'tool_dataprivacy');
+                        $expiredaction = new action_menu_link_secondary($expiredurl, null, $expiredtext);
+                        $expiredaction->add_class('disabled');
+                        $actions[] = $expiredaction;
+                    } else {
+                        // Show the download link.
+                        $actions[] = api::get_download_link($usercontext, $requestid);
+                    }
+                }
+                break;
         }
 
         $actionsmenu = new action_menu($actions);
@@ -247,7 +257,9 @@ class data_requests_table extends table_sql {
         $this->rawdata = [];
         $context = \context_system::instance();
         $renderer = $PAGE->get_renderer('tool_dataprivacy');
+
         foreach ($datarequests as $persistent) {
+            $this->datarequests[$persistent->get('id')] = $persistent;
             $exporter = new data_request_exporter($persistent, ['context' => $context]);
             $this->rawdata[] = $exporter->export($renderer);
         }

@@ -76,7 +76,7 @@ class api {
     /** The request is now being processed. */
     const DATAREQUEST_STATUS_PROCESSING = 4;
 
-    /** Data request completed. */
+    /** Information/other request completed. */
     const DATAREQUEST_STATUS_COMPLETE = 5;
 
     /** Data request cancelled by the user. */
@@ -84,6 +84,15 @@ class api {
 
     /** Data request rejected by the DPO. */
     const DATAREQUEST_STATUS_REJECTED = 7;
+
+    /** Data request download ready. */
+    const DATAREQUEST_STATUS_DOWNLOAD_READY = 8;
+
+    /** Data request expired. */
+    const DATAREQUEST_STATUS_EXPIRED = 9;
+
+    /** Data delete request completed, account is removed. */
+    const DATAREQUEST_STATUS_DELETED = 10;
 
     /**
      * Determines whether the user can contact the site's Data Protection Officer via Moodle.
@@ -381,6 +390,9 @@ class api {
             self::DATAREQUEST_STATUS_COMPLETE,
             self::DATAREQUEST_STATUS_CANCELLED,
             self::DATAREQUEST_STATUS_REJECTED,
+            self::DATAREQUEST_STATUS_DOWNLOAD_READY,
+            self::DATAREQUEST_STATUS_EXPIRED,
+            self::DATAREQUEST_STATUS_DELETED,
         ];
         list($insql, $inparams) = $DB->get_in_or_equal($nonpendingstatuses, SQL_PARAMS_NAMED);
         $select = 'type = :type AND userid = :userid AND status NOT ' . $insql;
@@ -404,6 +416,9 @@ class api {
             self::DATAREQUEST_STATUS_COMPLETE,
             self::DATAREQUEST_STATUS_CANCELLED,
             self::DATAREQUEST_STATUS_REJECTED,
+            self::DATAREQUEST_STATUS_DOWNLOAD_READY,
+            self::DATAREQUEST_STATUS_EXPIRED,
+            self::DATAREQUEST_STATUS_DELETED,
         ];
 
         return !in_array($status, $finalstatuses);
@@ -1094,5 +1109,35 @@ class api {
         }
 
         return $approvedcollection;
+    }
+
+    /**
+     * Determines whether a completed data export request has expired.
+     * The response will be valid regardless of the expiry scheduled task having run.
+     *
+     * @param data_request $request the data request object whose expiry will be checked.
+     * @return bool true if the request has expired.
+     */
+    public static function is_request_expired(data_request $request) {
+        $result = false;
+
+        // Only export requests expire.
+        if ($request->get('type') == self::DATAREQUEST_TYPE_EXPORT) {
+            switch ($request->get('status')) {
+                // Expired requests are obviously expired.
+                case self::DATAREQUEST_STATUS_EXPIRED:
+                    $result = true;
+                    break;
+                // Complete requests are expired if the expiry time has elapsed.
+                case self::DATAREQUEST_STATUS_DOWNLOAD_READY:
+                    $expiryseconds = get_config('tool_dataprivacy', 'privacyrequestexpiry');
+                    if ($expiryseconds > 0 && time() >= ($request->get('timemodified') + $expiryseconds)) {
+                        $result = true;
+                    }
+                    break;
+            }
+        }
+
+        return $result;
     }
 }

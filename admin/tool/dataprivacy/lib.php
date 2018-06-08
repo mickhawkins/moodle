@@ -199,6 +199,12 @@ function tool_dataprivacy_pluginfile($course, $cm, $context, $filearea, $args, $
             return false;
         }
 
+        // Make the file unavailable if it has expired.
+        $expiryseconds = get_config('tool_dataprivacy', 'privacyrequestexpiry');
+        if (\tool_dataprivacy\api::is_request_expired($datarequest)) {
+            send_file_not_found();
+        }
+
         // All good. Serve the exported data.
         $fs = get_file_storage();
         $relativepath = implode('/', $args);
