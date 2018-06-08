@@ -85,6 +85,9 @@ class data_request extends persistent {
                     api::DATAREQUEST_STATUS_COMPLETE,
                     api::DATAREQUEST_STATUS_CANCELLED,
                     api::DATAREQUEST_STATUS_REJECTED,
+                    api::DATAREQUEST_STATUS_DOWNLOAD_READY,
+                    api::DATAREQUEST_STATUS_EXPIRED,
+                    api::DATAREQUEST_STATUS_DELETED,
                 ],
                 'type' => PARAM_INT
             ],

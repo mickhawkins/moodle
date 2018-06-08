@@ -90,6 +90,11 @@ class my_data_requests_page implements renderable, templatable {
                 $outputcontext = \context_system::instance();
             } else {
                 $outputcontext = $usercontext;
+
+                // Hide expired downloads that cron hasn't removed yet.
+                if (api::is_request_expired($request)) {
+                    $status = api::DATAREQUEST_STATUS_EXPIRED;
+                }
             }
 
             $requestexporter = new data_request_exporter($request, ['context' => $outputcontext]);
@@ -109,12 +114,28 @@ class my_data_requests_page implements renderable, templatable {
                     $item->statuslabelclass = 'label-success';
                     $item->statuslabel = get_string('statuscomplete', 'tool_dataprivacy');
                     $cancancel = false;
-                    // Show download links only for export-type data requests.
-                    $candownload = $type == api::DATAREQUEST_TYPE_EXPORT;
+                    break;
+                case api::DATAREQUEST_STATUS_DOWNLOAD_READY:
+                    $item->statuslabelclass = 'label-success';
+                    $item->statuslabel = get_string('statusready', 'tool_dataprivacy');
+                    $cancancel = false;
+                    $candownload = true;
+
                     if ($usercontext) {
                         $candownload = api::can_download_data_request_for_user(
                                 $request->get('userid'), $request->get('requestedby'));
                     }
+                    break;
+                case api::DATAREQUEST_STATUS_DELETED:
+                    $item->statuslabelclass = 'label-success';
+                    $item->statuslabel = get_string('statusdeleted', 'tool_dataprivacy');
+                    $cancancel = false;
+                    break;
+                case api::DATAREQUEST_STATUS_EXPIRED:
+                    $item->statuslabelclass = 'label-default';
+                    $item->statuslabel = get_string('statusexpired', 'tool_dataprivacy');
+                    $item->statuslabeltitle = get_string('downloadexpireduser', 'tool_dataprivacy');
+                    $cancancel = false;
                     break;
                 case api::DATAREQUEST_STATUS_CANCELLED:
                 case api::DATAREQUEST_STATUS_REJECTED:
