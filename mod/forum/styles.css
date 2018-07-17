@@ -259,6 +259,14 @@ span.unread {
     bottom: -1px;
 }
 
+/* Forumpost permalink anchors */
+@media (min-width: 980px) {
+    .forumpost-anchor {
+        position: absolute;
+        margin-top: -40px;
+    }
+}
+
 /* Discussion navigation */
 .path-mod-forum .discussion-nav {
     margin: .5em 0;
