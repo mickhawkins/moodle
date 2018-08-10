@@ -66,12 +66,12 @@ class tool_dataprivacy_api_testcase extends advanced_testcase {
         $requestid = $datarequest->get('id');
 
         // Update with a valid status.
-        $result = api::update_request_status($requestid, api::DATAREQUEST_STATUS_COMPLETE);
+        $result = api::update_request_status($requestid, api::DATAREQUEST_STATUS_DOWNLOAD_READY);
         $this->assertTrue($result);
 
         // Fetch the request record again.
         $datarequest = new data_request($requestid);
-        $this->assertEquals(api::DATAREQUEST_STATUS_COMPLETE, $datarequest->get('status'));
+        $this->assertEquals(api::DATAREQUEST_STATUS_DOWNLOAD_READY, $datarequest->get('status'));
 
         // Update with an invalid status.
         $this->expectException(invalid_persistent_exception::class);
@@ -468,8 +468,8 @@ class tool_dataprivacy_api_testcase extends advanced_testcase {
      * @return array
      */
     public function get_data_requests_provider() {
-        $completeonly = [api::DATAREQUEST_STATUS_COMPLETE];
-        $completeandcancelled = [api::DATAREQUEST_STATUS_COMPLETE, api::DATAREQUEST_STATUS_CANCELLED];
+        $completeonly = [api::DATAREQUEST_STATUS_COMPLETE, api::DATAREQUEST_STATUS_DOWNLOAD_READY, api::DATAREQUEST_STATUS_DELETED];
+        $completeandcancelled = array_merge($completeonly, [api::DATAREQUEST_STATUS_CANCELLED]);
 
         return [
             // Own data requests.
@@ -612,6 +612,9 @@ class tool_dataprivacy_api_testcase extends advanced_testcase {
             [api::DATAREQUEST_STATUS_COMPLETE, false],
             [api::DATAREQUEST_STATUS_CANCELLED, false],
             [api::DATAREQUEST_STATUS_REJECTED, false],
+            [api::DATAREQUEST_STATUS_DOWNLOAD_READY, false],
+            [api::DATAREQUEST_STATUS_EXPIRED, false],
+            [api::DATAREQUEST_STATUS_DELETED, false],
         ];
     }
 
@@ -1416,5 +1419,61 @@ class tool_dataprivacy_api_testcase extends advanced_testcase {
             ],
             'list' => $approvedcollection->get_contextlist_for_component('tool_dataprivacy'),
         ];
+    }
+
+    /**
+     * Test for api::is_request_expired()
+     * Tests for the expected request status to protect from false positive/negative,
+     * then tests is_request_expired() is returning the expected response.
+     */
+    public function test_is_request_expired() {
+        $this->resetAfterTest();
+        \core_privacy\local\request\writer::setup_real_writer_instance();
+
+        // Set request expiry beyond this test.
+        set_config('privacyrequestexpiry', 20, 'tool_dataprivacy');
+
+        $admin = get_admin();
+        $this->setAdminUser();
+
+        // Create export request.
+        $datarequest = api::create_data_request($admin->id, api::DATAREQUEST_TYPE_EXPORT);
+        $requestid = $datarequest->get('id');
+
+        // Approve the request.
+        ob_start();
+        $this->runAdhocTasks('\tool_dataprivacy\task\initiate_data_request_task');
+        $this->setAdminUser();
+        api::approve_data_request($requestid);
+        $this->runAdhocTasks('\tool_dataprivacy\task\process_data_request_task');
+        ob_end_clean();
+
+        // Test Download ready (not expired) response.
+        $requests = api::get_data_requests($admin->id);
+        $this->assertEquals(api::DATAREQUEST_STATUS_DOWNLOAD_READY, $requests[$requestid]->get('status'));
+        $result = api::is_request_expired($requests[$requestid]);
+        $this->assertFalse($result);
+
+        // Let request expiry time lapse.
+        set_config('privacyrequestexpiry', 1, 'tool_dataprivacy');
+        $this->waitForSecond();
+
+        // Test Download ready (time expired) response.
+        $requests = api::get_data_requests($admin->id);
+        $this->assertEquals(api::DATAREQUEST_STATUS_DOWNLOAD_READY, $requests[$requestid]->get('status'));
+        $result = api::is_request_expired($requests[$requestid]);
+        $this->assertTrue($result);
+
+        // Run the expiry task to properly expire the request.
+        ob_start();
+        $task = \core\task\manager::get_scheduled_task('\tool_dataprivacy\task\delete_expired_requests');
+        $task->execute();
+        ob_end_clean();
+
+        // Test Expired response status response.
+        $requests = api::get_data_requests($admin->id);
+        $this->assertEquals(api::DATAREQUEST_STATUS_EXPIRED, $requests[$requestid]->get('status'));
+        $result = api::is_request_expired($requests[$requestid]);
+        $this->assertTrue($result);
     }
 }
