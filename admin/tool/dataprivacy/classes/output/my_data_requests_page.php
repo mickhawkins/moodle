@@ -90,11 +90,6 @@ class my_data_requests_page implements renderable, templatable {
                 $outputcontext = \context_system::instance();
             } else {
                 $outputcontext = $usercontext;
-
-                // Hide expired downloads that cron hasn't removed yet.
-                if (api::is_request_expired($request)) {
-                    $status = api::DATAREQUEST_STATUS_EXPIRED;
-                }
             }
 
             $requestexporter = new data_request_exporter($request, ['context' => $outputcontext]);

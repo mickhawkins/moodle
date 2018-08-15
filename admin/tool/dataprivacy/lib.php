@@ -200,8 +200,7 @@ function tool_dataprivacy_pluginfile($course, $cm, $context, $filearea, $args, $
         }
 
         // Make the file unavailable if it has expired.
-        $expiryseconds = get_config('tool_dataprivacy', 'privacyrequestexpiry');
-        if (\tool_dataprivacy\api::is_request_expired($datarequest)) {
+        if (\tool_dataprivacy\data_request::is_expired($datarequest)) {
             send_file_not_found();
         }
 

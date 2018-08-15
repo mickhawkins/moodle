@@ -55,11 +55,13 @@ class delete_expired_requests extends scheduled_task {
      *
      */
     public function execute() {
-        $manager = new \tool_dataprivacy\expired_data_requests();
-        $deleted = $manager->delete_expired_requests();
+        $expiredrequests = \tool_dataprivacy\data_request::get_expired_requests();
+        $deletecount = count($expiredrequests);
 
-        if ($deleted > 0) {
-            mtrace($deleted . ' expired completed data requests have been deleted');
+        if ($deletecount > 0) {
+            \tool_dataprivacy\data_request::expire($expiredrequests);
+
+            mtrace($deletecount . ' expired completed data requests have been deleted');
         }
     }
 }

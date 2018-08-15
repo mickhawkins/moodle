@@ -45,10 +45,11 @@ Feature: Data export from the privacy API
     And following "Download" should download between "1" and "100000" bytes
     And the following config values are set as admin:
       | privacyrequestexpiry | 1 | tool_dataprivacy |
-    And I navigate to "Users > Privacy and policies > Data requests" in site administration
     And I wait "1" seconds
+    And I navigate to "Users > Privacy and policies > Data requests" in site administration
+    And I should see "Expired" in the "Victim User 1" "table_row"
     And I follow "Actions"
-    And I should see "Download (expired)"
+    And I should not see "Download"
 
   @javascript
   Scenario: As a student, request data export and then download it when approved, unless it has expired

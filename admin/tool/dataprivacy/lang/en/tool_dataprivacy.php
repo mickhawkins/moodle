@@ -87,7 +87,6 @@ $string['defaultssaved'] = 'Defaults saved';
 $string['deny'] = 'Deny';
 $string['denyrequest'] = 'Deny request';
 $string['download'] = 'Download';
-$string['downloadexpiredaction'] = 'Download (expired)';
 $string['downloadexpireduser'] = 'Download has expired. Submit a new request if you wish to export your personal data.';
 $string['dporolemapping'] = 'Privacy officer role mapping';
 $string['dporolemapping_desc'] = 'The privacy officer can manage data requests. The capability tool/dataprivacy:managedatarequests must be allowed for a role to be listed as a privacy officer role mapping option.';

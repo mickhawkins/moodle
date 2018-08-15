@@ -211,17 +211,7 @@ class data_requests_table extends table_sql {
                 $usercontext = \context_user::instance($userid, IGNORE_MISSING);
                 // If user has permission to view download link, show relevant action item.
                 if ($usercontext && api::can_download_data_request_for_user($userid, $data->requestedbyuser->id)) {
-                    if (api::is_request_expired($this->datarequests[$data->id])) {
-                        // Show expiry message.
-                        $expiredurl = new moodle_url('#');
-                        $expiredtext = get_string('downloadexpiredaction', 'tool_dataprivacy');
-                        $expiredaction = new action_menu_link_secondary($expiredurl, null, $expiredtext);
-                        $expiredaction->add_class('disabled');
-                        $actions[] = $expiredaction;
-                    } else {
-                        // Show the download link.
-                        $actions[] = api::get_download_link($usercontext, $requestid);
-                    }
+                    $actions[] = api::get_download_link($usercontext, $requestid);
                 }
                 break;
         }
@@ -245,15 +235,19 @@ class data_requests_table extends table_sql {
     public function query_db($pagesize, $useinitialsbar = true) {
         global $PAGE;
 
-        // Count data requests from the given conditions.
-        $total = api::get_data_requests_count($this->userid, $this->statuses, $this->types);
-        $this->pagesize($pagesize, $total);
+        // Set dummy page total until we fetch full result set.
+        $this->pagesize($pagesize, $pagesize + 1);
 
         $sort = $this->get_sql_sort();
 
         // Get data requests from the given conditions.
         $datarequests = api::get_data_requests($this->userid, $this->statuses, $this->types, $sort,
                 $this->get_page_start(), $this->get_page_size());
+
+        // Count data requests from the given conditions.
+        $total = api::get_data_requests_count($this->userid, $this->statuses, $this->types);
+        $this->pagesize($pagesize, $total);
+
         $this->rawdata = [];
         $context = \context_system::instance();
         $renderer = $PAGE->get_renderer('tool_dataprivacy');

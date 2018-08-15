@@ -668,8 +668,6 @@ abstract class advanced_testcase extends base_testcase {
      * Run adhoc tasks, optionally matching the specified classname.
      *
      * @param   string  $matchclass The name of the class to match on.
-     *                              This is tested using the php is_a function so parent tasks, interfaces, and traits
-     *                              will also match.
      * @param   int     $matchuserid The userid to match.
      */
     protected function runAdhocTasks($matchclass = '', $matchuserid = null) {

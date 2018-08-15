@@ -309,6 +309,18 @@ class api {
             }
         }
 
+        // If any are due to expire, expire them and re-fetch updated data.
+        if (empty($statuses)
+                || in_array(self::DATAREQUEST_STATUS_DOWNLOAD_READY, $statuses)
+                || in_array(self::DATAREQUEST_STATUS_EXPIRED, $statuses)) {
+            $expiredrequests = data_request::get_expired_requests($userid);
+
+            if (!empty($expiredrequests)) {
+                data_request::expire($expiredrequests);
+                $results = self::get_data_requests($userid, $statuses, $types, $sort, $offset, $limit);
+            }
+        }
+
         return $results;
     }
 
@@ -1109,35 +1121,5 @@ class api {
         }
 
         return $approvedcollection;
-    }
-
-    /**
-     * Determines whether a completed data export request has expired.
-     * The response will be valid regardless of the expiry scheduled task having run.
-     *
-     * @param data_request $request the data request object whose expiry will be checked.
-     * @return bool true if the request has expired.
-     */
-    public static function is_request_expired(data_request $request) {
-        $result = false;
-
-        // Only export requests expire.
-        if ($request->get('type') == self::DATAREQUEST_TYPE_EXPORT) {
-            switch ($request->get('status')) {
-                // Expired requests are obviously expired.
-                case self::DATAREQUEST_STATUS_EXPIRED:
-                    $result = true;
-                    break;
-                // Complete requests are expired if the expiry time has elapsed.
-                case self::DATAREQUEST_STATUS_DOWNLOAD_READY:
-                    $expiryseconds = get_config('tool_dataprivacy', 'privacyrequestexpiry');
-                    if ($expiryseconds > 0 && time() >= ($request->get('timemodified') + $expiryseconds)) {
-                        $result = true;
-                    }
-                    break;
-            }
-        }
-
-        return $result;
     }
 }
