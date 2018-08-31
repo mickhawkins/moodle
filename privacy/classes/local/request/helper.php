@@ -61,6 +61,19 @@ class helper {
     }
 
     /**
+     * Add core-controlled contexts which are related to a component but that component may know about.
+     *
+     * For example, most activities are not aware of activity completion, but the course implements it for them.
+     * These should be included.
+     *
+     * @param   int             $userid The user being added for.
+     * @param   contextlist     $contextlist The contextlist being appended to.
+     * @return  contextlist     The final contextlist
+     */
+    public static function add_shared_users_to_userlist(\core_privacy\local\request\userlist $userlist) {
+    }
+
+    /**
      * Handle export of standard data for a plugin which implements the null provider and does not normally store data
      * of its own.
      *
