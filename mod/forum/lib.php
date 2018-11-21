@@ -2671,8 +2671,18 @@ function forum_get_discussions($cm, $forumsort="", $fullpost=true, $unused=-1, $
         $umtable  = "";
     } else {
         $umfields = ', ' . get_all_user_name_fields(true, 'um', null, 'um') . ', um.email AS umemail, um.picture AS umpicture,
-                        um.imagealt AS umimagealt';
-        $umtable  = " LEFT JOIN {user} um ON (d.usermodified = um.id)";
+                        um.imagealt AS umimagealt, pum.userid AS lastpostuser, pum.created AS lastpostcreated';
+        // Note: lc = last created, pum = post user modified.
+        $umtable  = " LEFT JOIN (SELECT MAX(fp.id) AS id, fp.discussion
+                                   FROM {forum_posts} fp
+                               GROUP BY fp.discussion
+                                ) lc
+                                ON lc.discussion = d.id
+                      LEFT JOIN (SELECT fp.created, fp.userid, fp.id
+                                   FROM {forum_posts} fp
+                                ) pum
+                                ON pum.id = lc.id
+                      LEFT JOIN {user} um ON um.id = pum.userid";
     }
 
     $updatedsincesql = '';
@@ -4011,10 +4021,10 @@ function forum_print_discussion_header(&$post, $forum, $group = -1, $datestring 
     }
 
     echo '<td class="lastpost">';
-    $usedate = (empty($post->created)) ? $post->timemodified : $post->created;
+    $usedate = (empty($post->lastpostcreated)) ? $post->timemodified : $post->lastpostcreated;
     $parenturl = '';
     $usermodified = new stdClass();
-    $usermodified->id = $post->usermodified;
+    $usermodified->id = (empty($post->lastpostuser)) ? $post->usermodified : $post->lastpostuser;
     $usermodified = username_load_fields_from_object($usermodified, $post, 'um');
 
     // In QA forums we check that the user can view participants.
