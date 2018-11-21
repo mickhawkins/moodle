@@ -163,6 +163,9 @@
         echo $OUTPUT->notification(get_string('qandanotify','forum'));
     }
 
+    // Order discussions consistent with displayed timestamps.
+    $discussionsort = 'd.pinned DESC, lastpostcreated DESC, timemodified DESC';
+
     switch ($forum->type) {
         case 'single':
             if (!empty($discussions) && count($discussions) > 1) {
@@ -192,17 +195,19 @@
             }
             echo '</p>';
             if (!empty($showall)) {
-                forum_print_latest_discussions($course, $forum, 0, 'header', '', -1, -1, -1, 0, $cm);
+                forum_print_latest_discussions($course, $forum, 0, 'header', $discussionsort, -1, -1, -1, 0, $cm);
             } else {
-                forum_print_latest_discussions($course, $forum, -1, 'header', '', -1, -1, $page, $CFG->forum_manydiscussions, $cm);
+                forum_print_latest_discussions($course, $forum, -1, 'header', $discussionsort, -1, -1,
+                        $page, $CFG->forum_manydiscussions, $cm);
             }
             break;
 
         case 'teacher':
             if (!empty($showall)) {
-                forum_print_latest_discussions($course, $forum, 0, 'header', '', -1, -1, -1, 0, $cm);
+                forum_print_latest_discussions($course, $forum, 0, 'header', $discussionsort, -1, -1, -1, 0, $cm);
             } else {
-                forum_print_latest_discussions($course, $forum, -1, 'header', '', -1, -1, $page, $CFG->forum_manydiscussions, $cm);
+                forum_print_latest_discussions($course, $forum, -1, 'header', $discussionsort, -1, -1,
+                        $page, $CFG->forum_manydiscussions, $cm);
             }
             break;
 
@@ -219,9 +224,10 @@
         default:
             echo '<br />';
             if (!empty($showall)) {
-                forum_print_latest_discussions($course, $forum, 0, 'header', '', -1, -1, -1, 0, $cm);
+                forum_print_latest_discussions($course, $forum, 0, 'header', $discussionsort, -1, -1, -1, 0, $cm);
             } else {
-                forum_print_latest_discussions($course, $forum, -1, 'header', '', -1, -1, $page, $CFG->forum_manydiscussions, $cm);
+                forum_print_latest_discussions($course, $forum, -1, 'header', $discussionsort, -1, -1,
+                        $page, $CFG->forum_manydiscussions, $cm);
             }
 
 
