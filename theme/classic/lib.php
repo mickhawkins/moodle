@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * classic backgrounds callbacks.
+ * Classic theme callbacks.
  *
- * @package    theme_classics
+ * @package    theme_classic
  * @copyright  2018 Bas Brands
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

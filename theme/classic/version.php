@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * classic backgrounds.
+ * Classic theme.
  *
- * @package    theme_classics
+ * @package    theme_classic
  * @copyright  2018 Bas Brands
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -31,5 +31,3 @@ $plugin->component = 'theme_classic';
 $plugin->dependencies = [
     'theme_boost' => 2018120300
 ];
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = 1.3;
