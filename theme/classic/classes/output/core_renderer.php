@@ -1,5 +1,5 @@
 <?php
-// This file is part of the classic theme for Moodle
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
 
 namespace theme_classic\output;
 
-use \theme_boost\output\core_renderer as boost_core_renderer;
-
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -28,6 +26,6 @@ defined('MOODLE_INTERNAL') || die;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-class core_renderer extends boost_core_renderer {
+class core_renderer extends \core_renderer {
 
 }
