@@ -16,8 +16,6 @@
 
 namespace theme_classic\output;
 
-use \theme_boost\output\core_renderer as boost_core_renderer;
-
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -28,6 +26,23 @@ defined('MOODLE_INTERNAL') || die;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-class core_renderer extends boost_core_renderer {
+class theme_classic_core_renderer extends \core_renderer {
+    /**
+     * Returns HTML to display a "Turn editing on/off" button in a form.
+     *
+     * @param moodle_url $url The URL + params to send through when clicking the button
+     * @return string HTML the button
+     */
+    public function edit_button(\moodle_url $url) {
+        $url->param('sesskey', sesskey());
+        if ($this->page->user_is_editing()) {
+            $url->param('edit', 'off');
+            $editstring = get_string('turneditingoff');
+        } else {
+            $url->param('edit', 'on');
+            $editstring = get_string('turneditingon');
+        }
 
+        return $this->single_button($url, $editstring);
+    }
 }
