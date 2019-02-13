@@ -18,12 +18,12 @@
 /**
  * Overriden core maintenance renderer.
  *
- * @package    theme_boost
+ * @package    theme_bootstrapbase
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace theme_boost\output;
+namespace theme_bootstrapbase\output;
 defined('MOODLE_INTERNAL') || die();
 
 use coding_exception;
@@ -34,7 +34,7 @@ use stdClass;
 /**
  * The maintenance renderer.
  *
- * @package    theme_boost
+ * @package    theme_bootstrapbase
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -42,7 +42,6 @@ class core_renderer_maintenance extends core_renderer {
 
     /**
      * Initialises the renderer instance.
-     *
      * @param moodle_page $page
      * @param string $target
      * @throws coding_exception
@@ -62,6 +61,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function block(block_contents $bc, $region) {
+        // Computer says no blocks.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -74,6 +75,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function blocks($region, $classes = array(), $tag = 'aside') {
+        // Computer says no blocks.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -84,6 +87,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function blocks_for_region($region) {
+        // Computer says no blocks for region.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -94,6 +99,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function course_content_header($onlyifnotcalledbefore = false) {
+        // Computer says no course content header.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -104,6 +111,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function course_content_footer($onlyifnotcalledbefore = false) {
+        // Computer says no course content footer.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -113,6 +122,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function course_header() {
+        // Computer says no course header.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -122,6 +133,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function course_footer() {
+        // Computer says no course footer.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -132,6 +145,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function custom_menu($custommenuitems = '') {
+        // Computer says no custom menu.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -142,6 +157,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function file_picker($options) {
+        // Computer says no file picker.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -152,6 +169,9 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function htmllize_file_tree($dir) {
+        // Hell no we don't want no htmllized file tree.
+        // Also why on earth is this function on the core renderer???
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
 
     }
@@ -162,7 +182,8 @@ class core_renderer_maintenance extends core_renderer {
      * @param block_contents $bc
      */
     public function init_block_hider_js(block_contents $bc) {
-        // Does nothing.
+        // Computer says no JavaScript.
+        // Do nothing, ridiculous method.
     }
 
     /**
@@ -171,6 +192,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function lang_menu() {
+        // Computer says no lang menu.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -181,6 +204,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function login_info($withlinks = null) {
+        // Computer says no login info.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 
@@ -192,6 +217,8 @@ class core_renderer_maintenance extends core_renderer {
      * @return string
      */
     public function user_picture(stdClass $user, array $options = null) {
+        // Computer says no user pictures.
+        // debugging('Please do not use $OUTPUT->'.__FUNCTION__.'() when performing maintenance tasks.', DEBUG_DEVELOPER);
         return '';
     }
 }
