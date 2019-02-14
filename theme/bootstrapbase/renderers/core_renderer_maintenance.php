@@ -38,7 +38,7 @@ use stdClass;
  * @copyright  2016 Frédéric Massart - FMCorz.net
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class core_renderer_maintenance extends core_renderer {
+class core_renderer_maintenance extends \theme_bootstrapbase_core_renderer {
 
     /**
      * Initialises the renderer instance.
