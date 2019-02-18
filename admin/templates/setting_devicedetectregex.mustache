@@ -15,21 +15,9 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_admin/setting_devicedetectregex
-
-    Admin devicedetectregex setting template.
-
-    Context variables required for this template:
-    * expressions - List of expressions containing index, name, expression and value
-
-    Example context (json):
-    {
-        "expressions": [
-            { "index": "i1", "name": "Name", "expression": "/bird|yellow/", "value": "Canary" }
-        ]
-    }
+    Setting devicedetectregex.
 }}
-<table class="generaltable">
+<table class="table table-striped">
     <thead>
         <tr>
             <th>{{#str}}devicedetectregexexpression, admin{{/str}}</th>
@@ -40,10 +28,10 @@
         {{#expressions}}
             <tr>
                 <td class="c{{index}}">
-                    <input type="text" name="{{name}}[expression{{index}}]" class="form-text text-ltr" value="{{expression}}">
+                    <input type="text" name="{{name}}[expression{{index}}]" class="form-control" value="{{expression}}">
                 </td>
                 <td class="c{{index}}">
-                    <input type="text" name="{{name}}[value{{index}}]" class="form-text text-ltr" value="{{value}}">
+                    <input type="text" name="{{name}}[value{{index}}]" class="form-control" value="{{value}}">
                 </td>
             </tr>
         {{/expressions}}
