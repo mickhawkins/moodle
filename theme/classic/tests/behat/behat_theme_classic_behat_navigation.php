@@ -121,7 +121,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      */
     public function should_exist_in_current_page_administration($element, $selectortype) {
         $nodes = array_map('trim', explode('>', $element));
-        $roottext = $nodes[0];
+        $roottext = (count($nodes) === 1 && $selectortype === 'text') ? $nodes[0] : '';
         $nodetext = end($nodes);
         $closemenu = false;
 
@@ -170,7 +170,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      */
     public function should_not_exist_in_current_page_administration($element, $selectortype) {
         $nodes = array_map('trim', explode('>', $element));
-        $roottext = $nodes[0];
+        $roottext = (count($nodes) === 1 && $selectortype === 'text') ? $nodes[0] : '';
 
         try {
             $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true, $roottext);
@@ -221,7 +221,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      *
      * @throws ElementNotFoundException
      * @param bool $mustexist If true, throws an exception if menu is not found
-     * @param bool $nodetext The name of the administration menu to find
+     * @param bool $nodetext (optional) The name of the administration menu to find
      * @return null|string
      */
     protected function find_page_administration_menu($mustexist = false, $nodetext = '') {
@@ -234,6 +234,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         if ($mustexist) {
             $exception = new ElementNotFoundException($this->getSession(), 'Page administration menu is not found');
             $this->find('xpath', $menuxpath, $exception);
+
         } else if (!$this->getSession()->getPage()->find('xpath', $menuxpath)) {
             return null;
         }

@@ -24,7 +24,7 @@ Feature: Region main settings menu
     And "Choice administration" "text" should not exist in current page administration
     And I follow "Choice name"
     And "Choice administration" "text" should exist in current page administration
-    And "Choice administration > Edit settings" "link" should exist in current page administration
+    And "Edit settings" "link" should exist in current page administration
     And I navigate to "Edit settings" in current page administration
     And I should see "Updating: Choice"
     And I navigate to course participants
