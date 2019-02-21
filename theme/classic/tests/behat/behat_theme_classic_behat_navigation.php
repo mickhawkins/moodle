@@ -123,34 +123,26 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         $nodes = array_map('trim', explode('>', $element));
         $roottext = '';//(count($nodes) === 1 && $selectortype === 'text') ? $nodes[0] : '';
         $nodetext = end($nodes);
-        $closemenu = false;
 
         // Find administration menu.
         $rootxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true, $roottext);
-        $menuxpath = $rootxpath;
+        $menuxpath = $rootxpath . '/p/../ul[1]';
 
-        // If we are checking for a sub-menu node, complete the xpath.
-        if (count($nodes) > 1) {
-            // Ensure the menu is open before trying to access sub-menus.
-            $closemenu = $this->open_page_administration_menu($rootxpath);
+        // Ensure the menu is open before trying to access sub-menus.
+        $closemenu = $this->open_page_administration_menu($rootxpath);
 
-            for ($i = 0; $i < (sizeof($nodes) - 1); $i++) {
-                if ($i === 0) {
-                    // Root navigation level is text and not a link.
-                    $menuxpath .= "/../../ul[1]/li";
-                } else {
-                    $menuxpath .= "/p[a[contains(text(), '{$nodes[$i]}')]/../../../ul[1]/li";
-                    $menuxpath .= "|a/span[contains(text(), '{$nodes[$i]}')]/../../../ul[1]/li]";
-                }
-            }
-
-            if ($selectortype == 'link') {
-                $menuxpath .= "/p[a[contains(text(), '{$nodetext}')]";
-                $menuxpath .= "|a/span[contains(text(), '{$nodetext}')]]";
-            }
+        for ($i = 0; $i < (sizeof($nodes) - 1); $i++) {
+            $menuxpath .= "/li/p/span[contains(text(), '{$nodes[$i]}')]/../../ul[1]";
         }
 
-        $exception = new ElementNotFoundException($this->getSession(), "Failed xpath: {$menuxpath}");
+        if ($selectortype == 'link') {
+            $menuxpath .= "/li/p[a[contains(text(), '{$nodetext}')]";
+            $menuxpath .= "|a/span[contains(text(), '{$nodetext}')]]";
+        } else {
+            $menuxpath .= "/li/p/span[contains(text(), '{$nodes[$i]}')]";
+        }
+
+        $exception = new ElementNotFoundException($this->getSession(), "\"{$element}\" \"{$selectortype}\"");
         $this->find('xpath', $menuxpath, $exception);
 
         // Close the menu if it was opened by this method.
@@ -187,6 +179,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         try {
             $this->should_exist_in_current_page_administration($element, $selectortype);
         } catch(ElementNotFoundException $e) {
+
             //Collapse the menu if it was closed before this test and we are checking a sub-menu.
             // Note: This is necessary because the try block will open the menu, but throws an exception before closing it again.
             if (count($nodes) > 1 && $closemenu) {
@@ -200,6 +193,20 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         // If the try block passed, the element exists, so throw an exception.
         $exception = 'The "' . $element . '" "' . $selectortype . '" was found, but should not exist';
         throw new ExpectationException($exception, $this->getSession());
+    }
+
+    /**
+     * Check that the page administration menu exists on the page.
+     *
+     * This confirms the existence of the menu, which authorised users should have access to.
+     * @Given /^I should see the page administration menu$/
+     *
+     * @throws ExpectationException
+     * @return void
+     */
+    public function page_administration_exists() {
+        $menuxpath = "//section[contains(@class,'block_settings')]//div[@id='settingsnav']";
+        $this->ensure_element_exists($menuxpath, 'xpath_element');
     }
 
     /**
@@ -225,7 +232,7 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      * @return null|string
      */
     protected function find_page_administration_menu($mustexist = false, $nodetext = '') {
-        $menuxpath = "//section[contains(@class,'block_settings')]//div[@id='settingsnav']/ul[1]/li";
+        $menuxpath = "//section[contains(@class,'block_settings')]//div[@id='settingsnav']/ul[1]/li[1]";
 
         if (!empty($nodetext)) {
             $menuxpath .= "/p/span[contains(text(), '{$nodetext}')]";

@@ -1,4 +1,4 @@
-@core @core_course @mick
+@core @core_course
 Feature: Managers can create courses
   In order to group users and contents
   As a manager

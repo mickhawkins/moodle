@@ -21,14 +21,13 @@ Feature: Region main settings menu
   Scenario: Teacher can access activity administration menus
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And "Choice administration" "text" should not exist in current page administration
     And I follow "Choice name"
-    And "Choice administration" "text" should exist in current page administration
+    And I should see the page administration menu
     And "Edit settings" "link" should exist in current page administration
     And I navigate to "Edit settings" in current page administration
     And I should see "Updating: Choice"
     And I navigate to course participants
-    And "Course administration" "text" should exist in current page administration
+    And I should see the page administration menu
     And I navigate to "Users > Enrolment methods" in current page administration
     And I should see "Enrolment methods"
     And I log out
@@ -43,7 +42,7 @@ Feature: Region main settings menu
 
   Scenario: Administrator can access site administration menus and sub-menus
     And I log in as "admin"
-    And "Site administration" "text" should exist in current page administration
+    And I should see the page administration menu
     And I navigate to "Advanced features" in site administration
     And I should see "Enable comments"
     And I navigate to "Users > Accounts > Add a new user" in site administration

@@ -18,7 +18,7 @@ Feature: Course administration menu
   Scenario: Teacher can use the course administration menu
     And I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And "Course administration" "text" should exist in current page administration
+    And I should see the page administration menu
 
   Scenario: Student cannot see the course administration menu
     And I log in as "student1"
