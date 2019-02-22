@@ -121,11 +121,10 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      */
     public function should_exist_in_current_page_administration($element, $selectortype) {
         $nodes = array_map('trim', explode('>', $element));
-        $roottext = '';//(count($nodes) === 1 && $selectortype === 'text') ? $nodes[0] : '';
         $nodetext = end($nodes);
 
         // Find administration menu.
-        $rootxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true, $roottext);
+        $rootxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true);
         $menuxpath = $rootxpath . '/p/../ul[1]';
 
         // Ensure the menu is open before trying to access sub-menus.
@@ -162,10 +161,9 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      */
     public function should_not_exist_in_current_page_administration($element, $selectortype) {
         $nodes = array_map('trim', explode('>', $element));
-        $roottext = '';//(count($nodes) === 1 && $selectortype === 'text') ? $nodes[0] : '';
 
         try {
-            $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true, $roottext);
+            $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true);
         } catch (Exception $e) {
             // If an exception was thrown, it means the root note does not exist, so we can conclude the test is a success.
             return;
