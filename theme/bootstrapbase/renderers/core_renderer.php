@@ -21,6 +21,7 @@
  * @copyright  2012 Bas Brands, www.basbrands.nl
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+use \html_writer as html_writer;
 
 class theme_bootstrapbase_core_renderer extends core_renderer {
 
@@ -75,6 +76,30 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
         $title = '<span class="accesshide" id="navbar-label">'.get_string('pagepath').'</span>';
         return $title . '<nav aria-labelledby="navbar-label"><ul class="breadcrumb">' .
                 $list_items . '</ul></nav>';
+    }
+
+    /**
+     * This code renders the navbar button to control the display of the custom menu
+     * on smaller screens.
+     *
+     * Do not display the button if the menu is empty.
+     *
+     * @return string HTML fragment
+     */
+    protected function navbar_button() {
+        global $CFG;
+
+        if (empty($CFG->custommenuitems) && $this->lang_menu() == '') {
+            return '';
+        }
+
+        $iconbar = html_writer::tag('span', '', array('class' => 'icon-bar'));
+        $button = html_writer::tag('a', $iconbar . "\n" . $iconbar. "\n" . $iconbar, array(
+                'class'       => 'btn btn-navbar',
+                'data-toggle' => 'collapse',
+                'data-target' => '.nav-collapse'
+        ));
+        return $button;
     }
 
     /*
@@ -188,30 +213,6 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
     }
 
     /**
-     * This code renders the navbar button to control the display of the custom menu
-     * on smaller screens.
-     *
-     * Do not display the button if the menu is empty.
-     *
-     * @return string HTML fragment
-     */
-    protected function navbar_button() {
-        global $CFG;
-
-        if (empty($CFG->custommenuitems) && $this->lang_menu() == '') {
-            return '';
-        }
-
-        $iconbar = html_writer::tag('span', '', array('class' => 'icon-bar'));
-        $button = html_writer::tag('a', $iconbar . "\n" . $iconbar. "\n" . $iconbar, array(
-            'class'       => 'btn btn-navbar',
-            'data-toggle' => 'collapse',
-            'data-target' => '.nav-collapse'
-        ));
-        return $button;
-    }
-
-    /**
      * Renders tabtree
      *
      * @param tabtree $tabtree
@@ -263,35 +264,15 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
      * @return string HTML to display the main header.
      */
     public function full_header() {
-        $html = \html_writer::start_tag('header', array('id' => 'page-header', 'class' => 'clearfix'));
+        $html = html_writer::start_tag('header', array('id' => 'page-header', 'class' => 'clearfix'));
         $html .= $this->context_header();
-        $html .= \html_writer::start_div('clearfix', array('id' => 'page-navbar'));
-        $html .= \html_writer::tag('div', $this->navbar(), array('class' => 'breadcrumb-nav'));
-        $html .= \html_writer::div($this->page_heading_button(), 'breadcrumb-button');
+        $html .= html_writer::start_div('clearfix', array('id' => 'page-navbar'));
+        $html .= html_writer::tag('div', $this->navbar(), array('class' => 'breadcrumb-nav'));
+        $html .= html_writer::div($this->page_heading_button(), 'breadcrumb-button');
         $html .= html_writer::end_div();
         $html .= html_writer::tag('div', $this->course_header(), array('id' => 'course-header'));
         $html .= html_writer::end_tag('header');
         return $html;
-    }
-
-    /**
-     * Returns HTML to display a "Turn editing on/off" button in a form.
-     *
-     * @param moodle_url $url The URL + params to send through when clicking the button
-     * @return string HTML the button
-     */
-    public function edit_button(moodle_url $url) {
-
-        $url->param('sesskey', sesskey());
-        if ($this->page->user_is_editing()) {
-            $url->param('edit', 'off');
-            $editstring = get_string('turneditingoff');
-        } else {
-            $url->param('edit', 'on');
-            $editstring = get_string('turneditingon');
-        }
-
-        return $this->single_button($url, $editstring);
     }
 
     /**
@@ -372,6 +353,101 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
 
         $this->init_block_hider_js($bc);
         return $output;
+    }
+
+    /**
+     * Produces a header for a block
+     *
+     * @param block_contents $bc
+     * @return string
+     */
+    protected function block_header(block_contents $bc) {
+
+        $title = '';
+        if ($bc->title) {
+            $attributes = array();
+            if ($bc->blockinstanceid) {
+                $attributes['id'] = 'instance-'.$bc->blockinstanceid.'-header';
+            }
+            $title = html_writer::tag('h2', $bc->title, $attributes);
+        }
+
+        $blockid = null;
+        if (isset($bc->attributes['id'])) {
+            $blockid = $bc->attributes['id'];
+        }
+        $controlshtml = $this->block_controls($bc->controls, $blockid);
+
+        $output = '';
+        if ($title || $controlshtml) {
+            $output .= html_writer::tag('div', html_writer::tag('div', html_writer::tag('div', '', array('class'=>'block_action')). $title . $controlshtml, array('class' => 'title')), array('class' => 'header'));
+        }
+        return $output;
+    }
+
+    /**
+     * Produces the content area for a block
+     *
+     * @param block_contents $bc
+     * @return string
+     */
+    protected function block_content(block_contents $bc) {
+        $output = html_writer::start_tag('div', array('class' => 'content'));
+        if (!$bc->title && !$this->block_controls($bc->controls)) {
+            $output .= html_writer::tag('div', '', array('class'=>'block_action notitle'));
+        }
+        $output .= $bc->content;
+        $output .= $this->block_footer($bc);
+        $output .= html_writer::end_tag('div');
+
+        return $output;
+    }
+
+    /**
+     * Produces the footer for a block
+     *
+     * @param block_contents $bc
+     * @return string
+     */
+    protected function block_footer(block_contents $bc) {
+        $output = '';
+        if ($bc->footer) {
+            $output .= html_writer::tag('div', $bc->footer, array('class' => 'footer'));
+        }
+        return $output;
+    }
+
+    /**
+     * Produces the annotation for a block
+     *
+     * @param block_contents $bc
+     * @return string
+     */
+    protected function block_annotation(block_contents $bc) {
+        $output = '';
+        if ($bc->annotation) {
+            $output .= html_writer::tag('div', $bc->annotation, array('class' => 'blockannotation'));
+        }
+        return $output;
+    }
+
+    /**
+     * Calls the JS require function to hide a block.
+     *
+     * @param block_contents $bc A block_contents object
+     */
+    protected function init_block_hider_js(block_contents $bc) {
+        if (!empty($bc->attributes['id']) and $bc->collapsible != block_contents::NOT_HIDEABLE) {
+            $config = new stdClass;
+            $config->id = $bc->attributes['id'];
+            $config->title = strip_tags($bc->title);
+            $config->preference = 'block' . $bc->blockinstanceid . 'hidden';
+            $config->tooltipVisible = get_string('hideblocka', 'access', $config->title);
+            $config->tooltipHidden = get_string('showblocka', 'access', $config->title);
+
+            $this->page->requires->js_init_call('M.util.init_block_hider', array($config));
+            user_preference_allow_ajax_update($config->preference, PARAM_BOOL);
+        }
     }
 
     /**
@@ -462,16 +538,6 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
     }
 
     /**
-     * Implementation of user image rendering.
-     *
-     * @param help_icon $helpicon A help icon instance
-     * @return string HTML fragment
-     */
-    protected function render_help_icon(help_icon $helpicon) {
-        return $this->render_from_template('core/help_icon', $helpicon->export_for_template($this));
-    }
-
-    /**
      * Renders a single button widget.
      *
      * This will return HTML to display a form containing a single button.
@@ -524,40 +590,6 @@ class theme_bootstrapbase_core_renderer extends core_renderer {
 
         // and finally one more wrapper with class
         return html_writer::tag('div', $output, array('class' => $button->class));
-    }
-
-    /**
-     * Renders the login form.
-     *
-     * @param \core_auth\output\login $form The renderable.
-     * @return string
-     */
-    public function render_login(\core_auth\output\login $form) {
-        global $CFG;
-
-        $context = $form->export_for_template($this);
-
-        // Override because rendering is not supported in template yet.
-        if ($CFG->rememberusername == 0) {
-            $context->cookieshelpiconformatted = $this->help_icon('cookiesenabledonlysession');
-        } else {
-            $context->cookieshelpiconformatted = $this->help_icon('cookiesenabled');
-        }
-        $context->errorformatted = $this->error_text($context->error);
-
-        return $this->render_from_template('core/loginform', $context);
-    }
-
-    /**
-     * Render the login signup form into a nice template for the theme.
-     *
-     * @param mform $form
-     * @return string
-     */
-    public function render_login_signup_form($form) {
-        $context = $form->export_for_template($this);
-
-        return $this->render_from_template('core/signup_form_layout', $context);
     }
 }
 

@@ -1730,101 +1730,6 @@ class core_renderer extends renderer_base {
     }
 
     /**
-     * Produces a header for a block
-     *
-     * @param block_contents $bc
-     * @return string
-     */
-    protected function block_header(block_contents $bc) {
-
-        $title = '';
-        if ($bc->title) {
-            $attributes = array();
-            if ($bc->blockinstanceid) {
-                $attributes['id'] = 'instance-'.$bc->blockinstanceid.'-header';
-            }
-            $title = html_writer::tag('h2', $bc->title, $attributes);
-        }
-
-        $blockid = null;
-        if (isset($bc->attributes['id'])) {
-            $blockid = $bc->attributes['id'];
-        }
-        $controlshtml = $this->block_controls($bc->controls, $blockid);
-
-        $output = '';
-        if ($title || $controlshtml) {
-            $output .= html_writer::tag('div', html_writer::tag('div', html_writer::tag('div', '', array('class'=>'block_action')). $title . $controlshtml, array('class' => 'title')), array('class' => 'header'));
-        }
-        return $output;
-    }
-
-    /**
-     * Produces the content area for a block
-     *
-     * @param block_contents $bc
-     * @return string
-     */
-    protected function block_content(block_contents $bc) {
-        $output = html_writer::start_tag('div', array('class' => 'content'));
-        if (!$bc->title && !$this->block_controls($bc->controls)) {
-            $output .= html_writer::tag('div', '', array('class'=>'block_action notitle'));
-        }
-        $output .= $bc->content;
-        $output .= $this->block_footer($bc);
-        $output .= html_writer::end_tag('div');
-
-        return $output;
-    }
-
-    /**
-     * Produces the footer for a block
-     *
-     * @param block_contents $bc
-     * @return string
-     */
-    protected function block_footer(block_contents $bc) {
-        $output = '';
-        if ($bc->footer) {
-            $output .= html_writer::tag('div', $bc->footer, array('class' => 'footer'));
-        }
-        return $output;
-    }
-
-    /**
-     * Produces the annotation for a block
-     *
-     * @param block_contents $bc
-     * @return string
-     */
-    protected function block_annotation(block_contents $bc) {
-        $output = '';
-        if ($bc->annotation) {
-            $output .= html_writer::tag('div', $bc->annotation, array('class' => 'blockannotation'));
-        }
-        return $output;
-    }
-
-    /**
-     * Calls the JS require function to hide a block.
-     *
-     * @param block_contents $bc A block_contents object
-     */
-    protected function init_block_hider_js(block_contents $bc) {
-        if (!empty($bc->attributes['id']) and $bc->collapsible != block_contents::NOT_HIDEABLE) {
-            $config = new stdClass;
-            $config->id = $bc->attributes['id'];
-            $config->title = strip_tags($bc->title);
-            $config->preference = 'block' . $bc->blockinstanceid . 'hidden';
-            $config->tooltipVisible = get_string('hideblocka', 'access', $config->title);
-            $config->tooltipHidden = get_string('showblocka', 'access', $config->title);
-
-            $this->page->requires->js_init_call('M.util.init_block_hider', array($config));
-            user_preference_allow_ajax_update($config->preference, PARAM_BOOL);
-        }
-    }
-
-    /**
      * Render the contents of a block_list.
      *
      * @param array $icons the icon for each item.
@@ -2752,11 +2657,23 @@ EOD;
     }
 
     /**
-     * We don't like these...
+     * Returns HTML to display a "Turn editing on/off" button in a form.
      *
+     * @param moodle_url $url The URL + params to send through when clicking the button
+     * @return string HTML the button
      */
     public function edit_button(moodle_url $url) {
-        return '';
+
+        $url->param('sesskey', sesskey());
+        if ($this->page->user_is_editing()) {
+            $url->param('edit', 'off');
+            $editstring = get_string('turneditingoff');
+        } else {
+            $url->param('edit', 'on');
+            $editstring = get_string('turneditingon');
+        }
+
+        return $this->single_button($url, $editstring);
     }
 
     /**
@@ -3693,30 +3610,6 @@ EOD;
     }
 
     /**
-     * This code renders the navbar button to control the display of the custom menu
-     * on smaller screens.
-     *
-     * Do not display the button if the menu is empty.
-     *
-     * @return string HTML fragment
-     */
-    protected function navbar_button() {
-        global $CFG;
-
-        if (empty($CFG->custommenuitems) && $this->lang_menu() == '') {
-            return '';
-        }
-
-        $iconbar = html_writer::tag('span', '', array('class' => 'icon-bar'));
-        $button = html_writer::tag('a', $iconbar . "\n" . $iconbar. "\n" . $iconbar, array(
-                'class'       => 'btn btn-navbar',
-                'data-toggle' => 'collapse',
-                'data-target' => '.nav-collapse'
-        ));
-        return $button;
-    }
-
-    /**
      * Renders a custom menu object (located in outputcomponents.php)
      *
      * The custom menu this method produces makes use of the YUI3 menunav widget
@@ -4324,7 +4217,7 @@ EOD;
         $header->navbar = $this->navbar();
         $header->pageheadingbutton = $this->page_heading_button();
         $header->courseheader = $this->course_header();
-        return $this->render_from_template('theme_boost/header', $header);
+        return $this->render_from_template('core/full_header', $header);
     }
 
     /**
