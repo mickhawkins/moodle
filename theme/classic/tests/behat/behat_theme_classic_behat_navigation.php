@@ -127,9 +127,6 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         $rootxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true);
         $menuxpath = $rootxpath . '/p/../ul[1]';
 
-        // Ensure the menu is open before trying to access sub-menus.
-        $closemenu = $this->open_page_administration_menu($rootxpath);
-
         for ($i = 0; $i < (sizeof($nodes) - 1); $i++) {
             $menuxpath .= "/li/p/span[contains(text(), '{$nodes[$i]}')]/../../ul[1]";
         }
@@ -143,11 +140,6 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
 
         $exception = new ElementNotFoundException($this->getSession(), "\"{$element}\" \"{$selectortype}\"");
         $this->find('xpath', $menuxpath, $exception);
-
-        // Close the menu if it was opened by this method.
-        if ($closemenu) {
-            $this->close_page_administration_menu($rootxpath);
-        }
     }
 
     /**
@@ -160,8 +152,6 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      * @return void
      */
     public function should_not_exist_in_current_page_administration($element, $selectortype) {
-        $nodes = array_map('trim', explode('>', $element));
-
         try {
             $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(true);
         } catch (Exception $e) {
@@ -169,20 +159,10 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
             return;
         }
 
-        // Check whether page administration is closed.
-        $menunode = $this->find('xpath', "{$menuxpath}/..");
-        $closemenu = ($menunode->getAttribute('aria-expanded') === 'false');
-
         // Test if the element exists.
         try {
             $this->should_exist_in_current_page_administration($element, $selectortype);
         } catch(ElementNotFoundException $e) {
-
-            //Collapse the menu if it was closed before this test and we are checking a sub-menu.
-            // Note: This is necessary because the try block will open the menu, but throws an exception before closing it again.
-            if (count($nodes) > 1 && $closemenu) {
-                $this->close_page_administration_menu($menuxpath);
-            }
 
             // If an exception was thrown, it means the element does not exist, so the test is successful.
             return;
@@ -226,15 +206,10 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
      *
      * @throws ElementNotFoundException
      * @param bool $mustexist If true, throws an exception if menu is not found
-     * @param bool $nodetext (optional) The name of the administration menu to find
      * @return null|string
      */
-    protected function find_page_administration_menu($mustexist = false, $nodetext = '') {
+    protected function find_page_administration_menu($mustexist = false) {
         $menuxpath = "//section[contains(@class,'block_settings')]//div[@id='settingsnav']/ul[1]/li[1]";
-
-        if (!empty($nodetext)) {
-            $menuxpath .= "/p/span[contains(text(), '{$nodetext}')]";
-        }
 
         if ($mustexist) {
             $exception = new ElementNotFoundException($this->getSession(), 'Page administration menu is not found');
@@ -245,64 +220,5 @@ class behat_theme_classic_behat_navigation extends behat_navigation {
         }
 
         return $menuxpath;
-    }
-
-    /**
-     * Open the administration menu if it is closed/collapsed.
-     *
-     * @param string $menuxpath (optional) Xpath to the page administration menu if already known
-     * @param string $nodetext (optional) The name of the administration menu being opened, if no $menuxpath is being provided
-     * @return bool True if the menu needed to be opened (was closed previously)
-     */
-    protected function open_page_administration_menu($menuxpath = null, $nodetext = '') {
-        $actioned = false;
-
-        if (!$menuxpath) {
-            $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(false, $nodetext);
-        }
-
-        if ($menuxpath && $this->running_javascript()) {
-            // The node we need is the <p> above the menu xpath.
-            $menunode = $this->find('xpath', "{$menuxpath}/..");
-
-            // If menu is collapsed, open it.
-            if ($menunode->getAttribute('aria-expanded') === 'false') {
-                $menunode->click();
-                $this->wait_for_pending_js();
-                $actioned = true;
-            }
-        }
-
-        return $actioned;
-    }
-
-    /**
-     * Close/collapse the administration menu if it is open.
-     *
-     * @param string $menuxpath (optional) Xpath to the page administration menu if already known
-     * @param string $nodetext (optional) The name of the administration menu being closed, if no $menuxpath is being provided
-     *
-     * @return bool True if the menu needed to be closed (was open previously)
-     */
-    protected function close_page_administration_menu($menuxpath = null, $nodetext = '') {
-        $actioned = false;
-
-        if (!$menuxpath) {
-            $menuxpath = $this->find_header_administration_menu() ?: $this->find_page_administration_menu(false, $nodetext);
-        }
-
-        if ($menuxpath && $this->running_javascript()) {
-            // The node we need is the <p> above the menu xpath.
-            $menunode = $this->find('xpath', "{$menuxpath}/..");
-
-            // If menu is open, collapse it.
-            if ($menunode->getAttribute('aria-expanded') === 'true') {
-                $menunode->click();
-                $this->wait_for_pending_js();
-                $actioned = true;
-            }
-        }
-
-        return $actioned;
     }
 }
