@@ -1,0 +1,51 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template report_security/security_report_section_results
+
+    Template for populating results of a section of the security report.
+
+    Classes required for JS:
+    * None
+
+    Data attributes required for JS:
+    * None
+
+    Context variables required for this template:
+    * issue         The name of the issue
+    * link          Local link to further issue information
+    * level         The risk level of the result
+    * description   Description of the current risk
+
+    Example context (json):
+    {
+        "issue":        "Password policy",
+        "linkparam":    "report_security_check_passwordpolicy",
+        "level":        "warning",
+        "description":  "Password policy not set."
+    }
+}}
+
+<tbody>
+    {{#sectionissue}}
+    <tr>
+        <td><a href="index.php?issue={{link}}">{{issue}}</a></td>
+        <td>{{level}}</td>
+        <td>{{description}}</td>
+    </tr>
+    {{/sectionissue}}
+</tbody>

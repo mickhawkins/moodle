@@ -70,6 +70,15 @@ $statusarr = array(REPORT_SECURITY_OK       => $strok,
 
 $url = "$CFG->wwwroot/report/security/index.php";
 
+$renderer = $PAGE->get_renderer('report_security');
+
+echo $renderer->test('Le title de thang');
+
+echo $OUTPUT->footer();
+
+exit; //TODO: Remove this and anything irrelevant below it.
+
+
 if ($issue and ($result = $issue(true))) {
     report_security_hide_timearning();
 

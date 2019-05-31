@@ -1,0 +1,64 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template report_security/security_report_section
+
+    Template for a section of the security report.
+
+    The purpose of this template is to render the title and placeholder for a logical grouping of security checks.
+
+    Classes required for JS:
+    * None
+
+    Data attributes required for JS:
+    * None
+
+    Context variables required for this template:
+    * title The name of the section.
+
+    Example context (json):
+    {
+        "section_id":   1,
+        "title":        "Elevated Access"
+    }
+}}
+
+{{#reportsection}}
+<h4>{{title}}</h4>
+<table class="table table-hover table-striped">
+    <thead>
+        <tr>
+            <th class="col-4">{{#str}}issue, report_security{{/str}}</th>
+            <th class="col-2">{{#str}}status, report_security{{/str}}</th>
+            <th class="col-6">{{#str}}description, report_security{{/str}}</th>
+        </tr>
+    </thead>
+    <tbody id="security_report_{{section_id}}">
+        <tr class="loading-spinner">
+            <td>{{> report_security/loading }}</td>
+            <td></td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+{{/reportsection}}
+
+{{#js}}
+require(['report_security/section_fetcher'], function(section_fetcher) {
+    section_fetcher.init();
+});
+{{/js}}

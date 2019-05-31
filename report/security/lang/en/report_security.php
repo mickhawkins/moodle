@@ -132,6 +132,7 @@ $string['check_webcron_warning'] = 'Anonymous users can access cron.';
 $string['check_webcron_name'] = 'Web cron';
 $string['check_webcron_ok'] = 'Anonymous users can not access cron.';
 $string['issue'] = 'Issue';
+$string['loading'] = 'Preparing report ...';
 $string['pluginname'] = 'Security overview';
 $string['security:view'] = 'View security report';
 $string['status'] = 'Status';
