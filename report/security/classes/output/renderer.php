@@ -45,9 +45,15 @@ class renderer extends plugin_renderer_base {
 
         $data = [
             "reportsection" => [
-                ["title" => "first"],
-                ["title" => "second"],
-                ["title" => "third"],
+                [   "section_id" => 1,
+                    "title" => "first",
+                ],
+                [   "section_id" => 2,
+                    "title" => "second",
+                ],
+                [   "section_id" => 3,
+                    "title" => "third",
+                ],
             ]
         ];
 

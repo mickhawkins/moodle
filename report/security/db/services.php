@@ -24,7 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$services = [
+//TODO: remove this $services section.
+/*$services = [
     // Web service name.
     'securityreportservice' => [
         // Web service functions of this service.
@@ -34,14 +35,17 @@ $services = [
         // Enabled by default.
         'enabled' => 1,
     ]
-];
+];*/
 
 $functions = [
     'report_security_prepare_report_section' => [
         'classname'     => 'report_security_external',
         'methodname'    => 'prepare_report_section',
         'classpath'     => 'report/security/externallib.php',
+        'description'   => 'Prepare information for a section of the security report',
         'type'          => 'read', // Database rights of the function.
+        'capabilities'  => 'report/security:view',
+        'ajax'          => true,
     ]
 ];
 

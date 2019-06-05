@@ -33,19 +33,20 @@
 
     Example context (json):
     {
+        "position":     "1"
         "issue":        "Password policy",
         "linkparam":    "report_security_check_passwordpolicy",
-        "level":        "warning",
+        "level":        "1",
         "description":  "Password policy not set."
     }
 }}
 
 <tbody>
-    {{#sectionissue}}
+    {{#position}}
     <tr>
-        <td><a href="index.php?issue={{link}}">{{issue}}</a></td>
+        <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
         <td>{{level}}</td>
         <td>{{description}}</td>
     </tr>
-    {{/sectionissue}}
+    {{/position}}
 </tbody>

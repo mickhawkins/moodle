@@ -49,33 +49,38 @@ class report_security_external extends external_api {
      * @return external_multiple_structure
      */
     public static function prepare_report_section_returns() {
-        return new external_multiple_structure(
-            new external_single_structure(
-                [
-                    'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
-                    'linkparam'     => new external_value(PARAM_LOCALURL, 'Link to further issue information'),
-                    'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
-                    'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
-                ]
-            )
+        return new external_single_structure(
+            [
+                'position'         => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
+                'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
+                'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
+                'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
+                'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
+            ]
         );
     }
 
     /**
-     * TODO
-     * @param type $section
+     * Prepares all data for one section of the security report.
+     *
+     * @param array $section Contains the section of the report to be prepared.
+     * @return array Information to populate report rows for a section.
      */
     public static function prepare_report_section($section) {
         $sectionid = $section['sectionid'];
 
+        //TODO: Do stuff for the section.
+
         $result = [
+            'position'      =>  1,
             'issue'         => 'Test issue, section ID ' . $sectionid,
             'linkparam'     => 'report_security_check_passwordpolicy',
-            'level'         => 'test level',
+            'level'         => 3,
             'description'   => 'This is the description of the test issue.',
         ];
 
         //TODO - the thing
+
         return $result;
     }
 }

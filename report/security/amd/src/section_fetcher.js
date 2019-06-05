@@ -23,7 +23,9 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification'], function(
     return {
         init: function() {
             var info = [];
-            info = [{'sectionid': 1}]; //TODO: Have this setting for all of the ones to be called
+            //info = [{'sectionid': 1}]; //TODO: Have this setting for all of the sections to be called. See push in relateCompetenciesHandler in /admin/tool/lp/amd/src/competencyactions.js
+
+            info = {'sectionid': 2};
 
             var promises = ajax.call([{
                 methodname: 'report_security_prepare_report_section',
@@ -33,12 +35,13 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification'], function(
             promises[0].done(function (data) {
                 templates.render('report_security/security_report_section_results', data).done(function (html, js) {
 
-                var section_id = 1; //TODO - have this passed in
+                    var section_id = 2; //TODO - have this passed in
 
-                $('#security_report_' + section_id).replaceWith(html);
-                templates.runTemplateJS(js); //this isnt actually js, it's the values to be passed into the template
+                    $('#security_report_' + section_id).replaceWith(html);
+                    templates.runTemplateJS(js);
 
                     return true;
+
                 }).fail(notification.exception);
             }).fail(notification.exception);
 
