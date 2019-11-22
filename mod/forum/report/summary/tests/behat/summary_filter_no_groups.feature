@@ -55,7 +55,7 @@ Feature: Groups report filter is not available if no groups exist
     And I navigate to "Summary report" in current page administration
     Then "Groups" "button" should not exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted |
-      | Teacher 1 | 2                            |
-      | Student 1 | 1                            |
-      | Student 2 | 0                            |
+      | -2-       | -3- |
+      | Teacher 1 | 2   |
+      | Student 1 | 1   |
+      | Student 2 | 0   |

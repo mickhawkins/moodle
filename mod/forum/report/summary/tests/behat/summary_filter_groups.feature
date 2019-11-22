@@ -68,10 +68,10 @@ Feature: Groups report filter is available if groups exist
     And I navigate to "Summary report" in current page administration
     Then "Groups" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Student 2 | 0                            | 0                        |
-      | Teacher 1 | 2                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Student 2 | 0   | 0   |
+      | Teacher 1 | 2   | 2   |
     And I click on "Groups" "button"
     And "Group A" "checkbox" should exist in the "filter-groups-popover" "region"
     And "Group B" "checkbox" should exist in the "filter-groups-popover" "region"
@@ -103,10 +103,10 @@ Feature: Groups report filter is available if groups exist
     And I click on "Save" "button" in the "filter-groups-popover" "region"
     And "Groups (all)" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Student 2 | 0                            | 0                        |
-      | Teacher 1 | 2                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Student 2 | 0   | 0   |
+      | Teacher 1 | 2   | 2   |
 
   @javascript
   Scenario: The summary report can be filtered by a subset of groups, and re-ordering the results retains the filter
@@ -116,10 +116,10 @@ Feature: Groups report filter is available if groups exist
     And I navigate to "Summary report" in current page administration
     Then "Groups" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Student 2 | 0                            | 0                        |
-      | Teacher 1 | 2                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Student 2 | 0   | 0   |
+      | Teacher 1 | 2   | 2   |
     And I click on "Groups" "button"
     And I click on "Clear" "button" in the "filter-groups-popover" "region"
     And I click on "Group A" "checkbox" in the "filter-groups-popover" "region"
@@ -128,17 +128,17 @@ Feature: Groups report filter is available if groups exist
     And I click on "Save" "button"
     And "Groups (3)" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Teacher 1 | 1                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Teacher 1 | 1   | 2   |
     And I should not see "Student 2"
     # Ensure re-ordering retains filter.
     And I click on "Number of discussions posted" "link"
     And "Groups (3)" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Teacher 1 | 1                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Teacher 1 | 1   | 2   |
     And I should not see "Student 2"
 
   @javascript
@@ -149,10 +149,10 @@ Feature: Groups report filter is available if groups exist
     And I navigate to "Summary report" in current page administration
     Then "Groups" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 0                            | 0                        |
-      | Student 2 | 1                            | 2                        |
-      | Teacher 1 | 3                            | 1                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 0   | 0   |
+      | Student 2 | 1   | 2   |
+      | Teacher 1 | 3   | 1   |
     And I click on "Groups" "button"
     And I click on "Clear" "button" in the "filter-groups-popover" "region"
     And I click on "Group A" "checkbox" in the "filter-groups-popover" "region"
@@ -160,10 +160,10 @@ Feature: Groups report filter is available if groups exist
     And I click on "Save" "button" in the "filter-groups-popover" "region"
     And "Groups (2)" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 0                            | 0                        |
-      | Student 2 | 1                            | 1                        |
-      | Teacher 1 | 2                            | 1                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 0   | 0   |
+      | Student 2 | 1   | 1   |
+      | Teacher 1 | 2   | 1   |
 
   @javascript
   Scenario: The summary report can be filtered by no groups only
@@ -172,19 +172,19 @@ Feature: Groups report filter is available if groups exist
     And I follow "forum2"
     And I navigate to "Summary report" in current page administration
     Then the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 0                            | 0                        |
-      | Student 2 | 1                            | 2                        |
-      | Teacher 1 | 3                            | 1                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 0   | 0   |
+      | Student 2 | 1   | 2   |
+      | Teacher 1 | 3   | 1   |
     And I click on "Groups" "button"
     And I click on "Clear" "button" in the "filter-groups-popover" "region"
     And I click on "No groups" "checkbox" in the "filter-groups-popover" "region"
     And I click on "Save" "button" in the "filter-groups-popover" "region"
     And "Groups (1)" "button" should exist
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 0                            | 0                        |
-      | Student 2 | 1                            | 1                        |
-      | Teacher 1 | 1                            | 0                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 0   | 0   |
+      | Student 2 | 1   | 1   |
+      | Teacher 1 | 1   | 0   |
 
   @javascript
   Scenario: Filtering by a group containing no users still allows the page to render
@@ -195,10 +195,10 @@ Feature: Groups report filter is available if groups exist
     And I navigate to "Summary report" in current page administration
     Then "Groups" "button" should exist
     And the following should exist in the "forumreport_summary_table" table:
-      | -2-       | Number of discussions posted | Number of replies posted |
-      | Student 1 | 1                            | 1                        |
-      | Student 2 | 0                            | 0                        |
-      | Teacher 1 | 2                            | 2                        |
+      | -2-       | -3- | -4- |
+      | Student 1 | 1   | 1   |
+      | Student 2 | 0   | 0   |
+      | Teacher 1 | 2   | 2   |
     And I click on "Groups" "button"
     And I click on "Clear" "button" in the "filter-groups-popover" "region"
     And I click on "Group D" "checkbox" in the "filter-groups-popover" "region"
