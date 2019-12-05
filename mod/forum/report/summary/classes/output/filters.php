@@ -42,11 +42,12 @@ defined('MOODLE_INTERNAL') || die();
 class filters implements renderable, templatable {
 
     /**
-     * Course module the report is being run within.
+     * Course modules the report relates to.
+     * Array contains stdClass objects
      *
-     * @var stdClass $cm
+     * @var array $cms
      */
-    protected $cm;
+    protected $cms;
 
     /**
      * Moodle URL used as the form action on the generate button.
@@ -96,6 +97,13 @@ class filters implements renderable, templatable {
     protected $datesbuttontext;
 
     /**
+     * Whether the report is being run for all forums within the course.
+     *
+     * @var bool $iscoursereport
+     */
+    protected $iscoursereport;
+
+    /**
      * Builds renderable filter data.
      *
      * @param stdClass $cm The course module object.
@@ -104,8 +112,12 @@ class filters implements renderable, templatable {
      *                                      in the format filtertype => [values]
      */
     public function __construct(stdClass $cm, moodle_url $actionurl, array $filterdata = []) {
+
+        //todo: change $cm to $cms array, which can also be empty if it's course level
+
         $this->cm = $cm;
         $this->actionurl = $actionurl;
+        $this->iscoursereport = empty($filterdata['forums']);
 
         // Prepare groups filter data.
         $groupsdata = $filterdata['groups'] ?? [];
@@ -125,6 +137,9 @@ class filters implements renderable, templatable {
      */
     protected function prepare_groups_data(array $groupsdata): void {
         global $DB, $USER;
+
+        //todo: loop through cms, need to find a way to build list of available groups without repeating them (if >1 forum exists)
+        // Do not do any of the export stuff if that's not available
 
         $groupmode = groups_get_activity_groupmode($this->cm);
         $context = \context_module::instance($this->cm->id);
@@ -159,20 +174,22 @@ class filters implements renderable, templatable {
         $this->groupsavailable = $groupsavailable;
         $this->groupsselected = $groupsselected;
 
-        // If export links will require discussion filtering, find and set the discussion IDs.
-        $groupsselectedcount = count($groupsselected);
-        if ($groupsselectedcount > 0 && $groupsselectedcount < count($groupsavailable)) {
-            list($groupidin, $groupidparams) = $DB->get_in_or_equal($groupsselected, SQL_PARAMS_NAMED);
-            $dwhere = "course = :courseid AND forum = :forumid AND groupid {$groupidin}";
-            $dparams = [
-                'courseid' => $this->cm->course,
-                'forumid' => $this->cm->instance,
-            ];
-            $dparams += $groupidparams;
-            $discussionids = $DB->get_fieldset_select('forum_discussions', 'DISTINCT id', $dwhere, $dparams);
+        // If reporting on specific forum(s) and export links will require discussion filtering, find and set the discussion IDs.
+        if (!$this->iscoursereport) {
+            $groupsselectedcount = count($groupsselected);
+            if ($groupsselectedcount > 0 && $groupsselectedcount < count($groupsavailable)) {
+                list($groupidin, $groupidparams) = $DB->get_in_or_equal($groupsselected, SQL_PARAMS_NAMED);
+                $dwhere = "course = :courseid AND forum = :forumid AND groupid {$groupidin}";
+                $dparams = [
+                    'courseid' => $this->cm->course,
+                    'forumid' => $this->cm->instance,
+                ];
+                $dparams += $groupidparams;
+                $discussionids = $DB->get_fieldset_select('forum_discussions', 'DISTINCT id', $dwhere, $dparams);
 
-            foreach ($discussionids as $discussionid) {
-                $this->discussionids[] = ['discid' => $discussionid];
+                foreach ($discussionids as $discussionid) {
+                    $this->discussionids[] = ['discid' => $discussionid];
+                }
             }
         }
     }

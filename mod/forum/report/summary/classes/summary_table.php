@@ -62,8 +62,14 @@ class summary_table extends table_sql {
     /** @var array The values available for pagination size per page. */
     protected $perpageoptions = [50, 100, 200];
 
-    /** @var \stdClass The course module object of the forum being reported on. */
-    protected $cm;
+    /** @var int The course ID containing the forum(s) being reported on. */
+    protected $courseid;
+
+    /** @var bool True if reporting on all forums in course, false if reporting on specific forum(s) */
+    protected $useallforums = false;
+
+    /** @var \stdClass The course module object(s) of the forum(s) being reported on. */
+    protected $cms = [];
 
     /**
      * @var int The user ID if only one user's summary will be generated.
@@ -113,12 +119,41 @@ class summary_table extends table_sql {
             bool $canseeprivatereplies, int $perpage, bool $canexport) {
         global $USER, $OUTPUT;
 
-        $forumid = $filters['forums'][0];
+        $uniqueid = $courseid . (empty($filters['forums']) ? '' : '_' . $filters['forums'][0]);
+        parent::__construct("summaryreport_{$uniqueid}");
 
-        parent::__construct("summaryreport_{$courseid}_{$forumid}");
+        $this->courseid = $courseid;
 
-        $this->cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
-        $this->context = \context_module::instance($this->cm->id);
+        // If no forum IDs filtered, reporting on all forums in the course.
+        if (empty($filters['forums'])) {
+            $this->context = \context_course::instance($courseid);
+
+            //todo: Fetch forums user has access to
+            $totalforumsincourse = 'todo';
+            $forumsuserhasaccessto = 'todo';
+
+            if ($totalforumsincourse == count($forumsuserhasaccessto)) {
+                $this->useallforums = true;
+            }
+
+
+        } else {
+
+            $this->context = \context_module::instance($cm->id); //todo
+        }
+
+
+        //$forumid = $filters['forums'][0];
+        //$this->cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
+        //$this->context = \context_module::instance($this->cm->id);
+
+//todo: not sure if need all cms if doing course level. If do, then this is required
+        foreach ($filters['forums'] as $forumid) {
+            $cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
+            $this->cms[] = $cm;
+            $this->contexts[$cm->id] = \context_module::instance($cm->id);
+        }
+
         $this->allowbulkoperations = $allowbulkoperations;
         $this->canseeprivatereplies = $canseeprivatereplies;
         $this->perpage = $perpage;
@@ -302,7 +337,7 @@ class summary_table extends table_sql {
         }
 
         $params = [
-            'id' => $this->cm->instance, // Forum id.
+            'id' => $this->cm->instance, // Forum id. TODO
             'userids[]' => $data->userid, // User id.
         ];
 
@@ -542,7 +577,7 @@ class summary_table extends table_sql {
                                          AND att.userid = ue.userid';
 
         $this->sql->basewhere = 'e.courseid = :courseid';
-
+//todo: might not group by f.id if course report
         $this->sql->basegroupby = 'ue.userid, e.courseid, f.id, u.id, ' . $userfieldssql;
 
         if ($this->logreader) {
@@ -561,7 +596,7 @@ class summary_table extends table_sql {
 
         $this->sql->params += [
             'component' => 'mod_forum',
-            'courseid' => $this->cm->course,
+            'courseid' => $this->cm->course, //todo
         ] + $privaterepliesparams;
 
         // Handle if a user is limited to viewing their own summary.
@@ -642,8 +677,10 @@ class summary_table extends table_sql {
      * @return void.
      */
     protected function apply_filters(array $filters): void {
-        // Apply the forums filter.
-        $this->add_filter(self::FILTER_FORUM, $filters['forums']);
+        // Apply the forums filter if not reporting on whole course.
+        if (!empty($filters['forums'])) { //todo - updated, but check this is still correct once more work done
+            $this->add_filter(self::FILTER_FORUM, $filters['forums']);
+        }
 
         // Apply groups filter.
         $this->add_filter(self::FILTER_GROUPS, $filters['groups']);
@@ -724,7 +761,7 @@ class summary_table extends table_sql {
      */
     protected function fill_log_summary_temp_table(int $contextid) {
         global $DB;
-
+//todo: this needs to change to use get in or equal for context id in the query. Also check if we can prevent this needing context(s) passed in
         $this->create_log_summary_temp_table();
 
         if ($this->logreader instanceof logstore_legacy\log\store) {
@@ -797,14 +834,14 @@ class summary_table extends table_sql {
     protected function get_filter_groups(array $groups): array {
         global $USER;
 
-        $groupmode = groups_get_activity_groupmode($this->cm);
-        $aag = has_capability('moodle/site:accessallgroups', $this->context);
+        $groupmode = groups_get_activity_groupmode($this->cm); //todo. Where no forum filtering, might have to show all
+        $aag = has_capability('moodle/site:accessallgroups', $this->context); //todo
         $allowedgroups = [];
         $filtergroups = [];
 
         // Filtering only valid if a forum groups mode is enabled.
         if (in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
-            $allgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid);
+            $allgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid); //todo
             $allgroups = [];
 
             foreach ($allgroupsobj as $group) {
@@ -820,7 +857,7 @@ class summary_table extends table_sql {
                 $allowedgroupsobj = $allgroupsobj + [$nogroups];
             } else {
                 // Only assigned groups.
-                $allowedgroupsobj = groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid);
+                $allowedgroupsobj = groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid); //todo
             }
 
             foreach ($allowedgroupsobj as $group) {
@@ -861,7 +898,7 @@ class summary_table extends table_sql {
      */
     protected function show_word_char_counts(): bool {
         global $DB;
-
+//todo
         if (is_null($this->showwordcharcounts)) {
             // This should be really fast.
             $sql = "SELECT 'x'

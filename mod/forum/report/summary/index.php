@@ -29,58 +29,68 @@ if (isguestuser()) {
 }
 
 $courseid = required_param('courseid', PARAM_INT);
-$forumid = required_param('forumid', PARAM_INT);
+$forumid = optional_param('forumid', 0, PARAM_INT);
 $perpage = optional_param('perpage', \forumreport_summary\summary_table::DEFAULT_PER_PAGE, PARAM_INT);
+$download = optional_param('download', '', PARAM_ALPHA);
 $filters = [];
+$pageurlparams = [
+    'courseid' => $courseid,
+    'perpage' => $perpage,
+];
 
 // Establish filter values.
-$filters['forums'] = [$forumid];
 $filters['groups'] = optional_param_array('filtergroups', [], PARAM_INT);
 $filters['datefrom'] = optional_param_array('datefrom', ['enabled' => 0], PARAM_INT);
 $filters['dateto'] = optional_param_array('dateto', ['enabled' => 0], PARAM_INT);
 
-$download = optional_param('download', '', PARAM_ALPHA);
-
-$cm = null;
 $modinfo = get_fast_modinfo($courseid);
+$course = $modinfo->get_course();
 
-if (!isset($modinfo->instances['forum'][$forumid])) {
-    throw new \moodle_exception("A valid forum ID is required to generate a summary report.");
+if ($forumid) {
+    $filters['forums'] = [$forumid];
+
+    $cm = null;
+
+    if (!isset($modinfo->instances['forum'][$forumid])) {
+        throw new \moodle_exception("A valid forum ID is required to generate a summary report.");
+    }
+
+    $foruminfo = $modinfo->instances['forum'][$forumid];
+    $title = $foruminfo->name;
+    $cm = $foruminfo->get_course_module_record();
+
+    require_login($courseid, false, $cm);
+    $context = \context_module::instance($cm->id);
+
+    $redirecturl = new moodle_url("/mod/forum/view.php");
+    $redirecturl->param('id', $forumid);
+    $pageurlparams['forumid'] = $forumid;
+} else {
+    require_login($courseid, false);
+    $context = \context_course::instance($courseid);
+    $title = $course->fullname;
+
+    $redirecturl = new moodle_url("/course/view.php");
+    $redirecturl->param('id', $courseid);
 }
-
-$foruminfo = $modinfo->instances['forum'][$forumid];
-$forumname = $foruminfo->name;
-$cm = $foruminfo->get_course_module_record();
-
-require_login($courseid, false, $cm);
-$context = \context_module::instance($cm->id);
 
 // This capability is required to view any version of the report.
 if (!has_capability("forumreport/summary:view", $context)) {
-    $redirecturl = new moodle_url("/mod/forum/view.php");
-    $redirecturl->param('id', $forumid);
     redirect($redirecturl);
 }
 
-$course = $modinfo->get_course();
+$pageurl = new moodle_url("/mod/forum/report/summary/index.php", $pageurlparams);
 
-$urlparams = [
-    'courseid' => $courseid,
-    'forumid' => $forumid,
-    'perpage' => $perpage,
-];
-$url = new moodle_url("/mod/forum/report/summary/index.php", $urlparams);
-
-$PAGE->set_url($url);
+$PAGE->set_url($pageurl);
 $PAGE->set_pagelayout('report');
-$PAGE->set_title($forumname);
+$PAGE->set_title($title);
 $PAGE->set_heading($course->fullname);
 $PAGE->navbar->add(get_string('nodetitle', "forumreport_summary"));
 
 // Prepare and display the report.
 $allowbulkoperations = !$download && !empty($CFG->messaging) && has_capability('moodle/course:bulkmessaging', $context);
 $canseeprivatereplies = has_capability('mod/forum:readprivatereplies', $context);
-$canexport = !$download && has_capability('mod/forum:exportforum', $context);
+$canexport = !$download && $forumid && has_capability('mod/forum:exportforum', $context);
 
 $table = new \forumreport_summary\summary_table($courseid, $filters, $allowbulkoperations,
         $canseeprivatereplies, $perpage, $canexport);
@@ -101,7 +111,7 @@ if ($download) {
     \forumreport_summary\event\report_viewed::create($eventparams)->trigger();
 
     echo $OUTPUT->header();
-    echo $OUTPUT->heading(get_string('summarytitle', 'forumreport_summary', $forumname), 2, 'p-b-2');
+    echo $OUTPUT->heading(get_string('summarytitle', 'forumreport_summary', $title), 2, 'p-b-2');
 
     if (!empty($filters['groups'])) {
         \core\notification::info(get_string('viewsdisclaimer', 'forumreport_summary'));
@@ -110,7 +120,7 @@ if ($download) {
     // Render the report filters form.
     $renderer = $PAGE->get_renderer('forumreport_summary');
 
-    echo $renderer->render_filters_form($cm, $url, $filters);
+    echo $renderer->render_filters_form($cm, $url, $filters); //todo $cm
     $table->show_download_buttons_at(array(TABLE_P_BOTTOM));
     echo $renderer->render_summary_table($table);
     echo $OUTPUT->footer();
