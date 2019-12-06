@@ -43,7 +43,7 @@ class filters implements renderable, templatable {
 
     /**
      * Course modules the report relates to.
-     * Array contains stdClass objects
+     * Array of stdClass objects
      *
      * @var array $cms
      */
@@ -106,16 +106,13 @@ class filters implements renderable, templatable {
     /**
      * Builds renderable filter data.
      *
-     * @param stdClass $cm The course module object.
+     * @param array $cms Array of course module objects.
      * @param moodle_url $actionurl The form action URL.
      * @param array $filterdata (optional) Associative array of data that has been set on available filters, if any,
      *                                      in the format filtertype => [values]
      */
-    public function __construct(stdClass $cm, moodle_url $actionurl, array $filterdata = []) {
-
-        //todo: change $cm to $cms array, which can also be empty if it's course level
-
-        $this->cm = $cm;
+    public function __construct(array $cms, moodle_url $actionurl, array $filterdata = []) {
+        $this->cms = $cms;
         $this->actionurl = $actionurl;
         $this->iscoursereport = empty($filterdata['forums']);
 
@@ -138,29 +135,41 @@ class filters implements renderable, templatable {
     protected function prepare_groups_data(array $groupsdata): void {
         global $DB, $USER;
 
-        //todo: loop through cms, need to find a way to build list of available groups without repeating them (if >1 forum exists)
-        // Do not do any of the export stuff if that's not available
-
-        $groupmode = groups_get_activity_groupmode($this->cm);
-        $context = \context_module::instance($this->cm->id);
-        $aag = has_capability('moodle/site:accessallgroups', $context);
         $groupsavailable = [];
+        $allowedgroupsobj = [];
 
-        // If no groups mode enabled, nothing to prepare.
-        if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
-            return;
-        }
+        foreach ($this->cms as $cm) {
+            $groupmode = groups_get_activity_groupmode($cm);
 
-        if ($groupmode == VISIBLEGROUPS || $aag) {
-            // Any groups, and no groups.
-            $allowedgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid);
-            $nogroups = new stdClass();
-            $nogroups->id = -1;
-            $nogroups->name = get_string('groupsnone');
-            $allowedgroupsobj[] = $nogroups;
-        } else {
-            // Only assigned groups.
-            $allowedgroupsobj = groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid);
+            // If no groups mode enabled, nothing to prepare.
+            if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
+                continue;
+            }
+
+            // If course report, only need to need to cap check once.
+            if ($this->iscoursereport && !isset($context)) {
+                $context = \context_course::instance($cm->course);
+                $aag = has_capability('moodle/site:accessallgroups', $context);
+            } else {
+                // Otherwise, fetch for the current cm's forum.
+                $context = \context_module::instance($cm->id);
+                $aag = has_capability('moodle/site:accessallgroups', $context);
+            }
+
+            if ($groupmode == VISIBLEGROUPS || $aag) {
+                // Any groups, and no groups.
+                $allowedgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid);
+                $nogroups = new stdClass();
+                $nogroups->id = -1;
+                $nogroups->name = get_string('groupsnone');
+                $allowedgroupsobj[] = $nogroups;
+
+                // All groups in course fetched, no need to continue checking for others.
+                break;
+            }
+
+            // Only some groups available, append user's groups from this forum that aren't already included.
+            $allowedgroupsobj += groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid);
         }
 
         foreach ($allowedgroupsobj as $group) {

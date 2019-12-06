@@ -45,28 +45,38 @@ $filters['dateto'] = optional_param_array('dateto', ['enabled' => 0], PARAM_INT)
 
 $modinfo = get_fast_modinfo($courseid);
 $course = $modinfo->get_course();
-
+$courseforums = $modinfo->instances['forum'];
+$cms = [];
+echo "<pre>";
+var_dump($courseforums);
+echo "</pre>";exit;
 if ($forumid) {
     $filters['forums'] = [$forumid];
 
-    $cm = null;
-
-    if (!isset($modinfo->instances['forum'][$forumid])) {
+    if (!isset($courseforums[$forumid])) {
         throw new \moodle_exception("A valid forum ID is required to generate a summary report.");
     }
 
-    $foruminfo = $modinfo->instances['forum'][$forumid];
+    $foruminfo = $courseforums[$forumid];
     $title = $foruminfo->name;
-    $cm = $foruminfo->get_course_module_record();
+    $forumcm = $foruminfo->get_course_module_record();
+    $cms[] = $forumcm;
 
-    require_login($courseid, false, $cm);
-    $context = \context_module::instance($cm->id);
+    require_login($courseid, false, $forumcm);
+    $context = \context_module::instance($forumcm->id);
 
     $redirecturl = new moodle_url("/mod/forum/view.php");
     $redirecturl->param('id', $forumid);
     $pageurlparams['forumid'] = $forumid;
 } else {
+    // Course level report
     require_login($courseid, false);
+
+    // Fetch the forum cms for the course.
+    foreach ($courseforums as $courseforum) {
+        $cms[] = $courseforum->get_course_module_record();
+    }
+
     $context = \context_course::instance($courseid);
     $title = $course->fullname;
 
@@ -120,7 +130,7 @@ if ($download) {
     // Render the report filters form.
     $renderer = $PAGE->get_renderer('forumreport_summary');
 
-    echo $renderer->render_filters_form($cm, $url, $filters); //todo $cm
+    echo $renderer->render_filters_form($cms, $url, $filters);
     $table->show_download_buttons_at(array(TABLE_P_BOTTOM));
     echo $renderer->render_summary_table($table);
     echo $OUTPUT->footer();

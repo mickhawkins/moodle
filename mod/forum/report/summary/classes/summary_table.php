@@ -83,9 +83,9 @@ class summary_table extends table_sql {
     protected $logreader = null;
 
     /**
-     * @var \context|null
+     * @var array of \context objects.
      */
-    protected $context = null;
+    protected $contexts = [];
 
     /** @var bool Whether the user has the capability/capabilities to perform bulk operations. */
     protected $allowbulkoperations = false;
@@ -124,24 +124,31 @@ class summary_table extends table_sql {
 
         $this->courseid = $courseid;
 
-        // If no forum IDs filtered, reporting on all forums in the course.
+        // If no forum IDs filtered, reporting on all forums in the course the user has access to.
         if (empty($filters['forums'])) {
             $this->context = \context_course::instance($courseid);
 
-            //todo: Fetch forums user has access to
-            $totalforumsincourse = 'todo';
-            $forumsuserhasaccessto = 'todo';
+            $modinfo = get_fast_modinfo($courseid);
+            $foruminstances = $modinfo->instances['forum'];
+            $allforumsincourse = array_keys($foruminstances);
+            $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
+                return $foruminstance->uservisible;
+            });
+            $forumsvisiblekeys = array_keys($forumsvisibletouser);
 
-            if ($totalforumsincourse == count($forumsuserhasaccessto)) {
+            if ($allforumsincourse != $forumsvisiblekeys) {
+                $filters['forums'] = $forumsvisiblekeys;
+            } else {
                 $this->useallforums = true;
+                $filters['forums'] = $allforumsincourse;
             }
+        } // else {
 
+            //$this->context = \context_module::instance($cm->id); //todo
+        //}
 
-        } else {
-
-            $this->context = \context_module::instance($cm->id); //todo
-        }
-
+//todo: current going to have forums filter always, and need to check useallforums in the filter to check whether to ignore it
+//todo: need to check whether the below not commented stuff belongs there, ie cms are actually needed elsewhere for the "all forums" course thing
 
         //$forumid = $filters['forums'][0];
         //$this->cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
@@ -159,7 +166,7 @@ class summary_table extends table_sql {
         $this->perpage = $perpage;
 
         // Only show their own summary unless they have permission to view all.
-        if (!has_capability('forumreport/summary:viewall', $this->context)) {
+        if (!has_capability('forumreport/summary:viewall', $this->context)) { //todo context
             $this->userid = $USER->id;
         }
 
@@ -533,7 +540,7 @@ class summary_table extends table_sql {
     protected function define_base_sql(): void {
         global $USER;
 
-        $userfields = get_extra_user_fields($this->context);
+        $userfields = get_extra_user_fields($this->context); //todo
         $userfieldssql = \user_picture::fields('u', $userfields);
 
         // Define base SQL query format.
@@ -581,7 +588,7 @@ class summary_table extends table_sql {
         $this->sql->basegroupby = 'ue.userid, e.courseid, f.id, u.id, ' . $userfieldssql;
 
         if ($this->logreader) {
-            $this->fill_log_summary_temp_table($this->context->id);
+            $this->fill_log_summary_temp_table();
 
             $this->sql->basefields .= ', CASE WHEN tmp.viewcount IS NOT NULL THEN tmp.viewcount ELSE 0 END AS viewcount';
             $this->sql->basefromjoins .= ' LEFT JOIN {' . self::LOG_SUMMARY_TEMP_TABLE . '} tmp ON tmp.userid = u.id ';
@@ -756,12 +763,11 @@ class summary_table extends table_sql {
     /**
      * Fills the log summary temp table.
      *
-     * @param int $contextid
      * @return null
      */
-    protected function fill_log_summary_temp_table(int $contextid) {
+    protected function fill_log_summary_temp_table() {
         global $DB;
-//todo: this needs to change to use get in or equal for context id in the query. Also check if we can prevent this needing context(s) passed in
+
         $this->create_log_summary_temp_table();
 
         if ($this->logreader instanceof logstore_legacy\log\store) {
@@ -776,12 +782,13 @@ class summary_table extends table_sql {
         // Apply dates filter if applied.
         $datewhere = $this->sql->filterbase['dateslog'] ?? '';
         $dateparams = $this->sql->filterbase['dateslogparams'] ?? [];
+        list($contextidin, $contextidparams) = $DB->get_in_or_equal($this->contexts, SQL_PARAMS_NAMED);
 
-        $params = ['contextid' => $contextid] + $dateparams;
+        $params = $contextidparams + $dateparams;
         $sql = "INSERT INTO {" . self::LOG_SUMMARY_TEMP_TABLE . "} (userid, viewcount)
                      SELECT userid, COUNT(*) AS viewcount
                        FROM {" . $logtable . "}
-                      WHERE contextid = :contextid
+                      WHERE contextid {$contextidin}
                             $datewhere
                             $nonanonymous
                    GROUP BY userid";
