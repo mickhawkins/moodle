@@ -47,9 +47,7 @@ $modinfo = get_fast_modinfo($courseid);
 $course = $modinfo->get_course();
 $courseforums = $modinfo->instances['forum'];
 $cms = [];
-echo "<pre>";
-var_dump($courseforums);
-echo "</pre>";exit;
+
 if ($forumid) {
     $filters['forums'] = [$forumid];
 
@@ -104,7 +102,7 @@ $canexport = !$download && $forumid && has_capability('mod/forum:exportforum', $
 
 $table = new \forumreport_summary\summary_table($courseid, $filters, $allowbulkoperations,
         $canseeprivatereplies, $perpage, $canexport);
-$table->baseurl = $url;
+$table->baseurl = $pageurl;
 
 $eventparams = [
     'context' => $context,
@@ -130,7 +128,7 @@ if ($download) {
     // Render the report filters form.
     $renderer = $PAGE->get_renderer('forumreport_summary');
 
-    echo $renderer->render_filters_form($cms, $url, $filters);
+    echo $renderer->render_filters_form($cms, $pageurl, $filters);
     $table->show_download_buttons_at(array(TABLE_P_BOTTOM));
     echo $renderer->render_summary_table($table);
     echo $OUTPUT->footer();

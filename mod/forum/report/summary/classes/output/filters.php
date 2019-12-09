@@ -50,6 +50,13 @@ class filters implements renderable, templatable {
     protected $cms;
 
     /**
+     * Course ID where the report is being generated.
+     *
+     * @var int $courseid
+     */
+    protected $courseid;
+
+    /**
      * Moodle URL used as the form action on the generate button.
      *
      * @var moodle_url $actionurl
@@ -113,6 +120,7 @@ class filters implements renderable, templatable {
      */
     public function __construct(array $cms, moodle_url $actionurl, array $filterdata = []) {
         $this->cms = $cms;
+        $this->courseid = $cms[0]->course;
         $this->actionurl = $actionurl;
         $this->iscoursereport = empty($filterdata['forums']);
 
@@ -141,14 +149,14 @@ class filters implements renderable, templatable {
         foreach ($this->cms as $cm) {
             $groupmode = groups_get_activity_groupmode($cm);
 
-            // If no groups mode enabled, nothing to prepare.
+            // If no groups mode enabled on the forum, nothing to prepare.
             if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
                 continue;
             }
 
             // If course report, only need to need to cap check once.
             if ($this->iscoursereport && !isset($context)) {
-                $context = \context_course::instance($cm->course);
+                $context = \context_course::instance($this->courseid);
                 $aag = has_capability('moodle/site:accessallgroups', $context);
             } else {
                 // Otherwise, fetch for the current cm's forum.
@@ -158,7 +166,7 @@ class filters implements renderable, templatable {
 
             if ($groupmode == VISIBLEGROUPS || $aag) {
                 // Any groups, and no groups.
-                $allowedgroupsobj = groups_get_all_groups($this->cm->course, 0, $this->cm->groupingid);
+                $allowedgroupsobj = groups_get_all_groups($this->courseid);
                 $nogroups = new stdClass();
                 $nogroups->id = -1;
                 $nogroups->name = get_string('groupsnone');
@@ -168,8 +176,10 @@ class filters implements renderable, templatable {
                 break;
             }
 
+            //todo: is this overkill, does this only need to be run once, and is the grouping needed?
+
             // Only some groups available, append user's groups from this forum that aren't already included.
-            $allowedgroupsobj += groups_get_all_groups($this->cm->course, $USER->id, $this->cm->groupingid);
+            $allowedgroupsobj += groups_get_all_groups($this->courseid, $USER->id, $cm->groupingid);
         }
 
         foreach ($allowedgroupsobj as $group) {
@@ -183,15 +193,15 @@ class filters implements renderable, templatable {
         $this->groupsavailable = $groupsavailable;
         $this->groupsselected = $groupsselected;
 
-        // If reporting on specific forum(s) and export links will require discussion filtering, find and set the discussion IDs.
+        // If reporting on a specific forum and export links will require discussion filtering, find and set the discussion IDs.
         if (!$this->iscoursereport) {
             $groupsselectedcount = count($groupsselected);
             if ($groupsselectedcount > 0 && $groupsselectedcount < count($groupsavailable)) {
                 list($groupidin, $groupidparams) = $DB->get_in_or_equal($groupsselected, SQL_PARAMS_NAMED);
                 $dwhere = "course = :courseid AND forum = :forumid AND groupid {$groupidin}";
                 $dparams = [
-                    'courseid' => $this->cm->course,
-                    'forumid' => $this->cm->instance,
+                    'courseid' => $this->courseid,
+                    'forumid' => $this->cms[0]->instance,
                 ];
                 $dparams += $groupidparams;
                 $discussionids = $DB->get_fieldset_select('forum_discussions', 'DISTINCT id', $dwhere, $dparams);
