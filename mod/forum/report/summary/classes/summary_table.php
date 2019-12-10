@@ -869,12 +869,12 @@ class summary_table extends table_sql {
                 continue;
             }
 
-            // If all forums course report, only need to need to cap check once.
-            if ($this->useallforums && !isset($aag)) {
-                $aag = has_capability('moodle/site:accessallgroups', $this->context);
-            } else {
-                // Otherwise, fetch for the current cm's forum.
+            if (!$this->useallforums) {
+                //Fetch for the current cm's forum.
                 $aag = has_capability('moodle/site:accessallgroups', $this->forumcontexts[$cm->id]);
+            } else if (!isset($aag)) {
+                // If running all forums course report, only need to need to cap check once.
+                $aag = has_capability('moodle/site:accessallgroups', $this->context);
             }
 
             if ($groupmode == VISIBLEGROUPS || $aag) {

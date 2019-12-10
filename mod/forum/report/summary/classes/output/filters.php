@@ -154,13 +154,13 @@ class filters implements renderable, templatable {
                 continue;
             }
 
-            // If course report, only need to need to cap check once.
-            if ($this->iscoursereport && !isset($context)) {
-                $context = \context_course::instance($this->courseid);
-                $aag = has_capability('moodle/site:accessallgroups', $context);
-            } else {
-                // Otherwise, fetch for the current cm's forum.
+            if (!$this->iscoursereport) {
+                // Fetch for the current cm's forum.
                 $context = \context_module::instance($cm->id);
+                $aag = has_capability('moodle/site:accessallgroups', $context);
+            } else if (!isset($context)) {
+                // If running course report, only need to need to cap check once.
+                $context = \context_course::instance($this->courseid);
                 $aag = has_capability('moodle/site:accessallgroups', $context);
             }
 
