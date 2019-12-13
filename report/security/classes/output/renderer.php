@@ -18,7 +18,7 @@
 /**
  * This file contains the renderer for the admin security overview report
  *
- * @copyright 2019 Michael Hawkins
+ * @copyright 2019 Michael Hawkins <michaelh@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,34 +28,34 @@ defined('MOODLE_INTERNAL') || die;
 
 use plugin_renderer_base;
 
+require_once($CFG->dirroot.'/report/security/locallib.php');
+
 /**
  * The renderer for the admin security overview report
  *
- * @copyright 2019 Michael Hawkins
+ * @copyright 2019 Michael Hawkins <michaelh@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends plugin_renderer_base {
 
-    public function test($title) {
+    /**
+     *
+     * @return type
+     */
+    public function prepare_sections() {
         $content = '';
+        $data = ['reportsection' => []];
 
-        $data = (object) [
-            'title' => $title,
-        ];
+        $sections = report_security_get_section_mapping();
 
-        $data = [
-            "reportsection" => [
-                [   "section_id" => 1,
-                    "title" => "first",
-                ],
-                [   "section_id" => 2,
-                    "title" => "second",
-                ],
-                [   "section_id" => 3,
-                    "title" => "third",
-                ],
-            ]
-        ];
+        //Should probably move this into the report_security_get_section_mapping method so it doesn't need extra processing here
+        foreach ($sections as $sectionid => $sectiondata) {
+            $data['reportsection'][] = [
+                'sectionid' => $sectionid,
+                'title' => get_string("section:{$sectiondata['name']}", 'report_security'),
+                'description' => get_string("section:{$sectiondata['name']}description", 'report_security'),
+            ];
+        }
 
         $template = 'report_security/security_report_section';
         $content .= $this->render_from_template($template, $data);

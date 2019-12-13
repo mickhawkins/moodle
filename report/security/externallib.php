@@ -18,7 +18,7 @@
  * Library functions for security report
  *
  * @package    report_security
- * @copyright  2019 Michael Hawkins
+ * @copyright  2019 Michael Hawkins <michaelh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -49,15 +49,31 @@ class report_security_external extends external_api {
      * @return external_multiple_structure
      */
     public static function prepare_report_section_returns() {
-        return new external_single_structure(
-            [
-                'position'         => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
-                'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
-                'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
-                'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
-                'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
-            ]
-        );
+        return new external_single_structure([
+            'sectionid' => new external_value(PARAM_INT, 'ID of the report section'),
+            'issues'      => new external_multiple_structure(
+                new external_single_structure(
+                    [
+                        'position'      => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
+                        'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
+                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
+                        'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
+                        'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
+                    ]
+                )
+            ),
+            'passed'      => new external_multiple_structure(
+                new external_single_structure(
+                    [
+                        'position'      => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
+                        'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
+                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
+                        'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
+                        'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
+                    ]
+                )
+            )
+        ]);
     }
 
     /**
@@ -72,14 +88,40 @@ class report_security_external extends external_api {
         //TODO: Do stuff for the section.
 
         $result = [
-            'position'      =>  1,
-            'issue'         => 'Test issue, section ID ' . $sectionid,
-            'linkparam'     => 'report_security_check_passwordpolicy',
-            'level'         => 3,
-            'description'   => 'This is the description of the test issue.',
+            'sectionid' => $sectionid,
+            'issues' => [
+                [
+                    'position'    =>  1,
+                    'issue'       => 'Test issue 1, section ID ' . $sectionid,
+                    'linkparam'   => 'report_security_check_passwordpolicy',
+                    'level'       => 3,
+                    'description' => 'This is the description of the test issue.',
+                ],
+                [
+                    'position'    =>  2,
+                    'issue'       => 'Test issue 2, section ID ' . $sectionid,
+                    'linkparam'   => 'report_security_check_passwordpolicy',
+                    'level'       => 2,
+                    'description' => 'This is the other description.',
+                ],
+            ],
+            'passed' => [
+                [
+                    'position'    =>  1,
+                    'issue'       => 'Hello, section ID ' . $sectionid,
+                    'linkparam'   => 'report_security_check_passwordpolicy',
+                    'level'       => 1,
+                    'description' => 'This is the description of the test issue.',
+                ],
+                [
+                    'position'    =>  2,
+                    'issue'       => 'This is fine, section ID ' . $sectionid,
+                    'linkparam'   => 'report_security_check_unsecuredataroot',
+                    'level'       => 1,
+                    'description' => 'Dataroot directory must not be accessible via the web.',
+                ],
+            ],
         ];
-
-        //TODO - the thing
 
         return $result;
     }

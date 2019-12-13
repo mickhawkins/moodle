@@ -18,7 +18,7 @@
  * Web services for the security report
  *
  * @package    report_security
- * @copyright  2019 Michael Hawkins
+ * @copyright  2019 Michael Hawkins <michaelh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -43,7 +43,7 @@ $functions = [
         'methodname'    => 'prepare_report_section',
         'classpath'     => 'report/security/externallib.php',
         'description'   => 'Prepare information for a section of the security report',
-        'type'          => 'read', // Database rights of the function.
+        'type'          => 'read',
         'capabilities'  => 'report/security:view',
         'ajax'          => true,
     ]

@@ -14,38 +14,36 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * Module responsible for fetching the security report sections.
+ *
  * @package report_security
- * @copyright 2019 Michael Hawkins
+ * @copyright 2019 Michael Hawkins <michaelh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-define(['jquery', 'core/ajax', 'core/templates', 'core/notification'], function($, ajax, templates, notification) {
 
-    return {
-        init: function() {
-            var info = [];
-            //info = [{'sectionid': 1}]; //TODO: Have this setting for all of the sections to be called. See push in relateCompetenciesHandler in /admin/tool/lp/amd/src/competencyactions.js
+import Ajax from 'core/ajax';
+import Templates from 'core/templates';
+import Notification from 'core/notification';
 
-            info = {'sectionid': 2};
+export const init = () => {
+    var info = [];
+    //TODO: Have this setting for all of the sections to be called.
+    //See push in relateCompetenciesHandler in /admin/tool/lp/amd/src/competencyactions.js
+    //info = [{'sectionid': 1}];
 
-            var promises = ajax.call([{
-                methodname: 'report_security_prepare_report_section',
-                args: {section: info}
-            }]);
+    info = {'sectionid': 2};
 
-            promises[0].done(function (data) {
-                templates.render('report_security/security_report_section_results', data).done(function (html, js) {
-
-                    var section_id = 2; //TODO - have this passed in
-
-                    $('#security_report_' + section_id).replaceWith(html);
-                    templates.runTemplateJS(js);
-
-                    return true;
-
-                }).fail(notification.exception);
-            }).fail(notification.exception);
-
-            return false;
-        }
+    const request = {
+        methodname: 'report_security_prepare_report_section',
+        args: {section: info}
     };
-});
+
+    Ajax.call([request])[0].done(function(data) {
+        Templates.render('report_security/security_report_section_results', data).done(function (html, js) {
+
+            document.getElementById(`security_report_${data.sectionid}`).outerHTML = html;
+            Templates.runTemplateJS(js);
+
+        }).fail(Notification.exception);
+    }).fail(Notification.exception);
+};

@@ -33,20 +33,71 @@
 
     Example context (json):
     {
-        "position":     "1"
-        "issue":        "Password policy",
-        "linkparam":    "report_security_check_passwordpolicy",
-        "level":        "1",
-        "description":  "Password policy not set."
+        "sectionid": 1,
+        "issues": [
+            {
+                "position":     "1",
+                "issue":        "Password policy",
+                "linkparam":    "report_security_check_passwordpolicy",
+                "level":        "1",
+                "description":  "Password policy not set."
+            }
+        ],
+        "passed": [
+            {
+                "position":     "1",
+                "issue":        "Insecure dataroot",
+                "linkparam":    "report_security_check_unsecuredataroot",
+                "level":        "1",
+                "description":  "Dataroot directory must not be accessible via the web."
+            }
+        ]
     }
 }}
 
-<tbody>
-    {{#position}}
+<tbody data-reportsection="{{sectionid}}">
+    {{#issues}}
     <tr>
         <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
         <td>{{level}}</td>
         <td>{{description}}</td>
     </tr>
-    {{/position}}
+    {{/issues}}
+    <tr>
+        <td colspan="3">
+            n checks passed
+            <button id="togglepassedsection{{sectionid}}" class="btn btn-link" aria-expanded="false">Click to show passed checks</button>
+        </td>
+    </tr>
 </tbody>
+<tbody data-passedsection="{{sectionid}}" class="hidden">
+    {{#passed}}
+    <tr>
+        <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
+        <td>{{level}}</td>
+        <td>{{description}}</td>
+    </tr>
+    {{/passed}}
+</tbody>
+
+{{#js}}
+
+//TODO: Move this to separate file, that has the sectionid passed in
+
+    document.getElementById('togglepassedsection{{sectionid}}').onclick = () => {
+        const passedsection = document.querySelector('[data-passedsection="{{sectionid}}"]');
+        const togglebutton = document.getElementById('togglepassedsection{{sectionid}}');
+
+        passedsection.classList.toggle('hidden');
+
+        //todo doesnt work
+        if (togglebutton.getAttribute('aria-expanded') === true) {
+            togglebutton.setAttribute('aria-expanded', true);
+            document.getElementById('blah').innerText = "Click to hide passed checks";
+        } else {
+            togglebutton.setAttribute('aria-expanded', false);
+            document.getElementById('blah').innerText = "Click to show passed checks";
+        }
+    };
+
+{{/js}}

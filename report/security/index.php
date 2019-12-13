@@ -47,10 +47,6 @@ core_php_time_limit::raise();
 admin_externalpage_setup('reportsecurity', '', null, '', array('pagelayout'=>'report'));
 echo $OUTPUT->header();
 
-echo $OUTPUT->heading(get_string('pluginname', 'report_security'));
-
-echo '<div id="timewarning">'.get_string('timewarning', 'report_security').'</div>';
-
 $strok       = '<span class="statusok">'.get_string('statusok', 'report_security').'</span>';
 $strinfo     = '<span class="statusinfo">'.get_string('statusinfo', 'report_security').'</span>';
 $strwarning  = '<span class="statuswarning">'.get_string('statuswarning', 'report_security').'</span>';
@@ -72,11 +68,11 @@ $url = "$CFG->wwwroot/report/security/index.php";
 
 $renderer = $PAGE->get_renderer('report_security');
 
-echo $renderer->test('Le title de thang');
+echo $renderer->prepare_sections();
 
 echo $OUTPUT->footer();
 
-exit; //TODO: Remove this and anything irrelevant below it.
+exit; //TODO: Remove this and anything irrelevant below it. possibly add author if most of the file is replaced
 
 
 if ($issue and ($result = $issue(true))) {

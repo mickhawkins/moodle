@@ -32,6 +32,11 @@ define('REPORT_SECURITY_WARNING', 'warning');
 define('REPORT_SECURITY_SERIOUS', 'serious');
 define('REPORT_SECURITY_CRITICAL', 'critical');
 
+define('REPORT_SECURITY_SECTION_OUTSIDE', 0);
+define('REPORT_SECURITY_SECTION_GENERAL', 1);
+define('REPORT_SECURITY_SECTION_ELEVATED', 2);
+define('REPORT_SECURITY_SECTION_DEV', 3);
+
 function report_security_hide_timearning() {
      global $PAGE;
      $PAGE->requires->js_init_code("Y.one('#timewarning').addClass('timewarninghidden')");
@@ -62,6 +67,65 @@ function report_security_get_issue_list() {
         'report_security_check_preventexecpath',
 
     );
+}
+
+/**
+ * Return the list of report sections and the checks within them.
+ *
+ * @param int Optional report section ID to return details about, -1 denotes all sections.
+ * @return array In the format [section => name, checks => [checks to perform]] where a section ID is provided,
+ *                or for all sections, an array of those arrays, indexed by section ID.
+ */
+function report_security_get_section_mapping(int $section = -1): array {
+    $mapping = [
+        REPORT_SECURITY_SECTION_OUTSIDE => [
+            'name' => 'outsideaccess',
+            'checks' => [
+                'report_security_check_unsecuredataroot',
+                'report_security_check_openprofiles',
+                'report_security_check_crawlers',
+                'report_security_check_guestrole',
+                'report_security_check_webcron',
+            ],
+        ],
+        REPORT_SECURITY_SECTION_GENERAL => [
+            'name' => 'bestpractices',
+            'checks' => [
+                'report_security_check_embed',
+                'report_security_check_mediafilterswf',
+                'report_security_check_passwordpolicy',
+                'report_security_check_preventexecpath',
+                'report_security_check_emailchangeconfirmation',
+                'report_security_check_cookiesecure',
+            ],
+        ],
+        REPORT_SECURITY_SECTION_ELEVATED => [
+            'name' => 'developmentsettings',
+            'checks' => [
+                'report_security_check_riskxss',
+                'report_security_check_riskadmin',
+                'report_security_check_riskbackup',
+                'report_security_check_defaultuserrole',
+                'report_security_check_frontpagerole',
+            ],
+        ],
+        REPORT_SECURITY_SECTION_DEV => [
+            'name' => 'elevatedaccess',
+            'checks' => [
+                'report_security_check_displayerrors',
+                'report_security_check_vendordir',
+                'report_security_check_nodemodules',
+                'report_security_check_noauth',
+                'report_security_check_configrw',
+            ],
+        ],
+    ];
+
+    if ($section === -1) {
+        return $mapping;
+    }
+
+    return $mapping[$section];
 }
 
 function report_security_doc_link($issue, $name) {

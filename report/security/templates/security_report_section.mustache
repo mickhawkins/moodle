@@ -37,8 +37,14 @@
     }
 }}
 
+<h2>{{#str}}pluginname, report_security{{/str}}</h2>
+<div id="timewarning">
+    <p>{{#str}}timewarning, report_security{{/str}}</p>
+</div>
+
 {{#reportsection}}
 <h4>{{title}}</h4>
+<p>{{description}}</p>
 <table class="table table-hover table-striped">
     <thead>
         <tr>
@@ -47,7 +53,7 @@
             <th class="col-6">{{#str}}description, report_security{{/str}}</th>
         </tr>
     </thead>
-    <tbody id="security_report_{{section_id}}">
+    <tbody id="security_report_{{sectionid}}">
         <tr class="loading-spinner">
             <td>{{> report_security/loading }}</td>
             <td></td>
