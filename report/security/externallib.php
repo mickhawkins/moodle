@@ -24,7 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once("$CFG->libdir/externallib.php");
+require_once("{$CFG->libdir}/externallib.php");
+require_once("{$CFG->libdir}/report/security/locallib.php");
 
 class report_security_external extends external_api {
 
@@ -87,42 +88,76 @@ class report_security_external extends external_api {
 
         //TODO: Do stuff for the section.
 
-        $result = [
-            'sectionid' => $sectionid,
-            'issues' => [
-                [
-                    'position'    =>  1,
-                    'issue'       => 'Test issue 1, section ID ' . $sectionid,
-                    'linkparam'   => 'report_security_check_passwordpolicy',
-                    'level'       => 3,
-                    'description' => 'This is the description of the test issue.',
-                ],
-                [
-                    'position'    =>  2,
-                    'issue'       => 'Test issue 2, section ID ' . $sectionid,
-                    'linkparam'   => 'report_security_check_passwordpolicy',
-                    'level'       => 2,
-                    'description' => 'This is the other description.',
-                ],
-            ],
-            'passed' => [
-                [
-                    'position'    =>  1,
-                    'issue'       => 'Hello, section ID ' . $sectionid,
-                    'linkparam'   => 'report_security_check_passwordpolicy',
-                    'level'       => 1,
-                    'description' => 'This is the description of the test issue.',
-                ],
-                [
-                    'position'    =>  2,
-                    'issue'       => 'This is fine, section ID ' . $sectionid,
-                    'linkparam'   => 'report_security_check_unsecuredataroot',
-                    'level'       => 1,
-                    'description' => 'Dataroot directory must not be accessible via the web.',
-                ],
-            ],
+        //todo: is name needed by the mapping method?
+//todo: cehck these REPORT_SECURITY_BLAH statuses are available, may need to require locallib.php
+
+        $sectioninfo = report_security_get_section_mapping($sectionid);
+        $results = [
+            REPORT_SECURITY_OK => [],
+            REPORT_SECURITY_INFO => [],
+            REPORT_SECURITY_SERIOUS => [],
+            REPORT_SECURITY_CRITICAL => [],
         ];
 
-        return $result;
+        foreach ($sectioninfo['checks'] as $check) {
+            $checkresult = call_user_func($check);
+
+            $results[$checkresult->status][] = [
+                'position' => 'TODO - remove?',
+                'issue' => $checkresult->name,
+                'linkparam' => $checkresult->issue,
+                'level' => $checkresult->status,
+                'description' => $checkresult->details,
+            ];
+            
+            //TODO: replace link with linkparam probably, that is available in $checkresult
+        }
+
+        $details = [
+            'sectionid' =>$sectionid,
+            // Append so results are ordered by most critical first.
+            'issues' => $results[REPORT_SECURITY_CRITICAL] + $results[REPORT_SECURITY_SERIOUS] + $results[REPORT_SECURITY_INFO],
+            'passed' => $results[REPORT_SECURITY_OK],
+        ];
+
+
+        return $details;
+
+//        $result = [
+//            'sectionid' => $sectionid,
+//            'issues' => [
+//                [
+//                    'position'    =>  1,
+//                    'issue'       => 'Test issue 1, section ID ' . $sectionid,
+//                    'linkparam'   => 'report_security_check_passwordpolicy',
+//                    'level'       => 3,
+//                    'description' => 'This is the description of the test issue.',
+//                ],
+//                [
+//                    'position'    =>  2,
+//                    'issue'       => 'Test issue 2, section ID ' . $sectionid,
+//                    'linkparam'   => 'report_security_check_passwordpolicy',
+//                    'level'       => 2,
+//                    'description' => 'This is the other description.',
+//                ],
+//            ],
+//            'passed' => [
+//                [
+//                    'position'    =>  1,
+//                    'issue'       => 'Hello, section ID ' . $sectionid,
+//                    'linkparam'   => 'report_security_check_passwordpolicy',
+//                    'level'       => 1,
+//                    'description' => 'This is the description of the test issue.',
+//                ],
+//                [
+//                    'position'    =>  2,
+//                    'issue'       => 'This is fine, section ID ' . $sectionid,
+//                    'linkparam'   => 'report_security_check_unsecuredataroot',
+//                    'level'       => 1,
+//                    'description' => 'Dataroot directory must not be accessible via the web.',
+//                ],
+//            ],
+//        ];
+
     }
 }
