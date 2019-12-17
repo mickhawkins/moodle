@@ -71,14 +71,17 @@ class behat_form_select extends behat_form_field {
         // Wait for all the possible AJAX requests that have been
         // already triggered by selectOption() to be finished.
         if ($this->running_javascript()) {
-            // Click into the parent node to remove focus from element (without closing dialogue, if any).
+            // Click into the parent node (if one is found) to remove focus from element (without closing dialogue, if any).
             if (!$singleselect) {
                 try {
-                    $this->session->getDriver()->click($this->field->getParent()->getXpath());
+                    $clickelement = $this->field->getParent() ?? $this->field;
+
+                    $this->session->getDriver()->click($clickelement->getXpath());
                 } catch (\Exception $e) {
                     return;
                 }
             }
+
             $this->session->wait(behat_base::get_timeout() * 1000, behat_base::PAGE_READY_JS);
         }
     }
