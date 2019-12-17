@@ -25,7 +25,7 @@ import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
 
-export const init = () => {
+export const fetchsections = () => {
     var info = [];
     //TODO: Have this setting for all of the sections to be called.
     //See push in relateCompetenciesHandler in /admin/tool/lp/amd/src/competencyactions.js
@@ -46,4 +46,11 @@ export const init = () => {
 
         }).fail(Notification.exception);
     }).fail(Notification.exception);
+};
+
+export const tableevents = (sectionid) => {
+    document.getElementById(`togglepassedsection${sectionid}`).onclick = () => {
+        document.getElementById(`togglepassedsection${sectionid}showtext`).classList.toggle('hidden');
+        document.getElementById(`togglepassedsection${sectionid}hidetext`).classList.toggle('hidden');
+    };
 };

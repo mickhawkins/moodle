@@ -57,7 +57,8 @@ class report_security_external extends external_api {
                     [
                         'issue'         => new external_value(PARAM_TEXT, 'Name of the check being performed'),
                         'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Name for the further info link'),
-                        'status'         => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
+                        'status'        => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
+                        'statusname'    => new external_value(PARAM_ALPHANUM, 'Risk status name which can be displayed to user'),
                         'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
                     ]
                 ), 'Checks which may require action in this section', VALUE_OPTIONAL
@@ -68,7 +69,8 @@ class report_security_external extends external_api {
                     [
                         'issue'         => new external_value(PARAM_TEXT, 'Name of the check being performed'),
                         'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Name for the further info link'),
-                        'status'         => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
+                        'status'        => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
+                        'statusname'    => new external_value(PARAM_ALPHANUM, 'Risk status name which can be displayed to user'),
                         'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
                     ]
                 ), 'Checks which have passed in this section', VALUE_OPTIONAL
@@ -105,6 +107,7 @@ class report_security_external extends external_api {
                 'issue' => $checkresult->name,
                 'linkparam' => $checkresult->issue,
                 'status' => $checkresult->status,
+                'statusname' => get_string("status{$checkresult->status}", 'report_security'),
                 'description' => $checkresult->info,
             ];
         }

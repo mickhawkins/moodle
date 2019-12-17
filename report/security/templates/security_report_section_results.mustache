@@ -49,8 +49,8 @@
                 "position":     "1",
                 "issue":        "Insecure dataroot",
                 "linkparam":    "report_security_check_unsecuredataroot",
-                "status":        "ok",
-                "statusname":
+                "status":       "ok",
+                "statusname":   "Ok",
                 "description":  "Dataroot directory must not be accessible via the web."
             }
         ]
@@ -65,42 +65,33 @@
         <td>{{description}}</td>
     </tr>
     {{/issues}}
-    <tr>
-        <td colspan="3">
-            {{passedcount}} checks require no action
-            <button id="togglepassedsection{{sectionid}}" class="btn btn-link" aria-expanded="false">Click to show passed checks</button>
-        </td>
-    </tr>
 </tbody>
-<tbody data-passedsection="{{sectionid}}" class="hidden">
+{{#passedcount}}
+<thead>
+    <tr>
+    <td colspan="3">
+        <span class="statusok">{{# str }} passedcheckstext, report_security, {{passedcount}} {{/ str }}</span>
+        <button id="togglepassedsection{{sectionid}}" class="btn btn-link" aria-expanded="false"
+                data-toggle="collapse" data-target="[data-passedsection='{{sectionid}}']">
+            <span id='togglepassedsection{{sectionid}}showtext'>{{# str }} passedchecksshow, report_security {{/ str }}</span>
+            <span id='togglepassedsection{{sectionid}}hidetext' class='hidden'>{{# str }} passedcheckshide, report_security {{/ str }}</span>
+        </button>
+    </td>
+    </tr>
+</thead>
+<tbody data-passedsection="{{sectionid}}" class="collapse">
     {{#passed}}
     <tr>
         <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
-        <td><span class="status{{level}}">{{level}}</span></td>
+        <td><span class="status{{status}}">{{statusname}}</span></td>
         <td>{{description}}</td>
     </tr>
     {{/passed}}
 </tbody>
+{{/passedcount}}
 
 {{#js}}
-
-//TODO: Move this to separate file, that has the sectionid passed in
-
-    document.getElementById('togglepassedsection{{sectionid}}').onclick = () => {
-        const passedsection = document.querySelector('[data-passedsection="{{sectionid}}"]');
-        const togglebutton = document.getElementById('togglepassedsection{{sectionid}}');
-
-        passedsection.classList.toggle('hidden');
-
-        //todo Below here doesnt work
-
-        if (togglebutton.getAttribute('aria-expanded') === true) {
-            togglebutton.setAttribute('aria-expanded', true);
-            document.getElementById('blah').innerText = "Click to hide passed checks";
-        } else {
-            togglebutton.setAttribute('aria-expanded', false);
-            document.getElementById('blah').innerText = "Click to show passed checks";
-        }
-    };
-
+require(['report_security/section_handlers'], function(section_handlers) {
+    section_handlers.tableevents({{sectionid}});
+});
 {{/js}}

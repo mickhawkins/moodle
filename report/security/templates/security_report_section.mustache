@@ -64,7 +64,7 @@
 {{/reportsection}}
 
 {{#js}}
-require(['report_security/section_fetcher'], function(section_fetcher) {
-    section_fetcher.init();
+require(['report_security/section_handlers'], function(section_handlers) {
+    section_handlers.fetchsections();
 });
 {{/js}}
