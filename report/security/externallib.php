@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die;
 
 require_once("{$CFG->libdir}/externallib.php");
-require_once("{$CFG->libdir}/report/security/locallib.php");
+require_once("{$CFG->dirroot}/report/security/locallib.php");
 
 class report_security_external extends external_api {
 
@@ -52,27 +52,26 @@ class report_security_external extends external_api {
     public static function prepare_report_section_returns() {
         return new external_single_structure([
             'sectionid' => new external_value(PARAM_INT, 'ID of the report section'),
-            'issues'      => new external_multiple_structure(
+            'issues' => new external_multiple_structure(
                 new external_single_structure(
                     [
-                        'position'      => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
-                        'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
-                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
-                        'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
+                        'issue'         => new external_value(PARAM_TEXT, 'Name of the check being performed'),
+                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Name for the further info link'),
+                        'status'         => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
                         'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
                     ]
-                )
+                ), 'Checks which may require action in this section', VALUE_OPTIONAL
             ),
-            'passed'      => new external_multiple_structure(
+            'passedcount' => new external_value(PARAM_INT, 'The number of checks that passed in this section'),
+            'passed' => new external_multiple_structure(
                 new external_single_structure(
                     [
-                        'position'      => new external_value(PARAM_NUMBER, 'Position of the issue within the section'),
-                        'issue'         => new external_value(PARAM_TEXT, 'Name of the issue being checked'),
-                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Issue name for the further info link'),
-                        'level'         => new external_value(PARAM_ALPHANUM, 'Risk level of the issue'),
+                        'issue'         => new external_value(PARAM_TEXT, 'Name of the check being performed'),
+                        'linkparam'     => new external_value(PARAM_ALPHANUMEXT, 'Name for the further info link'),
+                        'status'         => new external_value(PARAM_ALPHANUM, 'Risk status of the check'),
                         'description'   => new external_value(PARAM_TEXT, 'Decsription of the result'),
                     ]
-                )
+                ), 'Checks which have passed in this section', VALUE_OPTIONAL
             )
         ]);
     }
@@ -103,61 +102,21 @@ class report_security_external extends external_api {
             $checkresult = call_user_func($check);
 
             $results[$checkresult->status][] = [
-                'position' => 'TODO - remove?',
                 'issue' => $checkresult->name,
                 'linkparam' => $checkresult->issue,
-                'level' => $checkresult->status,
-                'description' => $checkresult->details,
+                'status' => $checkresult->status,
+                'description' => $checkresult->info,
             ];
-            
-            //TODO: replace link with linkparam probably, that is available in $checkresult
         }
 
         $details = [
-            'sectionid' =>$sectionid,
-            // Append so results are ordered by most critical first.
+            'sectionid' => $sectionid,
+            // Append in this order so results so most critical are listed first.
             'issues' => $results[REPORT_SECURITY_CRITICAL] + $results[REPORT_SECURITY_SERIOUS] + $results[REPORT_SECURITY_INFO],
+            'passedcount' => count($results[REPORT_SECURITY_OK]),
             'passed' => $results[REPORT_SECURITY_OK],
         ];
 
-
         return $details;
-
-//        $result = [
-//            'sectionid' => $sectionid,
-//            'issues' => [
-//                [
-//                    'position'    =>  1,
-//                    'issue'       => 'Test issue 1, section ID ' . $sectionid,
-//                    'linkparam'   => 'report_security_check_passwordpolicy',
-//                    'level'       => 3,
-//                    'description' => 'This is the description of the test issue.',
-//                ],
-//                [
-//                    'position'    =>  2,
-//                    'issue'       => 'Test issue 2, section ID ' . $sectionid,
-//                    'linkparam'   => 'report_security_check_passwordpolicy',
-//                    'level'       => 2,
-//                    'description' => 'This is the other description.',
-//                ],
-//            ],
-//            'passed' => [
-//                [
-//                    'position'    =>  1,
-//                    'issue'       => 'Hello, section ID ' . $sectionid,
-//                    'linkparam'   => 'report_security_check_passwordpolicy',
-//                    'level'       => 1,
-//                    'description' => 'This is the description of the test issue.',
-//                ],
-//                [
-//                    'position'    =>  2,
-//                    'issue'       => 'This is fine, section ID ' . $sectionid,
-//                    'linkparam'   => 'report_security_check_unsecuredataroot',
-//                    'level'       => 1,
-//                    'description' => 'Dataroot directory must not be accessible via the web.',
-//                ],
-//            ],
-//        ];
-
     }
 }

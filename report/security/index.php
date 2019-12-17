@@ -29,7 +29,7 @@ require('../../config.php');
 require_once($CFG->dirroot.'/report/security/locallib.php');
 require_once($CFG->libdir.'/adminlib.php');
 
-
+//todo: Make details a modal so this can be removed
 $issue = optional_param('issue', '', PARAM_ALPHANUMEXT); // show detailed info about one issue only
 
 $issues = report_security_get_issue_list();
@@ -39,6 +39,7 @@ if (array_search($issue, $issues, true) === false) {
     $issue = '';
 }
 
+//todo: check if this is needed anymore with the ajaxing
 // we may need a bit more memory and this may take a long time to process
 raise_memory_limit(MEMORY_EXTRA);
 core_php_time_limit::raise();

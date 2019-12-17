@@ -39,16 +39,18 @@
                 "position":     "1",
                 "issue":        "Password policy",
                 "linkparam":    "report_security_check_passwordpolicy",
-                "level":        "1",
+                "status":        "critical",
                 "description":  "Password policy not set."
             }
         ],
+        "passedcount": 1,
         "passed": [
             {
                 "position":     "1",
                 "issue":        "Insecure dataroot",
                 "linkparam":    "report_security_check_unsecuredataroot",
-                "level":        "1",
+                "status":        "ok",
+                "statusname":
                 "description":  "Dataroot directory must not be accessible via the web."
             }
         ]
@@ -59,13 +61,13 @@
     {{#issues}}
     <tr>
         <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
-        <td>{{level}}</td>
+        <td><span class="status{{status}}">{{statusname}}</span></td>
         <td>{{description}}</td>
     </tr>
     {{/issues}}
     <tr>
         <td colspan="3">
-            n checks passed
+            {{passedcount}} checks require no action
             <button id="togglepassedsection{{sectionid}}" class="btn btn-link" aria-expanded="false">Click to show passed checks</button>
         </td>
     </tr>
@@ -74,7 +76,7 @@
     {{#passed}}
     <tr>
         <td><a href="index.php?issue={{linkparam}}">{{issue}}</a></td>
-        <td>{{level}}</td>
+        <td><span class="status{{level}}">{{level}}</span></td>
         <td>{{description}}</td>
     </tr>
     {{/passed}}
@@ -90,7 +92,8 @@
 
         passedsection.classList.toggle('hidden');
 
-        //todo doesnt work
+        //todo Below here doesnt work
+
         if (togglebutton.getAttribute('aria-expanded') === true) {
             togglebutton.setAttribute('aria-expanded', true);
             document.getElementById('blah').innerText = "Click to hide passed checks";
