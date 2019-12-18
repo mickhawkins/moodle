@@ -26,26 +26,29 @@ import Templates from 'core/templates';
 import Notification from 'core/notification';
 
 export const fetchsections = () => {
-    var info = [];
+
     //TODO: Have this setting for all of the sections to be called.
     //See push in relateCompetenciesHandler in /admin/tool/lp/amd/src/competencyactions.js
     //info = [{'sectionid': 1}];
+    //
+//todo: outside access is not returning anything
+    const sections = [0, 1, 2, 3];
 
-    info = {'sectionid': 2};
+    sections.forEach(function(sectionid) {
+        const request = {
+            methodname: 'report_security_prepare_report_section',
+            args: {sectionid: sectionid}
+        };
 
-    const request = {
-        methodname: 'report_security_prepare_report_section',
-        args: {section: info}
-    };
+        Ajax.call([request])[0].done(function(data) {
+            Templates.render('report_security/security_report_section_results', data).done(function (html, js) {
 
-    Ajax.call([request])[0].done(function(data) {
-        Templates.render('report_security/security_report_section_results', data).done(function (html, js) {
+                document.getElementById(`security_report_${data.sectionid}`).outerHTML = html;
+                Templates.runTemplateJS(js);
 
-            document.getElementById(`security_report_${data.sectionid}`).outerHTML = html;
-            Templates.runTemplateJS(js);
-
+            }).fail(Notification.exception);
         }).fail(Notification.exception);
-    }).fail(Notification.exception);
+    });
 };
 
 export const tableevents = (sectionid) => {

@@ -29,7 +29,9 @@ require('../../config.php');
 require_once($CFG->dirroot.'/report/security/locallib.php');
 require_once($CFG->libdir.'/adminlib.php');
 
-//todo: Make details a modal so this can be removed
+//todo: Make clicking on any of the checks' details a modal
+//todo: should be able to remove a bunch of this page's stuff when it's no longer loading a single item with the same page
+//todo: This file is mostly rewritten, do I add another copyright line?
 $issue = optional_param('issue', '', PARAM_ALPHANUMEXT); // show detailed info about one issue only
 
 $issues = report_security_get_issue_list();
@@ -39,7 +41,7 @@ if (array_search($issue, $issues, true) === false) {
     $issue = '';
 }
 
-//todo: check if this is needed anymore with the ajaxing
+//todo: check if this is needed anymore with the ajaxing, and whether the ajax script needs this
 // we may need a bit more memory and this may take a long time to process
 raise_memory_limit(MEMORY_EXTRA);
 core_php_time_limit::raise();
@@ -48,24 +50,24 @@ core_php_time_limit::raise();
 admin_externalpage_setup('reportsecurity', '', null, '', array('pagelayout'=>'report'));
 echo $OUTPUT->header();
 
-$strok       = '<span class="statusok">'.get_string('statusok', 'report_security').'</span>';
-$strinfo     = '<span class="statusinfo">'.get_string('statusinfo', 'report_security').'</span>';
-$strwarning  = '<span class="statuswarning">'.get_string('statuswarning', 'report_security').'</span>';
-$strserious  = '<span class="statusserious">'.get_string('statusserious', 'report_security').'</span>';
-$strcritical = '<span class="statuscritical">'.get_string('statuscritical', 'report_security').'</span>';
+//$strok       = '<span class="statusok">'.get_string('statusok', 'report_security').'</span>';
+//$strinfo     = '<span class="statusinfo">'.get_string('statusinfo', 'report_security').'</span>';
+//$strwarning  = '<span class="statuswarning">'.get_string('statuswarning', 'report_security').'</span>';
+//$strserious  = '<span class="statusserious">'.get_string('statusserious', 'report_security').'</span>';
+//$strcritical = '<span class="statuscritical">'.get_string('statuscritical', 'report_security').'</span>';
+//
+//$strissue    = get_string('issue', 'report_security');
+//$strstatus   = get_string('status', 'report_security');
+//$strdesc     = get_string('description', 'report_security');
+//$strconfig   = get_string('configuration', 'report_security');
+//
+//$statusarr = array(REPORT_SECURITY_OK       => $strok,
+//                   REPORT_SECURITY_INFO     => $strinfo,
+//                   REPORT_SECURITY_WARNING  => $strwarning,
+//                   REPORT_SECURITY_SERIOUS  => $strserious,
+//                   REPORT_SECURITY_CRITICAL => $strcritical);
 
-$strissue    = get_string('issue', 'report_security');
-$strstatus   = get_string('status', 'report_security');
-$strdesc     = get_string('description', 'report_security');
-$strconfig   = get_string('configuration', 'report_security');
-
-$statusarr = array(REPORT_SECURITY_OK       => $strok,
-                   REPORT_SECURITY_INFO     => $strinfo,
-                   REPORT_SECURITY_WARNING  => $strwarning,
-                   REPORT_SECURITY_SERIOUS  => $strserious,
-                   REPORT_SECURITY_CRITICAL => $strcritical);
-
-$url = "$CFG->wwwroot/report/security/index.php";
+//$url = "$CFG->wwwroot/report/security/index.php";
 
 $renderer = $PAGE->get_renderer('report_security');
 

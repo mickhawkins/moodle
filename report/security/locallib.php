@@ -42,6 +42,7 @@ function report_security_hide_timearning() {
      $PAGE->requires->js_init_code("Y.one('#timewarning').addClass('timewarninghidden')");
 }
 
+//todo: deprecate/remove
 function report_security_get_issue_list() {
     return array(
         'report_security_check_unsecuredataroot',
@@ -100,7 +101,7 @@ function report_security_get_section_mapping(int $section = -1): array {
             ],
         ],
         REPORT_SECURITY_SECTION_ELEVATED => [
-            'name' => 'developmentsettings',
+            'name' => 'elevatedaccess',
             'checks' => [
                 'report_security_check_riskxss',
                 'report_security_check_riskadmin',
@@ -110,7 +111,7 @@ function report_security_get_section_mapping(int $section = -1): array {
             ],
         ],
         REPORT_SECURITY_SECTION_DEV => [
-            'name' => 'elevatedaccess',
+            'name' => 'developmentsettings',
             'checks' => [
                 'report_security_check_displayerrors',
                 'report_security_check_vendordir',
@@ -279,6 +280,8 @@ function report_security_check_mediafilterswf($detailed=false) {
  */
 function report_security_check_unsecuredataroot($detailed=false) {
     global $CFG;
+
+    require_once($CFG->libdir.'/adminlib.php');
 
     $result = new stdClass();
     $result->issue   = 'report_security_check_unsecuredataroot';

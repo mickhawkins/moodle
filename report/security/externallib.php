@@ -34,15 +34,9 @@ class report_security_external extends external_api {
      * @return external_function_parameters
      */
     public static function prepare_report_section_parameters() {
-        return new external_function_parameters(
-            [
-                'section' => new external_single_structure(
-                    [
-                        'sectionid' => new external_value(PARAM_INT, 'ID of report section to prepare'),
-                    ]
-                )
-            ]
-        );
+        return new external_function_parameters([
+            'sectionid' => new external_value(PARAM_INT, 'ID of report section to prepare'),
+        ]);
     }
 
     /**
@@ -81,21 +75,18 @@ class report_security_external extends external_api {
     /**
      * Prepares all data for one section of the security report.
      *
-     * @param array $section Contains the section of the report to be prepared.
+     * @param array $sectionid The section ID within the report to be prepared.
      * @return array Information to populate report rows for a section.
      */
-    public static function prepare_report_section($section) {
-        $sectionid = $section['sectionid'];
-
-        //TODO: Do stuff for the section.
+    public static function prepare_report_section($sectionid) {
 
         //todo: is name needed by the mapping method?
-//todo: cehck these REPORT_SECURITY_BLAH statuses are available, may need to require locallib.php
 
         $sectioninfo = report_security_get_section_mapping($sectionid);
         $results = [
             REPORT_SECURITY_OK => [],
             REPORT_SECURITY_INFO => [],
+            REPORT_SECURITY_WARNING => [],
             REPORT_SECURITY_SERIOUS => [],
             REPORT_SECURITY_CRITICAL => [],
         ];
@@ -103,19 +94,26 @@ class report_security_external extends external_api {
         foreach ($sectioninfo['checks'] as $check) {
             $checkresult = call_user_func($check);
 
-            $results[$checkresult->status][] = [
-                'issue' => $checkresult->name,
-                'linkparam' => $checkresult->issue,
-                'status' => $checkresult->status,
-                'statusname' => get_string("status{$checkresult->status}", 'report_security'),
-                'description' => $checkresult->info,
-            ];
+            if (!empty($checkresult)) {
+                $results[$checkresult->status][] = [
+                    'issue' => $checkresult->name,
+                    'linkparam' => $checkresult->issue,
+                    'status' => $checkresult->status,
+                    'statusname' => get_string("status{$checkresult->status}", 'report_security'),
+                    'description' => $checkresult->info,
+                ];
+            }
         }
 
         $details = [
             'sectionid' => $sectionid,
-            // Append in this order so results so most critical are listed first.
-            'issues' => $results[REPORT_SECURITY_CRITICAL] + $results[REPORT_SECURITY_SERIOUS] + $results[REPORT_SECURITY_INFO],
+            // Merge in order of importance, so most critical results are listed first.
+            'issues' => array_merge(
+                $results[REPORT_SECURITY_CRITICAL],
+                $results[REPORT_SECURITY_SERIOUS],
+                $results[REPORT_SECURITY_WARNING],
+                $results[REPORT_SECURITY_INFO]
+            ),
             'passedcount' => count($results[REPORT_SECURITY_OK]),
             'passed' => $results[REPORT_SECURITY_OK],
         ];
