@@ -66,23 +66,23 @@ class behat_form_select extends behat_form_field {
         } else {
            // By default, assume the passed value is a non-multiple option.
             $this->field->selectOption(trim($value));
-       }
 
-        // Wait for all the possible AJAX requests that have been
-        // already triggered by selectOption() to be finished.
-        if ($this->running_javascript()) {
-            // Click into the parent node (if one is found) to remove focus from element (without closing dialogue, if any).
-            if (!$singleselect) {
-                try {
-                    $clickelement = $this->field->getParent() ?? $this->field;
+            // Wait for all the possible AJAX requests that have been
+            // already triggered by selectOption() to be finished.
+            if ($this->running_javascript()) {
+                // Click into the parent node (if one is found) to remove focus from element (without closing dialogue, if any).
+                if (!$singleselect) {
+                    try {
+                        $clickelement = $this->field->getParent() ?? $this->field;
 
-                    $this->session->getDriver()->click($clickelement->getXpath());
-                } catch (\Exception $e) {
-                    return;
+                        $this->session->getDriver()->click($clickelement->getXpath());
+                    } catch (\Exception $e) {
+                        return;
+                    }
                 }
-            }
 
-            $this->session->wait(behat_base::get_timeout() * 1000, behat_base::PAGE_READY_JS);
+                $this->session->wait(behat_base::get_timeout() * 1000, behat_base::PAGE_READY_JS);
+            }
         }
     }
 
