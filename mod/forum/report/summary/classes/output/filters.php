@@ -104,25 +104,17 @@ class filters implements renderable, templatable {
     protected $datesbuttontext;
 
     /**
-     * Whether the report is being run for all forums within the course.
-     *
-     * @var bool $iscoursereport
-     */
-    protected $iscoursereport;
-
-    /**
      * Builds renderable filter data.
      *
      * @param array $cms Array of course module objects.
      * @param moodle_url $actionurl The form action URL.
      * @param array $filterdata (optional) Associative array of data that has been set on available filters, if any,
-     *                                      in the format filtertype => [values]
+     *                                     in the format filtertype => [values]
      */
     public function __construct(array $cms, moodle_url $actionurl, array $filterdata = []) {
         $this->cms = $cms;
         $this->courseid = $cms[0]->course;
         $this->actionurl = $actionurl;
-        $this->iscoursereport = empty($filterdata['forums']);
 
         // Prepare groups filter data.
         $groupsdata = $filterdata['groups'] ?? [];
@@ -146,40 +138,43 @@ class filters implements renderable, templatable {
         $groupsavailable = [];
         $allowedgroupsobj = [];
 
+        $usergroups = groups_get_all_groups($this->courseid, $USER->id);
+        $coursegroups = groups_get_all_groups($this->courseid);
+        $forumids = [];
+        $allgroups = false;
+
+        // Check if any forum gives the user access to all groups and no groups.
         foreach ($this->cms as $cm) {
-            $groupmode = groups_get_activity_groupmode($cm);
+            $forumids[] = $cm->instance;
 
-            // If no groups mode enabled on the forum, nothing to prepare.
-            if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
-                continue;
-            }
+            // Only need to check for all groups access if not confirmed by a previous check.
+            if (!$allgroups) {
+                $groupmode = groups_get_activity_groupmode($cm);
 
-            if (!$this->iscoursereport) {
+                // If no groups mode enabled on the forum, nothing to prepare.
+                if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
+                    continue;
+                }
+
                 // Fetch for the current cm's forum.
                 $context = \context_module::instance($cm->id);
                 $aag = has_capability('moodle/site:accessallgroups', $context);
-            } else if (!isset($context)) {
-                // If running course report, only need to need to cap check once.
-                $context = \context_course::instance($this->courseid);
-                $aag = has_capability('moodle/site:accessallgroups', $context);
+
+                if ($groupmode == VISIBLEGROUPS || $aag) {
+                    $allgroups = true;
+                }
             }
+        }
 
-            if ($groupmode == VISIBLEGROUPS || $aag) {
-                // Any groups, and no groups.
-                $allowedgroupsobj = groups_get_all_groups($this->courseid);
-                $nogroups = new stdClass();
-                $nogroups->id = -1;
-                $nogroups->name = get_string('groupsnone');
-                $allowedgroupsobj[] = $nogroups;
+        // Any groups, and no groups.
+        if ($allgroups) {
+            $nogroups = new stdClass();
+            $nogroups->id = -1;
+            $nogroups->name = get_string('groupsnone');
 
-                // All groups in course fetched, no need to continue checking for others.
-                break;
-            }
-
-            //todo: is this overkill, does this only need to be run once, and is the grouping needed?
-
-            // Only some groups available, append user's groups from this forum that aren't already included.
-            $allowedgroupsobj += groups_get_all_groups($this->courseid, $USER->id, $cm->groupingid);
+            $allowedgroupsobj = $coursegroups + [$nogroups];
+        } else {
+            $allowedgroupsobj = $usergroups;
         }
 
         foreach ($allowedgroupsobj as $group) {
@@ -193,22 +188,19 @@ class filters implements renderable, templatable {
         $this->groupsavailable = $groupsavailable;
         $this->groupsselected = $groupsselected;
 
-        // If reporting on a specific forum and export links will require discussion filtering, find and set the discussion IDs.
-        if (!$this->iscoursereport) {
-            $groupsselectedcount = count($groupsselected);
-            if ($groupsselectedcount > 0 && $groupsselectedcount < count($groupsavailable)) {
-                list($groupidin, $groupidparams) = $DB->get_in_or_equal($groupsselected, SQL_PARAMS_NAMED);
-                $dwhere = "course = :courseid AND forum = :forumid AND groupid {$groupidin}";
-                $dparams = [
-                    'courseid' => $this->courseid,
-                    'forumid' => $this->cms[0]->instance,
-                ];
-                $dparams += $groupidparams;
-                $discussionids = $DB->get_fieldset_select('forum_discussions', 'DISTINCT id', $dwhere, $dparams);
+        $groupsselectedcount = count($groupsselected);
+        if ($groupsselectedcount > 0 && $groupsselectedcount < count($groupsavailable)) {
+            list($forumidin, $forumidparams) = $DB->get_in_or_equal($forumids, SQL_PARAMS_NAMED);
+            list($groupidin, $groupidparams) = $DB->get_in_or_equal($groupsselected, SQL_PARAMS_NAMED);
 
-                foreach ($discussionids as $discussionid) {
-                    $this->discussionids[] = ['discid' => $discussionid];
-                }
+            $dwhere = "course = :courseid AND forum {$forumidin} AND groupid {$groupidin}";
+            $dparams = ['courseid' => $this->courseid];
+            $dparams += $forumidparams + $groupidparams;
+
+            $discussionids = $DB->get_fieldset_select('forum_discussions', 'DISTINCT id', $dwhere, $dparams);
+
+            foreach ($discussionids as $discussionid) {
+                $this->discussionids[] = ['discid' => $discussionid];
             }
         }
     }

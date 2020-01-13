@@ -82,6 +82,8 @@ if ($forumid) {
     $redirecturl->param('id', $courseid);
 }
 
+//TODO: Determine what to do with contexts in this file - need to check the below cap checks and the level they're assigned at etc
+
 // This capability is required to view any version of the report.
 if (!has_capability("forumreport/summary:view", $context)) {
     redirect($redirecturl);

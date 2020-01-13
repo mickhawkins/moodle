@@ -83,12 +83,6 @@ class summary_table extends table_sql {
     protected $logreader = null;
 
     /**
-     * @var \context|null The context the report is being run within.
-     * Will be set to either the forum context (when reporting on a forum), or course context (when reporting on a whole course).
-     */
-    protected $context = null;
-
-    /**
      * @var array of \context objects for the forums included in the report.
      */
     protected $forumcontexts = [];
@@ -132,8 +126,6 @@ class summary_table extends table_sql {
 
         // If no forum IDs filtered, reporting on all forums in the course the user has access to.
         if (empty($filters['forums'])) {
-            $this->context = \context_course::instance($courseid);
-
             $modinfo = get_fast_modinfo($courseid);
             $foruminstances = $modinfo->instances['forum'];
             $allforumsincourse = array_keys($foruminstances);
@@ -142,34 +134,25 @@ class summary_table extends table_sql {
             });
             $forumsvisiblekeys = array_keys($forumsvisibletouser);
 
-            if ($allforumsincourse != $forumsvisiblekeys) {
-                $filters['forums'] = $forumsvisiblekeys;
-            } else {
-                $this->useallforums = true;
-                $filters['forums'] = $allforumsincourse;
-            }
+            $filters['forums'] = $forumsvisiblekeys;
+            $userfieldscontext = \context_course::instance($courseid);
+            $this->useallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
         }
 
         foreach ($filters['forums'] as $forumid) {
             $cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
             $this->cms[] = $cm;
-
             $this->forumcontexts[$cm->id] = \context_module::instance($cm->id);
 
-            // If reporting on a single forum rather than a course, set the report context.
-            if (empty($this->context)) {
-                $this->context = $this->forumcontexts[$cm->id];
+            // Only show own summary unless they have permission to view all in every forum being reported.
+            if (empty($this->userid) && !has_capability('forumreport/summary:viewall', $this->forumcontexts[$cm->id])) {
+                $this->userid = $USER->id;
             }
         }
 
         $this->allowbulkoperations = $allowbulkoperations;
         $this->canseeprivatereplies = $canseeprivatereplies;
         $this->perpage = $perpage;
-
-        // Only show their own summary unless they have permission to view all.
-        if (!has_capability('forumreport/summary:viewall', $this->context)) {
-            $this->userid = $USER->id;
-        }
 
         $columnheaders = [];
 
@@ -220,7 +203,7 @@ class summary_table extends table_sql {
         $this->apply_filters($filters);
 
         // Define the basic SQL data and object format.
-        $this->define_base_sql();
+        $this->define_base_sql($userfieldscontext);
     }
 
     /**
@@ -538,12 +521,13 @@ class summary_table extends table_sql {
     /**
      * Define the object to store all for the table SQL and initialises the base SQL required.
      *
+     * @param \context $userfieldscontext The context to use when fetching extra user fields.
      * @return void.
      */
-    protected function define_base_sql(): void {
+    protected function define_base_sql(\context $userfieldscontext): void {
         global $USER;
 
-        $userfields = get_extra_user_fields($this->context);
+        $userfields = get_extra_user_fields($userfieldscontext);
         $userfieldssql = \user_picture::fields('u', $userfields);
 
         // Define base SQL query format.
@@ -850,47 +834,43 @@ class summary_table extends table_sql {
     protected function get_filter_groups(array $groups): array {
         global $USER;
 
+        $usergroups = groups_get_all_groups($this->courseid, $USER->id);
+        $coursegroups = groups_get_all_groups($this->courseid);
+        $allgroups = false;
         $allowedgroupsobj = [];
         $allowedgroups = [];
         $filtergroups = [];
-        $allgroups = [];
-
-        $allgroupsobj = groups_get_all_groups($this->courseid, 0);
-
-        foreach ($allgroupsobj as $group) {
-            $allgroups[] = $group->id;
-        }
 
         foreach ($this->cms as $cm) {
-            $groupmode = groups_get_activity_groupmode($cm);
+            // Only need to check for all groups access if not confirmed by a previous check.
+            if (!$allgroups) {
+                $groupmode = groups_get_activity_groupmode($cm);
 
-            // If no groups mode enabled on the forum, nothing to prepare.
-            if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
-                continue;
-            }
+                // If no groups mode enabled on the forum, nothing to prepare.
+                if (!in_array($groupmode, [VISIBLEGROUPS, SEPARATEGROUPS])) {
+                    continue;
+                }
 
-            if (!$this->useallforums) {
-                //Fetch for the current cm's forum.
                 $aag = has_capability('moodle/site:accessallgroups', $this->forumcontexts[$cm->id]);
-            } else if (!isset($aag)) {
-                // If running all forums course report, only need to need to cap check once.
-                $aag = has_capability('moodle/site:accessallgroups', $this->context);
+
+                if ($groupmode == VISIBLEGROUPS || $aag) {
+                    $allgroups = true;
+
+                    // All groups in course fetched, no need to continue checking for others.
+                    break;
+                }
             }
+        }
 
-            if ($groupmode == VISIBLEGROUPS || $aag) {
-                $nogroups = new \stdClass();
-                $nogroups->id = -1;
-                $nogroups->name = get_string('groupsnone');
+        if ($allgroups) {
+            $nogroups = new \stdClass();
+            $nogroups->id = -1;
+            $nogroups->name = get_string('groupsnone');
 
-                // Any groups and no groups.
-                $allowedgroupsobj = $allgroupsobj + [$nogroups];
-
-                // All groups in course fetched, no need to continue checking for others.
-                break;
-            }
-
-            // Only add user's assigned groups from this forum that aren't already included.
-            $allowedgroupsobj += groups_get_all_groups($this->courseid, $USER->id, $cm->groupingid);
+            // Any groups and no groups.
+            $allowedgroupsobj = $coursegroups + [$nogroups];
+        } else {
+            $allowedgroupsobj = $usergroups;
         }
 
         foreach ($allowedgroupsobj as $group) {
@@ -900,7 +880,7 @@ class summary_table extends table_sql {
         // If not all groups in course are selected, filter by allowed groups submitted.
         if (!empty($groups) && !empty(array_diff($allowedgroups, $groups))) {
             $filtergroups = array_intersect($groups, $allowedgroups);
-        } else if (!empty(array_diff($allgroups, $allowedgroups))) {
+        } else if (!empty(array_diff($coursegroups, $allowedgroups))) {
             // If user's 'all groups' is a subset of the course groups, filter by all groups available to them.
             $filtergroups = $allowedgroups;
         }
