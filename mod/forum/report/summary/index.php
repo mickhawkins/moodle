@@ -62,10 +62,11 @@ if ($forumid) {
 
     require_login($courseid, false, $forumcm);
     $context = \context_module::instance($forumcm->id);
-
+    $canexport = !$download && has_capability('mod/forum:exportforum', $context);
     $redirecturl = new moodle_url("/mod/forum/view.php");
     $redirecturl->param('id', $forumid);
     $pageurlparams['forumid'] = $forumid;
+    $accessallforums = false;
 } else {
     // Course level report
     require_login($courseid, false);
@@ -77,16 +78,23 @@ if ($forumid) {
 
     $context = \context_course::instance($courseid);
     $title = $course->fullname;
-
+    // Export currently only supports single forum exports.
+    $canexport = false;
     $redirecturl = new moodle_url("/course/view.php");
     $redirecturl->param('id', $courseid);
-}
 
-//TODO: Determine what to do with contexts in this file - need to check the below cap checks and the level they're assigned at etc
+    // Determine which forums the user has access to in the course, and whether that is all forums in the course.
+    $modinfo = get_fast_modinfo($courseid);
+    $foruminstances = $modinfo->instances['forum'];
+    $allforumsincourse = array_keys($foruminstances);
+    $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
+        return $foruminstance->uservisible;
+    });
+    $forumsvisiblekeys = array_keys($forumsvisibletouser);
 
-// This capability is required to view any version of the report.
-if (!has_capability("forumreport/summary:view", $context)) {
-    redirect($redirecturl);
+    $filters['forums'] = $forumsvisiblekeys;
+
+    $accessallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
 }
 
 $pageurl = new moodle_url("/mod/forum/report/summary/index.php", $pageurlparams);
@@ -97,20 +105,46 @@ $PAGE->set_title($title);
 $PAGE->set_heading($course->fullname);
 $PAGE->navbar->add(get_string('nodetitle', "forumreport_summary"));
 
-// Prepare and display the report.
 $allowbulkoperations = !$download && !empty($CFG->messaging) && has_capability('moodle/course:bulkmessaging', $context);
-$canseeprivatereplies = has_capability('mod/forum:readprivatereplies', $context);
-$canexport = !$download && $forumid && has_capability('mod/forum:exportforum', $context);
+$canseeprivatereplies = false;
+$privatereplycapcount = 0;
+$canview = false;
 
+foreach ($filters['forums'] as $forumidfilter) {
+    $forumcontext = \context_module::instance($forumidfilter);
+
+    // This capability is required in at least one of the given contexts to view any version of the report.
+    if (has_capability("forumreport/summary:view", $forumcontext)) {
+        $canview = true;
+    }
+
+    if (has_capability('mod/forum:readprivatereplies', $forumcontext)) {
+        $privatereplycapcount++;
+    }
+}
+
+if (!$canview) {
+    redirect($redirecturl);
+}
+
+// Only use private replies if user has that cap in every forum context in the report.
+if (count($filters['forums']) === $privatereplycapcount) {
+    $canseeprivatereplies = true;
+}
+
+echo "Can view: " . var_export($canview, true) . '<br>';
+echo "Private replies: " . var_export($canseeprivatereplies, true);exit;
+
+// Prepare and display the report.
 $table = new \forumreport_summary\summary_table($courseid, $filters, $allowbulkoperations,
-        $canseeprivatereplies, $perpage, $canexport);
+        $canseeprivatereplies, $perpage, $canexport, $accessallforums);
 $table->baseurl = $pageurl;
 
 $eventparams = [
     'context' => $context,
     'other' => [
         'forumid' => $forumid,
-        'hasviewall' => has_capability('forumreport/summary:viewall', $context),
+        'hasviewall' => has_capability('forumreport/summary:viewall', $context), //todo - per forum
     ],
 ];
 
@@ -130,6 +164,7 @@ if ($download) {
     // Render the report filters form.
     $renderer = $PAGE->get_renderer('forumreport_summary');
 
+    unset($filters['forums']);
     echo $renderer->render_filters_form($cms, $pageurl, $filters);
     $table->show_download_buttons_at(array(TABLE_P_BOTTOM));
     echo $renderer->render_summary_table($table);

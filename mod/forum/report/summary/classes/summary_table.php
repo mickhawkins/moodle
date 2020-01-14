@@ -66,7 +66,7 @@ class summary_table extends table_sql {
     protected $courseid;
 
     /** @var bool True if reporting on all forums in course, false if reporting on specific forum(s) */
-    protected $useallforums = false;
+    protected $accessallforums = false;
 
     /** @var \stdClass The course module object(s) of the forum(s) being reported on. */
     protected $cms = [];
@@ -114,35 +114,44 @@ class summary_table extends table_sql {
      * @param bool $canseeprivatereplies Whether the user can see all private replies or not.
      * @param int $perpage The number of rows to display per page.
      * @param bool $canexport Is the user allowed to export records?
+     * @param bool $accessallforums If user is running a course level report, do they have access to all forums in the course?
      */
     public function __construct(int $courseid, array $filters, bool $allowbulkoperations,
-            bool $canseeprivatereplies, int $perpage, bool $canexport) {
+            bool $canseeprivatereplies, int $perpage, bool $canexport, bool $accessallforums) {
         global $USER, $OUTPUT;
 
         $uniqueid = $courseid . (empty($filters['forums']) ? '' : '_' . $filters['forums'][0]);
         parent::__construct("summaryreport_{$uniqueid}");
 
         $this->courseid = $courseid;
+        $this->accessallforums = $accessallforums;
 
+        //TODO: moving the below out into the index file. Also need to move the foreach below this into a method
         // If no forum IDs filtered, reporting on all forums in the course the user has access to.
-        if (empty($filters['forums'])) {
-            $modinfo = get_fast_modinfo($courseid);
-            $foruminstances = $modinfo->instances['forum'];
-            $allforumsincourse = array_keys($foruminstances);
-            $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
-                return $foruminstance->uservisible;
-            });
-            $forumsvisiblekeys = array_keys($forumsvisibletouser);
-
-            $filters['forums'] = $forumsvisiblekeys;
+        if ($accessallforums) {
             $userfieldscontext = \context_course::instance($courseid);
-            $this->useallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
+//            $modinfo = get_fast_modinfo($courseid);
+//            $foruminstances = $modinfo->instances['forum'];
+//            $allforumsincourse = array_keys($foruminstances);
+//            $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
+//                return $foruminstance->uservisible;
+//            });
+//            $forumsvisiblekeys = array_keys($forumsvisibletouser);
+//
+//            $filters['forums'] = $forumsvisiblekeys;
+//            $userfieldscontext = \context_course::instance($courseid);
+//            $this->accessallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
         }
 
         foreach ($filters['forums'] as $forumid) {
             $cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
             $this->cms[] = $cm;
             $this->forumcontexts[$cm->id] = \context_module::instance($cm->id);
+
+            // Set it to the forum context if not reporting on course.`
+            if (!isset($userfieldscontext)) {
+                $userfieldscontext = $this->forumcontexts[$cm->id];
+            }
 
             // Only show own summary unless they have permission to view all in every forum being reported.
             if (empty($this->userid) && !has_capability('forumreport/summary:viewall', $this->forumcontexts[$cm->id])) {
@@ -323,8 +332,8 @@ class summary_table extends table_sql {
         global $OUTPUT;
 
         // If no posts, nothing to export.
-        // If reporting on a course, unable to export (export only handles a single forum).
-        if (empty($data->earliestpost) || $this->useallforums) {
+        // If reporting on more than one forum (eg a course), unable to export (export only handles a single forum).
+        if (empty($data->earliestpost) || count($this->cms) > 1) {
             return '';
         }
 
@@ -671,7 +680,7 @@ class summary_table extends table_sql {
      */
     protected function apply_filters(array $filters): void {
         // Apply the forums filter if not reporting on whole course.
-        if (!$this->useallforums) {
+        if (!$this->accessallforums) {
             $this->add_filter(self::FILTER_FORUM, $filters['forums']);
         }
 
@@ -835,7 +844,7 @@ class summary_table extends table_sql {
         global $USER;
 
         $usergroups = groups_get_all_groups($this->courseid, $USER->id);
-        $coursegroups = groups_get_all_groups($this->courseid);
+        $coursegroupsobj = groups_get_all_groups($this->courseid);
         $allgroups = false;
         $allowedgroupsobj = [];
         $allowedgroups = [];
@@ -868,7 +877,7 @@ class summary_table extends table_sql {
             $nogroups->name = get_string('groupsnone');
 
             // Any groups and no groups.
-            $allowedgroupsobj = $coursegroups + [$nogroups];
+            $allowedgroupsobj = $coursegroupsobj + [$nogroups];
         } else {
             $allowedgroupsobj = $usergroups;
         }
@@ -878,11 +887,21 @@ class summary_table extends table_sql {
         }
 
         // If not all groups in course are selected, filter by allowed groups submitted.
-        if (!empty($groups) && !empty(array_diff($allowedgroups, $groups))) {
-            $filtergroups = array_intersect($groups, $allowedgroups);
-        } else if (!empty(array_diff($coursegroups, $allowedgroups))) {
-            // If user's 'all groups' is a subset of the course groups, filter by all groups available to them.
-            $filtergroups = $allowedgroups;
+        if (!empty($groups)) {
+            if (!empty(array_diff($allowedgroups, $groups))) {
+                $filtergroups = array_intersect($groups, $allowedgroups);
+            } else {
+                $coursegroups = [];
+
+                foreach ($coursegroupsobj as $group) {
+                    $coursegroups[] = $group->id;
+                }
+
+                // If user's 'all groups' is a subset of the course groups, filter by all groups available to them.
+                if (!empty(array_diff($coursegroups, $allowedgroups))) {
+                    $filtergroups = $allowedgroups;
+                }
+            }
         }
 
         return $filtergroups;
