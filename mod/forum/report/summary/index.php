@@ -105,13 +105,16 @@ $PAGE->set_title($title);
 $PAGE->set_heading($course->fullname);
 $PAGE->navbar->add(get_string('nodetitle', "forumreport_summary"));
 
+$numforums = count($filters['forums']);
 $allowbulkoperations = !$download && !empty($CFG->messaging) && has_capability('moodle/course:bulkmessaging', $context);
 $canseeprivatereplies = false;
+$hasviewall = false;
 $privatereplycapcount = 0;
+$viewallcount = 0;
 $canview = false;
 
-foreach ($filters['forums'] as $forumidfilter) {
-    $forumcontext = \context_module::instance($forumidfilter);
+foreach ($cms as $cm) {
+    $forumcontext = \context_module::instance($cm->id);
 
     // This capability is required in at least one of the given contexts to view any version of the report.
     if (has_capability("forumreport/summary:view", $forumcontext)) {
@@ -121,19 +124,25 @@ foreach ($filters['forums'] as $forumidfilter) {
     if (has_capability('mod/forum:readprivatereplies', $forumcontext)) {
         $privatereplycapcount++;
     }
+
+    if (has_capability('forumreport/summary:viewall', $forumcontext)) {
+        $viewallcount++;
+    }
 }
 
 if (!$canview) {
     redirect($redirecturl);
 }
 
-// Only use private replies if user has that cap in every forum context in the report.
-if (count($filters['forums']) === $privatereplycapcount) {
+// Only use private replies if user has that cap in all forums in the report.
+if ($numforums === $privatereplycapcount) {
     $canseeprivatereplies = true;
 }
 
-echo "Can view: " . var_export($canview, true) . '<br>';
-echo "Private replies: " . var_export($canseeprivatereplies, true);exit;
+// Will only show all users if user has the cap for all forums in the report.
+if ($numforums === $viewallcount) {
+    $hasviewall = true;
+}
 
 // Prepare and display the report.
 $table = new \forumreport_summary\summary_table($courseid, $filters, $allowbulkoperations,
@@ -144,7 +153,7 @@ $eventparams = [
     'context' => $context,
     'other' => [
         'forumid' => $forumid,
-        'hasviewall' => has_capability('forumreport/summary:viewall', $context), //todo - per forum
+        'hasviewall' => $hasviewall,
     ],
 ];
 
