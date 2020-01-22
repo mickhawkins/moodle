@@ -48,6 +48,16 @@ $course = $modinfo->get_course();
 $courseforums = $modinfo->instances['forum'];
 $cms = [];
 
+// Determine which forums the user has access to in the course.
+$allforumidsincourse = array_keys($courseforums);
+$forumsvisibletouser = [];
+
+foreach ($courseforums as $courseforumid => $courseforum) {
+    if ($courseforum->uservisible) {
+        $forumsvisibletouser[$courseforumid] = $courseforum->name;
+    }
+}
+
 if ($forumid) {
     $filters['forums'] = [$forumid];
 
@@ -71,6 +81,8 @@ if ($forumid) {
     // Course level report
     require_login($courseid, false);
 
+    $filters['forums'] = array_keys($forumsvisibletouser);
+
     // Fetch the forum cms for the course.
     foreach ($courseforums as $courseforum) {
         $cms[] = $courseforum->get_course_module_record();
@@ -83,18 +95,8 @@ if ($forumid) {
     $redirecturl = new moodle_url("/course/view.php");
     $redirecturl->param('id', $courseid);
 
-    // Determine which forums the user has access to in the course, and whether that is all forums in the course.
-    $modinfo = get_fast_modinfo($courseid);
-    $foruminstances = $modinfo->instances['forum'];
-    $allforumsincourse = array_keys($foruminstances);
-    $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
-        return $foruminstance->uservisible;
-    });
-    $forumsvisiblekeys = array_keys($forumsvisibletouser);
-
-    $filters['forums'] = $forumsvisiblekeys;
-
-    $accessallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
+    // Determine whether user has access to all forums in the course.
+    $accessallforums = empty(array_diff($allforumidsincourse, $filters['forums']));
 }
 
 $pageurl = new moodle_url("/mod/forum/report/summary/index.php", $pageurlparams);
@@ -169,6 +171,14 @@ if ($download) {
     if (!empty($filters['groups'])) {
         \core\notification::info(get_string('viewsdisclaimer', 'forumreport_summary'));
     }
+
+    // Allow switching to course report (or other forum user has access to).
+    $forumselectoptions = [0 => get_string('forumselectcourseoption', 'forumreport_summary')] + $forumsvisibletouser;
+    $reporturl = new moodle_url("/mod/forum/report/summary/index.php");
+    $reporturl->param('courseid', $courseid);
+    $forumselect = new single_select($reporturl, 'forumid', $forumselectoptions, $forumid);
+    $forumselect->set_label(get_string('forumselectlabel', 'forumreport_summary'));
+    echo $OUTPUT->render($forumselect);
 
     // Render the report filters form.
     $renderer = $PAGE->get_renderer('forumreport_summary');
