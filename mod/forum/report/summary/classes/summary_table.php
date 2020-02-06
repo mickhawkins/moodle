@@ -87,6 +87,11 @@ class summary_table extends table_sql {
      */
     protected $forumcontexts = [];
 
+    /**
+     * @var context_course|context_module The context where the report is being run (either a specific forum or the course).
+     */
+    protected $userfieldscontext = null;
+
     /** @var bool Whether the user has the capability/capabilities to perform bulk operations. */
     protected $allowbulkoperations = false;
 
@@ -125,43 +130,11 @@ class summary_table extends table_sql {
 
         $this->courseid = $courseid;
         $this->accessallforums = $accessallforums;
-
-        //TODO: moving the below out into the index file. Also need to move the foreach below this into a method
-        // If no forum IDs filtered, reporting on all forums in the course the user has access to.
-        if ($accessallforums) {
-            $userfieldscontext = \context_course::instance($courseid);
-//            $modinfo = get_fast_modinfo($courseid);
-//            $foruminstances = $modinfo->instances['forum'];
-//            $allforumsincourse = array_keys($foruminstances);
-//            $forumsvisibletouser = array_filter($foruminstances, function($foruminstance) {
-//                return $foruminstance->uservisible;
-//            });
-//            $forumsvisiblekeys = array_keys($forumsvisibletouser);
-//
-//            $filters['forums'] = $forumsvisiblekeys;
-//            $userfieldscontext = \context_course::instance($courseid);
-//            $this->accessallforums = empty(array_diff($allforumsincourse, $forumsvisiblekeys));
-        }
-
-        foreach ($filters['forums'] as $forumid) {
-            $cm = get_coursemodule_from_instance('forum', $forumid, $courseid);
-            $this->cms[] = $cm;
-            $this->forumcontexts[$cm->id] = \context_module::instance($cm->id);
-
-            // Set it to the forum context if not reporting on course.`
-            if (!isset($userfieldscontext)) {
-                $userfieldscontext = $this->forumcontexts[$cm->id];
-            }
-
-            // Only show own summary unless they have permission to view all in every forum being reported.
-            if (empty($this->userid) && !has_capability('forumreport/summary:viewall', $this->forumcontexts[$cm->id])) {
-                $this->userid = $USER->id;
-            }
-        }
-
         $this->allowbulkoperations = $allowbulkoperations;
         $this->canseeprivatereplies = $canseeprivatereplies;
         $this->perpage = $perpage;
+
+        $this->set_forum_properties($filters['forums']);
 
         $columnheaders = [];
 
@@ -213,6 +186,37 @@ class summary_table extends table_sql {
 
         // Define the basic SQL data and object format.
         $this->define_base_sql($userfieldscontext);
+    }
+
+    /**
+     * Sets properties that are determined by forum filter values.
+     *
+     * @param array $forumids The forum IDs passed in by the filter.
+     * @return void
+     */
+    protected function set_forum_properties(array $forumids): void {
+        global $USER;
+
+        // If no forum IDs filtered, reporting on all forums in the course the user has access to.
+        if ($this->accessallforums) {
+            $this->userfieldscontext = \context_course::instance($this->courseid);
+        }
+
+        foreach ($forumids as $forumid) {
+            $cm = get_coursemodule_from_instance('forum', $forumid, $this->courseid);
+            $this->cms[] = $cm;
+            $this->forumcontexts[$cm->id] = \context_module::instance($cm->id);
+
+            // Set forum context if not reporting on course.
+            if (!isset($this->userfieldscontext)) {
+                $this->userfieldscontext = $this->forumcontexts[$cm->id];
+            }
+
+            // Only show own summary unless they have permission to view all in every forum being reported.
+            if (empty($this->userid) && !has_capability('forumreport/summary:viewall', $this->forumcontexts[$cm->id])) {
+                $this->userid = $USER->id;
+            }
+        }
     }
 
     /**
