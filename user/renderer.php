@@ -269,21 +269,7 @@ class core_user_renderer extends plugin_renderer_base {
      * @return bool|string
      */
     public function user_filter(context $context, string $baseurl = null) {
-
-        //TODO sss Based on the above method (unified_filter), refer to that for some of the other logic, like groups later
-        $filters = [];
-        $canreviewenrol = has_capability('moodle/course:enrolreview', $context);
-
-        // Include status filter options if user has access.
-        if ($canreviewenrol) {
-            $status = get_string('status');
-            $filters[$status] = [
-                ['value' => ENROL_USER_ACTIVE, 'label' => get_string('active')],
-                ['value' => ENROL_USER_SUSPENDED, 'label' => get_string('inactive')],
-            ];
-        }
-
-        $renderable = new \core_user\output\user_filter($filters, $baseurl);
+        $renderable = new \core_user\output\user_filter($context, $baseurl);
         $templatecontext = $renderable->export_for_template($this->output);
 
         return $this->output->render_from_template('core_user/user_filter', $templatecontext);

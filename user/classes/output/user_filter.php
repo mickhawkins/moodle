@@ -40,43 +40,50 @@ defined('MOODLE_INTERNAL') || die();
  */
 class user_filter implements renderable, templatable {
 
-    /** @var array $filtertypes The filter types available. */
+    /** @var moodle_url|string $baseurl The url with params used to call this page. */
+    protected $baseurl;
+
+    /** @var context $context The context where the filters are being rendered. */
+    protected $context;
+
+    /** @var array $filtertypes The filter types to be displayed. */
     protected $filtertypes = [];
 
     /** @var array $filteroptions The options available for enumerated filter types. */
     protected $filteroptions = [];
 
-    /** @var moodle_url|string $baseurl The url with params used to call this page. */
-    protected $baseurl;
-
     /**
      * User filter constructor.
      *
-     * @param context $context The context object.
-     * @param array $filtertypes The types of filters available.
-     * @param array $filteroptions The options available for each enumerated filter type.
+     * @param context $context The context where the filters are being rendered.
      * @param string|moodle_url $baseurl The url with params needed to call up this page.
      */
-    public function __construct(context $context, array $filtertypes, array $filteroptions, string $baseurl = null) {
-        $this->filtertypes = $filtertypes;
-        $this->filteroptions = $filteroptions;
-
-        //TODO: Probably remove filteroptions from being passed in, can be determined based on filtertypes.
-
-        $this->prepare_filter_options();
+    public function __construct(context $context, string $baseurl = null) {
+        $this->context = $context;
 
         if (!empty($baseurl)) {
             $this->baseurl = new moodle_url($baseurl);
         }
+
+        $this->prepare_filters();
     }
 
-    /**
-     * Prepares the options available for the filter types.
-     */
-    protected function prepare_filter_options() {
-        foreach ($this->filtertypes as $filter) {
+    protected function prepare_filters() {
+        $canreviewenrol = has_capability('moodle/course:enrolreview', $context);
 
+        // Include status filter if user has access.
+        if ($canreviewenrol) {
+            $statuslabel = get_string('status');
+            $statusname = strtolower($statuslabel);
+
+            $this->filtertypes[$statusname] = $statuslabel;
+
+            $this->filteroptions[$statusname] = [
+                ENROL_USER_ACTIVE => get_string('active'),
+                ['value' => ENROL_USER_SUSPENDED, 'label' => get_string('inactive')],
+            ];
         }
+
     }
 
     /**
@@ -86,29 +93,27 @@ class user_filter implements renderable, templatable {
      * @return stdClass|array
      */
     public function export_for_template(renderer_base $output) {
-        global $PAGE;
-
         $data = new stdClass();
+        $data->filtertypes = [];
+        $data->filteroptions = [];
 
-        foreach ($this->selectedoptions as $option) {
-            if (!isset($this->filteroptions[$option])) {
-                $this->filteroptions[$option] = $option;
+        foreach ($this->filtertypes as $filtername => $filterlabel) {
+            $data->filtertypes[] = (object) [
+                'name' => $filtername,
+                'label' => $filterlabel,
+            ];
+
+            // If filter has options, set them.
+            if (!empty($this->filteroptions[$filtername])) {
+                foreach ($this->filteroptions[$filtername] as $optionvalue => $optionlabel) {
+                    $data->filteroptions[$filtername] = (object) [
+                        'value' => $optionvalue,
+                        'label' => $optionlabel,
+                    ];
+                }
             }
         }
 
-        $data->filteroptions = [];
-        $originalfilteroptions = [];
-        foreach ($this->filteroptions as $value => $label) {
-            $selected = in_array($value, $this->selectedoptions);
-            $filteroption = (object)[
-                'value' => $value,
-                'label' => $label
-            ];
-            $originalfilteroptions[] = $filteroption;
-            $filteroption->selected = $selected;
-            $data->filteroptions[] = $filteroption;
-        }
-        $data->originaloptionsjson = json_encode($originalfilteroptions);
         return $data;
     }
 }
