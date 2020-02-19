@@ -1,0 +1,157 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_user/filter_row
+
+    Template for use by each filter condition.
+
+
+TODO
+    Context variables required for this template:
+      * filteroptions - Array of filter options.
+      * value string - The option value.
+      * label string - The option label.
+      * selected boolean - Whether the option is selected
+
+    Example context (json):
+    {
+        "matchtypes": [
+            {
+                "value": 1,
+                "label": "All",
+                "selected": true
+            },
+            {
+                "value": 2,
+                "label": "Any",
+                "selected": false
+            },
+            {
+                "value": 0,
+                "label": "None",
+                "selected": false
+            }
+        ],
+        "filtertypes": [
+            {
+                "value": "status",
+                "label": "Status"
+            }
+        ],
+        "filteroptions": [
+            {
+                "filtername": "status",
+                "options": [
+                    {
+                        "value": 0,
+                        "label": "active"
+                    },
+                    {
+                        "value": 1,
+                        "label": "inactive"
+                    }
+                ]
+            }
+        ]
+    }
+}}
+
+<div id="filter-row-{{uniqid}}" class="rounded mb-3 p-2 align-middle bg-white border border-secondary">
+    <label for="match-type-{{uniqid}}">{{#str}}match{{/str}}</label>
+
+    <div class="dropdown d-inline-block">
+        <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-match-type" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false" data-reference="parent">
+            {{matchtypesdefault}}
+        </button>
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-match-type-options" aria-labelledby="{{uniqid}}-match-type">
+            {{#matchtypes}}
+            <a class="dropdown-item" href="#" data-value="{{value}}">{{label}}</a>
+            {{/matchtypes}}
+        </div>
+        <input type="hidden" id="{{uniqid}}-match-type-selected" value="TODO: Pass in the default value">
+    </div>
+
+    <div class="dropdown d-inline-block">
+        <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-filter-type" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false" data-reference="parent">
+            {{filtertypesdefault}}
+        </button>
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-filter-type-options" aria-labelledby="{{uniqid}}-filter-type">
+            <!--TODO: this data-filter-options should be populated in template context depending on the filter type, and per filter-->
+            {{#filtertypes}}
+            <a class="dropdown-item" href="#" data-value="{{value}}" data-filter-options-id="{{uniqid}}-filter-options">{{label}}</a>
+            {{/filtertypes}}
+        </div>
+        <input type="hidden" id="{{uniqid}}-filter-type-selected" class="filter-type-value" value="">
+    </div>
+
+    <!-- TODO: Need to look into if/how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):-->
+    {{#filteroptions}}
+    <div id="{{uniqid}}-filter-options" name="{{uniqid}}-filter-options" class="position-relative filter-options hidden">
+        <input type="text" class="form-control" placeholder="{{#str}}typeorselect{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
+               autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
+        <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
+
+        <ul id="{{uniqid}}-filter-options-list" class="form-autocomplete-suggestions hidden">
+            {{#options}}
+            <li data-value="{{value}}">{{label}}</li>
+            {{/options}}
+        </ul>
+    </div>
+    {{/filteroptions}}
+
+    <div id="{{uniqid}}-filter-options-set" name="{{uniqid}}-filter-options-set" class="d-inline-block"></div>
+
+    <i class="icon fa fa-times-circle float-right pt-2"></i>
+</div>
+
+{{#js}}
+
+//TODO: THIS WOULD NEED TO BE DONE IN THE OUTER filter_form.mustache, SO IT'S ONLY SET UP ONCE, NOT ONCE PER FILTER
+
+require(['core_user/user_filters'], function(Filter) {
+    Filter.init('{{uniqid}}');
+});
+
+//require(['core_user/unified_filter'], function(Filter) {
+//    Filter.init();
+//});
+
+/////////////////TODO//////////////
+//require(['core_user/TODO'], function(Filter) {
+//    //Filter.init();
+//});
+
+{{/js}}
+
+<!--TODO: each little selected element will use this for closing: <i class="icon fa fa-times"></i>
+
+Plan:
+
+Type or select:
+    -Selection:
+        -closes the select box
+        -Adds the selected text to a little crossable box
+        -Removes that item from the dropdown
+
+    -Clicking cross on a previously selected item:
+        -Removes that element
+        -Re-adds that item in its original place in the dropdown    <<<<<<<<<<< need to keep track of where it would have gone?
+
+    Clear filters:
+        -Removes all items and resets all drop downs-->

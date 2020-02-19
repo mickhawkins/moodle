@@ -259,6 +259,20 @@ class core_user_renderer extends plugin_renderer_base {
 
         return $this->output->render_from_template('core_user/unified_filter', $context);
     }
+    /**
+     * Renders the user filter element for the course participants page.
+     *
+     * @param context $context The context object.
+     * @param string|moodle_url $baseurl The url with params needed to call up this page.
+     * @return bool|string
+     */
+    public function user_filter(context $context, string $baseurl = null) {
+        $renderable = new \core_user\output\user_filter($context, $baseurl);
+        $templatecontext = $renderable->export_for_template($this->output);
+
+        //return $this->output->render_from_template('core_user/user_filter_row', $templatecontext);
+        return $this->output->render_from_template('core_user/filter_form', $templatecontext);
+    }
 
     /**
      * Returns a formatted filter option.
