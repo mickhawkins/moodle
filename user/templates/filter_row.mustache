@@ -1,0 +1,125 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_user/filter_row
+
+    Template for use by each enumerated filter.
+
+
+TODO
+    Context variables required for this template:
+      * filteroptions - Array of filter options.
+      * value string - The option value.
+      * label string - The option label.
+      * selected boolean - Whether the option is selected
+
+    Example context (json):
+    {
+        "matchtypes": [
+            {
+                "value": "all",
+                "label": "All",
+                "selected": true
+            },
+            {
+                "value": "any",
+                "label": "Any"
+            },
+            {
+                "value": "none",
+                "label": "None"
+            }
+        ]
+        "filtertypes": [
+            {
+                "name": "status",
+                "label": "Status"
+            },
+            {
+                "name": "keyword",
+                "label": "Keyword",
+                "method": "text"
+            }
+        ]
+        "filteroptions": [
+            {
+                "filtername": "status",
+                "options": [
+                    {
+                        "value": "x",
+                        "label": "active"
+                    },
+                    {
+                        "value": "x",
+                        "label": "inactive"
+                    }
+                ]
+            }
+        ]
+    }
+}}
+
+<div id="filter-row-{{uniqid}}" class="rounded mb-3" style="border: 1px solid red">
+    <label for="match-type-{{uniqid}}" class="sr-only">{{#str}}match{{/str}}</label>
+    <select name="match-type-{{uniqid}}[]" id="match-type-{{uniqid}}">
+        {{#matchtypes}}
+            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{label}}</option>
+        {{/matchtypes}}
+    </select>
+
+
+    <br>TODO: Need to look into how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):
+
+    <div class="d-inline-block position-relative">
+        <input type="text" class="form-control" placeholder="{{#str}}typeorselect{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
+               autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
+        <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
+        <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">▼</button>
+    </div>
+
+    <select name="match-type-{{uniqid}}[]" id="match-type-{{uniqid}}">
+        {{#filtertypes}}
+            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{label}}</option>
+        {{/filtertypes}}
+    </select>
+    {{#filteroptions}}
+        <select name="filter-options-{{filtername}}-{{uniqid}}[]" id="filter-options-{{filtername}}-{{uniqid}}" class="form-autocomplete-original-select">
+            {{#options}}
+                <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
+            {{/options}}
+        </select>
+    {{/filteroptions}}
+
+    <i class="icon fa fa-times-circle"></i>
+</div>
+
+TODO: each little selected element will use this for closing: <i class="icon fa fa-times"></i>
+
+Plan:
+
+Type or select:
+    -Selection:
+        -closes the select box
+        -Adds the selected text to a little crossable box
+        -Removes that item from the dropdown
+
+    -Clicking cross on a previously selected item:
+        -Removes that element
+        -Re-adds that item in its original place in the dropdown    <<<<<<<<<<< need to keep track of where it would have gone?
+
+    Clear filters:
+        -Removes all items and resets all drop downs

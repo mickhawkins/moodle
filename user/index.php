@@ -99,6 +99,35 @@ if ($node) {
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('participants'));
 
+
+//TESTING TODO
+
+$strings = [
+    'all' => get_string('all'),
+    'any' => get_string('any'),
+    'none' => get_String('none'),
+];
+
+$tempaltecontext = [
+    'matchtypes' => [
+        ['value' => strtolower($strings['all']), 'label' => $strings['all'], 'selected' => true],
+        ['value' => strtolower($strings['any']), 'label' => $strings['any']],
+        ['value' => strtolower($strings['none']), 'label' => $strings['none']],
+    ],
+    'filtertypes' => [
+        ['value' => USER_FILTER_STATUS, 'label' => get_string('status')],
+    ],
+];
+
+// Render the unified filter.
+$renderer = $PAGE->get_renderer('core_user');
+
+echo $renderer->user_filter($context, $baseurl);
+//sss
+//echo $OUTPUT->render_from_template('user/filter_row', $tempaltecontext);
+
+//END TESTING TODO
+
 // Get the currently applied filters.
 $filtersapplied = optional_param_array('unified-filters', [], PARAM_NOTAGS);
 $filterwassubmitted = optional_param('unified-filter-submitted', 0, PARAM_BOOL);

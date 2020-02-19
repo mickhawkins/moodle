@@ -1,0 +1,62 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_user/filter_form
+
+    Template for the form containing one or more filter rows.
+
+    Example context (json):
+    {
+        "action": "TODO",
+        "matchtypes": [
+            {
+                "value": "all"
+                "label": "all"
+            },
+            {
+                "value": "any"
+                "label": "any"
+            }
+        ]
+    }
+}}
+<form method="post" action="{{action}}" class="mb-1" role="TODO - is this needed?">
+    <!--<label for="unified-filters" class="sr-only">{{#str}}filters{{/str}}</label>
+    <select name="unified-filters[]" id="unified-filters" multiple="multiple" data-originaloptionsjson="{{originaloptionsjson}}" class="form-autocomplete-original-select">
+        {{#filteroptions}}
+            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
+        {{/filteroptions}}
+    </select>
+    -->
+
+    Match   All/any <<<<< dropdown
+
+    <filter row>
+
+    AND/OR <<< will need to be wrapped in a way that changing the match type will change these, or hidden if anove was the last item.
+
+    + Add condition <<<< generates a new filter row from the template
+
+    Clear filters /// Apply filters
+
+</form>
+{{#js}}
+/////////////////TODO//////////////
+require(['core_user/TODO'], function(Filter) {
+    //Filter.init();
+});
+{{/js}}
