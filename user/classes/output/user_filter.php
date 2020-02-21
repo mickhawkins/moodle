@@ -27,6 +27,7 @@ use context;
 use moodle_url;
 use renderable;
 use renderer_base;
+use core_user\participants_table;
 use stdClass;
 use templatable;
 
@@ -39,6 +40,12 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class user_filter implements renderable, templatable {
+
+    /** @var array $matchtypes The match types available within each filter. */
+    protected $matchtypes = [];
+
+    /** @var int $matchdefault The match type to be selected by default */
+    protected $matchdefault;
 
     /** @var moodle_url|string $baseurl The url with params used to call this page. */
     protected $baseurl;
@@ -65,11 +72,28 @@ class user_filter implements renderable, templatable {
             $this->baseurl = new moodle_url($baseurl);
         }
 
+        $this->prepare_filter_match_types();
         $this->prepare_filters();
     }
 
+    /**
+     * Fetch relevant strings and prepare match types for use within each filter condition.
+     */
+    protected function prepare_filter_match_types() {
+        $this->matchtypes = [
+            participants_table::MATCH_ALL => get_string('all'),
+            participants_table::MATCH_ANY => get_string('any'),
+            participants_table::MATCH_NONE => get_string('none'),
+        ];
+
+        $this->matchdefault = participants_table::MATCH_ALL;
+    }
+
+    /**
+     * Prepare filter options available to this user, as well as any values for enumerated filter types.
+     */
     protected function prepare_filters() {
-        $canreviewenrol = has_capability('moodle/course:enrolreview', $context);
+        $canreviewenrol = has_capability('moodle/course:enrolreview', $this->context);
 
         // Include status filter if user has access.
         if ($canreviewenrol) {
@@ -80,7 +104,7 @@ class user_filter implements renderable, templatable {
 
             $this->filteroptions[$statusname] = [
                 ENROL_USER_ACTIVE => get_string('active'),
-                ['value' => ENROL_USER_SUSPENDED, 'label' => get_string('inactive')],
+                ENROL_USER_SUSPENDED => get_string('inactive'),
             ];
         }
 
@@ -94,23 +118,39 @@ class user_filter implements renderable, templatable {
      */
     public function export_for_template(renderer_base $output) {
         $data = new stdClass();
+        $data->matchtypes = [];
         $data->filtertypes = [];
         $data->filteroptions = [];
 
+        foreach ($this->matchtypes as $matchvalue => $matchlabel) {
+            $data->matchtypes[] = (object) [
+                'value' => $matchvalue,
+                'label' => $matchlabel,
+                'selected' => ($matchvalue === $this->matchdefault),
+            ];
+        }
+
         foreach ($this->filtertypes as $filtername => $filterlabel) {
             $data->filtertypes[] = (object) [
-                'name' => $filtername,
+                'value' => $filtername,
                 'label' => $filterlabel,
             ];
 
             // If filter has options, set them.
             if (!empty($this->filteroptions[$filtername])) {
+                $dataoptions = [
+                    'filtername' => $filtername,
+                    'options' => [],
+                ];
+
                 foreach ($this->filteroptions[$filtername] as $optionvalue => $optionlabel) {
-                    $data->filteroptions[$filtername] = (object) [
+                    $dataoptions['options'][] = [
                         'value' => $optionvalue,
                         'label' => $optionlabel,
                     ];
                 }
+
+                $data->filteroptions[] = (object) $dataoptions;
             }
         }
 

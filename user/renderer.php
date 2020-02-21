@@ -262,9 +262,7 @@ class core_user_renderer extends plugin_renderer_base {
     /**
      * Renders the user filter element for the course participants page.
      *
-     * @param stdClass $course The course object. TODO NOT INCLUDED
      * @param context $context The context object.
-     * @param array $filtersapplied Array of currently applied filters. TODO NOT INCLUDED - not sure if this will ever be needed
      * @param string|moodle_url $baseurl The url with params needed to call up this page.
      * @return bool|string
      */
@@ -272,7 +270,7 @@ class core_user_renderer extends plugin_renderer_base {
         $renderable = new \core_user\output\user_filter($context, $baseurl);
         $templatecontext = $renderable->export_for_template($this->output);
 
-        return $this->output->render_from_template('core_user/user_filter', $templatecontext);
+        return $this->output->render_from_template('core_user/user_filter_row', $templatecontext);
     }
 
     /**

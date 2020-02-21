@@ -44,6 +44,15 @@ require_once($CFG->dirroot . '/user/lib.php');
  */
 class participants_table extends \table_sql {
 
+    /** @const int 'Match none' used within or between filter to indicate they should be queries using logical NOT */
+    const MATCH_NONE = 0;
+
+    /** @const int 'Match all' used within or between filter to indicate they should be queries using logical AND */
+    const MATCH_ALL = 1;
+
+    /** @const int 'Match any' used within or between filter to indicate they should be queries using logical OR */
+    const MATCH_ANY = 2;
+
     /**
      * @var int $courseid The course id
      */

@@ -17,7 +17,7 @@
 {{!
     @template core_user/filter_row
 
-    Template for use by each enumerated filter.
+    Template for use by each filter condition.
 
 
 TODO
@@ -31,40 +31,37 @@ TODO
     {
         "matchtypes": [
             {
-                "value": "all",
+                "value": 1,
                 "label": "All",
                 "selected": true
             },
             {
-                "value": "any",
-                "label": "Any"
+                "value": 2,
+                "label": "Any",
+                "selected": false
             },
             {
-                "value": "none",
-                "label": "None"
+                "value": 0,
+                "label": "None",
+                "selected": false
             }
-        ]
+        ],
         "filtertypes": [
             {
-                "name": "status",
+                "value": "status",
                 "label": "Status"
-            },
-            {
-                "name": "keyword",
-                "label": "Keyword",
-                "method": "text"
             }
-        ]
+        ],
         "filteroptions": [
             {
                 "filtername": "status",
                 "options": [
                     {
-                        "value": "x",
+                        "value": 0,
                         "label": "active"
                     },
                     {
-                        "value": "x",
+                        "value": 1,
                         "label": "inactive"
                     }
                 ]
@@ -74,32 +71,42 @@ TODO
 }}
 
 <div id="filter-row-{{uniqid}}" class="rounded mb-3" style="border: 1px solid red">
-    <label for="match-type-{{uniqid}}" class="sr-only">{{#str}}match{{/str}}</label>
+    <label for="match-type-{{uniqid}}">{{#str}}match{{/str}}</label>
     <select name="match-type-{{uniqid}}[]" id="match-type-{{uniqid}}">
         {{#matchtypes}}
             <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{label}}</option>
         {{/matchtypes}}
     </select>
 
+    <br>TODO: Need to look into if/how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):
 
-    <br>TODO: Need to look into how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):
+    <br> WORKING HERE<br>
 
-    <div class="d-inline-block position-relative">
+    <div id="filter-types-{{uniqid}}" class="d-inline-block position-relative">
         <input type="text" class="form-control" placeholder="{{#str}}typeorselect{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
                autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
         <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
         <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">▼</button>
+
+        <ul id="filter-types-list-{{uniqid}}" class="form-autocomplete-suggestions hidden">
+        {{#filtertypes}}
+            <li data-value="{{value}}">{{label}}</li>
+        {{/filtertypes}}
+        </ul>
     </div>
 
-    <select name="match-type-{{uniqid}}[]" id="match-type-{{uniqid}}">
+
+
+
+    <select name="TODOfilter-type-{{uniqid}}[]" id="filter-type-{{uniqid}}">
         {{#filtertypes}}
-            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{label}}</option>
+            <option value="{{value}}">{{label}}</option>
         {{/filtertypes}}
     </select>
     {{#filteroptions}}
-        <select name="filter-options-{{filtername}}-{{uniqid}}[]" id="filter-options-{{filtername}}-{{uniqid}}" class="form-autocomplete-original-select">
+        <select name="filter-options-{{filtername}}-{{uniqid}}[]" id="filter-options-{{filtername}}-{{uniqid}}"> <!--class="form-autocomplete-original-select"-->
             {{#options}}
-                <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
+                <option value="{{value}}">{{{label}}}</option>
             {{/options}}
         </select>
     {{/filteroptions}}
@@ -107,7 +114,26 @@ TODO
     <i class="icon fa fa-times-circle"></i>
 </div>
 
-TODO: each little selected element will use this for closing: <i class="icon fa fa-times"></i>
+{{#js}}
+
+//TODO: THIS WOULD NEED TO BE DONE IN THE OUTER filter_form.mustache, SO IT'S ONLY SET UP ONCE, NOT ONCE PER FILTER
+
+require(['core_user/user_filters'], function(Filter) {
+    Filter.init('{{uniqid}}');
+});
+
+//require(['core_user/unified_filter'], function(Filter) {
+//    Filter.init();
+//});
+
+/////////////////TODO//////////////
+//require(['core_user/TODO'], function(Filter) {
+//    //Filter.init();
+//});
+
+{{/js}}
+
+<!--TODO: each little selected element will use this for closing: <i class="icon fa fa-times"></i>
 
 Plan:
 
@@ -122,4 +148,4 @@ Type or select:
         -Re-adds that item in its original place in the dropdown    <<<<<<<<<<< need to keep track of where it would have gone?
 
     Clear filters:
-        -Removes all items and resets all drop downs
+        -Removes all items and resets all drop downs-->
