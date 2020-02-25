@@ -44,8 +44,8 @@ class user_filter implements renderable, templatable {
     /** @var array $matchtypes The match types available within each filter. */
     protected $matchtypes = [];
 
-    /** @var int $matchdefault The match type to be selected by default */
-    protected $matchdefault;
+    /** @var int $matchdefault The value to display on the match type dropdown by default */
+    protected $matchtypesdefault;
 
     /** @var moodle_url|string $baseurl The url with params used to call this page. */
     protected $baseurl;
@@ -55,6 +55,9 @@ class user_filter implements renderable, templatable {
 
     /** @var array $filtertypes The filter types to be displayed. */
     protected $filtertypes = [];
+
+    /** @var int $filtertypesdefault The value to display on the filter types dropdown by default */
+    protected $filtertypesdefault;
 
     /** @var array $filteroptions The options available for enumerated filter types. */
     protected $filteroptions = [];
@@ -86,13 +89,16 @@ class user_filter implements renderable, templatable {
             participants_table::MATCH_NONE => get_string('none'),
         ];
 
-        $this->matchdefault = participants_table::MATCH_ALL;
+        $this->matchtypesdefault = $this->matchtypes[participants_table::MATCH_ALL];
     }
 
     /**
      * Prepare filter options available to this user, as well as any values for enumerated filter types.
      */
     protected function prepare_filters() {
+        $this->filtertypesdefault = get_string('selectfilter');
+
+        // Status filter.
         $canreviewenrol = has_capability('moodle/course:enrolreview', $this->context);
 
         // Include status filter if user has access.
@@ -107,7 +113,6 @@ class user_filter implements renderable, templatable {
                 ENROL_USER_SUSPENDED => get_string('inactive'),
             ];
         }
-
     }
 
     /**
@@ -122,11 +127,13 @@ class user_filter implements renderable, templatable {
         $data->filtertypes = [];
         $data->filteroptions = [];
 
+        $data->matchtypesdefault = $this->matchtypesdefault;
+        $data->filtertypesdefault = $this->filtertypesdefault;
+
         foreach ($this->matchtypes as $matchvalue => $matchlabel) {
             $data->matchtypes[] = (object) [
                 'value' => $matchvalue,
                 'label' => $matchlabel,
-                'selected' => ($matchvalue === $this->matchdefault),
             ];
         }
 
