@@ -270,7 +270,8 @@ class core_user_renderer extends plugin_renderer_base {
         $renderable = new \core_user\output\user_filter($context, $baseurl);
         $templatecontext = $renderable->export_for_template($this->output);
 
-        return $this->output->render_from_template('core_user/user_filter_row', $templatecontext);
+        //return $this->output->render_from_template('core_user/user_filter_row', $templatecontext);
+        return $this->output->render_from_template('core_user/filter_form', $templatecontext);
     }
 
     /**

@@ -40,6 +40,31 @@ export const init = (uniqid) => {
 //TODO: Any of the type in search stuff / handling of the selection probably need to be
 //      imported from a new file (or at least set as a separate const).
 
+    // Handler for setting values for single dropdowns.
+    const setDropdownValue = e => {
+        const dropdownType = e.target.parentNode.parentNode.querySelector('button').id;
+
+        // Display the selection and set the hidden value.
+        document.getElementById(dropdownType).innerText = e.target.innerText;
+        document.getElementById(`${dropdownType}-selected`).value = e.target.getAttribute('data-value');
+
+    };
+
+    // Handler which displays the input option(s) available for a chosen filter type.
+    const displayFilterValueInput = e => {
+        //TODO
+    };
+
+    // Set listener on each filter dropdown menu.
+    document.querySelectorAll('.dropdown-menu.user-filter-select').forEach((dropdown) => {
+        dropdown.addEventListener('click', setDropdownValue);
+    });
+
+    // Set listener for displaying filter input option(s).
+    document.querySelectorAll('.filter-type-value').forEach((filterTypeValue) => {
+        filterTypeValue.addEventListener('change', displayFilterValueInput);
+    });
+
     const chooseOption = e => {
         window.console.log(e.target.getAttribute('data-value'));
         //TODO: This is fetching the correct value. The template will need a select to replace the "type or select"
@@ -58,7 +83,7 @@ export const init = (uniqid) => {
         dropdownList.classList.remove('hidden');
     };
 
-    const filterdiv = document.getElementById(`filter-types-${uniqid}`);
+    const filterdiv = document.getElementById(`${uniqid}-TODOfilter-types`);
 
     filterdiv.querySelector('input[type="text"]').addEventListener('focus', toggleFilterDropdown);
     filterdiv.querySelector('span').addEventListener('click', toggleFilterDropdown);

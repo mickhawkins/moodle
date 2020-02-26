@@ -70,78 +70,51 @@ TODO
     }
 }}
 
-<div id="filter-row-{{uniqid}}" class="rounded mb-3" style="border: 1px solid red">
+<div id="filter-row-{{uniqid}}" class="rounded mb-3 align-middle" style="border: 1px solid red">
     <label for="match-type-{{uniqid}}">{{#str}}match{{/str}}</label>
 
-    <div class="dropdown d-inline-block" data-uniqid="{{uniqid}}">
-        <button type="button" class="btn btn-secondary dropdown-toggle" id="match-type-{{uniqid}}" data-toggle="dropdown"
+    <div class="dropdown d-inline-block">
+        <button type="button" class="btn btn-secondary dropdown-toggle" id="{{uniqid}}-match-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent">
             {{matchtypesdefault}}
         </button>
-        <div class="dropdown-menu" id="match-type-options-{{uniqid}}" aria-labelledby="match-type-{{uniqid}}">
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-match-type-options" aria-labelledby="{{uniqid}}-match-type">
             {{#matchtypes}}
-            <a class="dropdown-item user-filter-select" href="#" data-value="{{value}}">{{label}}</a>
+            <a class="dropdown-item" href="#" data-value="{{value}}">{{label}}</a>
             {{/matchtypes}}
         </div>
-        <input type="hidden" id="match-type-selected-{{uniqid}}" value="TODO: Pass in the default value">
+        <input type="hidden" id="{{uniqid}}-match-type-selected" value="TODO: Pass in the default value">
     </div>
 
-    <div class="dropdown d-inline-block" data-uniqid="{{uniqid}}">
-        <button type="button" class="btn btn-secondary dropdown-toggle" id="filter-type-{{uniqid}}" data-toggle="dropdown"
+    <div class="dropdown d-inline-block">
+        <button type="button" class="btn btn-secondary dropdown-toggle" id="{{uniqid}}-filter-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent">
             {{filtertypesdefault}}
         </button>
-        <div class="dropdown-menu" id="filter-type-options-{{uniqid}}" aria-labelledby="filter-type-{{uniqid}}">
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-filter-type-options" aria-labelledby="{{uniqid}}-filter-type">
             {{#filtertypes}}
-            <a class="dropdown-item user-filter-select" href="#" data-value="{{value}}">{{label}}</a>
+            <a class="dropdown-item" href="#" data-value="{{value}}">{{label}}</a>
             {{/filtertypes}}
         </div>
-        <input type="hidden" id="filter-type-selected-{{uniqid}}" value="">
+        <input type="hidden" id="{{uniqid}}-filter-type-selected" class="filter-type-value" value="">
     </div>
 
-    <br><br>
 
+    <!-- TODO: Need to look into if/how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):-->
 
-        <div id="filter-types-{{uniqid}}" class="d-inline-block position-relative">
+    <div id="{{uniqid}}-TODOfilter-types" class="d-inline-block position-relative">
         <input type="text" class="form-control" placeholder="{{#str}}selectfilter{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
                autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
         <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
-        <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">▼</button>
+        
 
-        <ul id="filter-types-list-{{uniqid}}" class="form-autocomplete-suggestions hidden">
+        <ul id="{{uniqid}}TODOfilter-types-list" class="form-autocomplete-suggestions hidden">
         {{#filtertypes}}
             <li data-value="{{value}}">{{label}}</li>
         {{/filtertypes}}
         </ul>
     </div>
 
-
-
-    <br>TODO: Need to look into if/how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):
-
-    <br> WORKING HERE<br>
-
-    <div id="filter-types-{{uniqid}}" class="d-inline-block position-relative">
-        <input type="text" class="form-control" placeholder="{{#str}}selectfilter{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
-               autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
-        <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
-        <button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">▼</button>
-
-        <ul id="filter-types-list-{{uniqid}}" class="form-autocomplete-suggestions hidden">
-        {{#filtertypes}}
-            <li data-value="{{value}}">{{label}}</li>
-        {{/filtertypes}}
-        </ul>
-    </div>
-
-
-
-
-    <select name="TODOfilter-type-{{uniqid}}[]" id="filter-type-{{uniqid}}">
-        {{#filtertypes}}
-            <option value="{{value}}">{{label}}</option>
-        {{/filtertypes}}
-    </select>
     {{#filteroptions}}
         <select name="filter-options-{{filtername}}-{{uniqid}}[]" id="filter-options-{{filtername}}-{{uniqid}}"> <!--class="form-autocomplete-original-select"-->
             {{#options}}
@@ -150,7 +123,7 @@ TODO
         </select>
     {{/filteroptions}}
 
-    <i class="icon fa fa-times-circle"></i>
+    <i class="icon fa fa-times-circle float-right"></i>
 </div>
 
 {{#js}}

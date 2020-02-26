@@ -34,29 +34,29 @@
         ]
     }
 }}
-<form method="post" action="{{action}}" class="mb-1" role="TODO - is this needed?">
-    <!--<label for="unified-filters" class="sr-only">{{#str}}filters{{/str}}</label>
-    <select name="unified-filters[]" id="unified-filters" multiple="multiple" data-originaloptionsjson="{{originaloptionsjson}}" class="form-autocomplete-original-select">
-        {{#filteroptions}}
-            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
-        {{/filteroptions}}
-    </select>
-    -->
 
-    Match   All/any <<<<< dropdown
+<div class="display-block mt-5 p-3 rounded" style="border: 2px solid green">
+    <!-- <form method="post" action="{{action}}" class="mb-1" role="TODO - is this needed?"> -->
+    <form method="post" action="#" class="mb-1" role="TODO - is this needed?">
 
-    <filter row>
+        {{> core_user/user_filter_row }}
 
-    AND/OR <<< will need to be wrapped in a way that changing the match type will change these, or hidden if anove was the last item.
+        AND/OR <<< will need to be wrapped in a way that changing the match type will change these, or hidden if anove was the last item.
 
-    + Add condition <<<< generates a new filter row from the template
+        <button type="button" class="btn btn-link d-inline-block float-left">
+            <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
+        </button>
 
-    Clear filters /// Apply filters
+        <div class="float-right">
+            <button type="button" class="btn btn-link d-inline-block">{{#str}}clearfilters{{/str}}</button>
+            <button type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
+        </div>
+    </form>
+</div>
 
-</form>
 {{#js}}
 /////////////////TODO//////////////
-require(['core_user/TODO'], function(Filter) {
+//require(['core_user/TODO'], function(Filter) {
     //Filter.init();
-});
+//});
 {{/js}}
