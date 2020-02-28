@@ -35,21 +35,22 @@
     }
 }}
 
-<div class="display-block mt-5 p-3 rounded" style="border: 2px solid green">
+<div class="filter-group mt-5 p-3 rounded border border-secondary">
     <!-- <form method="post" action="{{action}}" class="mb-1" role="TODO - is this needed?"> -->
     <form method="post" action="#" class="mb-1" role="TODO - is this needed?">
 
         {{> core_user/user_filter_row }}
 
-        AND/OR <<< will need to be wrapped in a way that changing the match type will change these, or hidden if anove was the last item.
+        <div class="display-block">
+            &nbsp;
+            <button type="button" class="btn btn-link d-inline-block float-left">
+                <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
+            </button>
 
-        <button type="button" class="btn btn-link d-inline-block float-left">
-            <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
-        </button>
-
-        <div class="float-right">
-            <button type="button" class="btn btn-link d-inline-block">{{#str}}clearfilters{{/str}}</button>
-            <button type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
+            <div class="float-right">
+                <button type="button" class="btn btn-link d-inline-block">{{#str}}clearfilters{{/str}}</button>
+                <button type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
+            </div>
         </div>
     </form>
 </div>

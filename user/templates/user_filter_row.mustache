@@ -70,11 +70,11 @@ TODO
     }
 }}
 
-<div id="filter-row-{{uniqid}}" class="rounded mb-3 align-middle" style="border: 1px solid red">
+<div id="filter-row-{{uniqid}}" class="rounded mb-3 p-2 align-middle bg-white border border-secondary">
     <label for="match-type-{{uniqid}}">{{#str}}match{{/str}}</label>
 
     <div class="dropdown d-inline-block">
-        <button type="button" class="btn btn-secondary dropdown-toggle" id="{{uniqid}}-match-type" data-toggle="dropdown"
+        <button type="button" class="btn btn-light dropdown-toggle" id="{{uniqid}}-match-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent">
             {{matchtypesdefault}}
         </button>
@@ -87,7 +87,7 @@ TODO
     </div>
 
     <div class="dropdown d-inline-block">
-        <button type="button" class="btn btn-secondary dropdown-toggle" id="{{uniqid}}-filter-type" data-toggle="dropdown"
+        <button type="button" class="btn btn-light dropdown-toggle" id="{{uniqid}}-filter-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent">
             {{filtertypesdefault}}
         </button>
