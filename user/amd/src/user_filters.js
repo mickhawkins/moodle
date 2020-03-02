@@ -52,19 +52,33 @@ export const init = (uniqid) => {
 
     };
 
+    const toggleVisibility = option => {
+        option.classList.toggle('hidden');
+    };
+
     const setOptionValue = e => {
-        const value = e.target.getAttribute('data-value');
+        const selectedOption = e.target;
+        const value = selectedOption.getAttribute('data-value');
         let valueTag = document.createElement('span');
-        let crossicon = document.createElement('i');
+        let crossIcon = document.createElement('i');
         //TODO: Figure out if we need to store the values somewhere hidden as well, for easy sending in the web service
 
         // Set up and display new tag for chosen value.
         valueTag.setAttribute('data-value', value);
         valueTag.classList.add('d-inline-block', 'bg-dark', 'text-white', 'rounded', 'font-weight-bold', 'px-1');
-        valueTag.innerText = e.target.innerText;
-        crossicon.classList.add('icon', 'fa', 'fa-times', 'pl-2', 'mr-0');
-        valueTag.appendChild(crossicon);
+        valueTag.innerText = selectedOption.innerText;
+        crossIcon.classList.add('icon', 'fa', 'fa-times', 'pl-2', 'mr-0');
+
+        // Handle cross removing tag and re-adding option to filter dropdown.
+        crossIcon.addEventListener('click', function() {
+            toggleVisibility(selectedOption);
+            valueTag.parentNode.removeChild(valueTag);
+        });
+
+        valueTag.appendChild(crossIcon);
         document.getElementById(`${uniqid}-filter-options-set`).appendChild(valueTag);
+
+        toggleVisibility(selectedOption);
     };
 
     const toggleFilterDropdown = e => {
