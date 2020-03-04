@@ -106,7 +106,10 @@ class user_filter implements renderable, templatable {
             $statuslabel = get_string('status');
             $statusname = strtolower($statuslabel);
 
-            $this->filtertypes[$statusname] = $statuslabel;
+            $this->filtertypes[$statusname] = [
+                'inputtype' => 'enhanceddropdown',
+                'label' => $statuslabel,
+            ];
 
             $this->filteroptions[$statusname] = [
                 ENROL_USER_ACTIVE => get_string('active'),
@@ -137,10 +140,12 @@ class user_filter implements renderable, templatable {
             ];
         }
 
-        foreach ($this->filtertypes as $filtername => $filterlabel) {
+        foreach ($this->filtertypes as $filtername => $filterinfo) {
+            $inputtype = $filterinfo['inputtype'];
             $data->filtertypes[] = (object) [
+                'inputtype' => $inputtype,
                 'value' => $filtername,
-                'label' => $filterlabel,
+                'label' => $filterinfo['label'],
             ];
 
             // If filter has options, set them.
@@ -157,7 +162,8 @@ class user_filter implements renderable, templatable {
                     ];
                 }
 
-                $data->filteroptions[] = (object) $dataoptions;
+                // Insert the options into the correct input type in the template.
+                $data->$inputtype[] = (object) $dataoptions;
             }
         }
 

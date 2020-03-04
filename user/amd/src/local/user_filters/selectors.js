@@ -27,6 +27,9 @@ export default {
         types: {
             text: 'input[type="text"]',
         },
+        dropdown: {
+            toEnhance: uniqid => `#${uniqid}-filter-options-dropdown`,
+        },
         blah: {
             example: '[data-region="filter-groups"] input[type="checkbox"]',
             getModuleSelector: uniqid => `[role="menuitem"][data-modname="${uniqid}"]`,

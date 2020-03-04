@@ -15,7 +15,7 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template core_user/filter_row
+    @template core_user/user_filter_row
 
     Template for use by each filter condition.
 
@@ -52,16 +52,15 @@ TODO
                 "label": "Status"
             }
         ],
-        "filteroptions": [
+        "enhanceddropdown": [
             {
-                "filtername": "status",
                 "options": [
                     {
-                        "value": 0,
+                        "value": "0",
                         "label": "active"
                     },
                     {
-                        "value": 1,
+                        "value": "1",
                         "label": "inactive"
                     }
                 ]
@@ -75,7 +74,7 @@ TODO
 
     <div class="dropdown d-inline-block">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-match-type" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false" data-reference="parent">
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="TODO: Pass in the default value">
             {{matchtypesdefault}}
         </button>
         <div class="dropdown-menu user-filter-select" id="{{uniqid}}-match-type-options" aria-labelledby="{{uniqid}}-match-type">
@@ -83,71 +82,33 @@ TODO
             <a class="dropdown-item" href="#" data-value="{{value}}">{{label}}</a>
             {{/matchtypes}}
         </div>
-        <input type="hidden" id="{{uniqid}}-match-type-selected" value="TODO: Pass in the default value">
     </div>
 
     <div class="dropdown d-inline-block">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-filter-type" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false" data-reference="parent">
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="">
             {{filtertypesdefault}}
         </button>
         <div class="dropdown-menu user-filter-select" id="{{uniqid}}-filter-type-options" aria-labelledby="{{uniqid}}-filter-type">
-            <!--TODO: this data-filter-options should be populated in template context depending on the filter type, and per filter-->
             {{#filtertypes}}
-            <a class="dropdown-item" href="#" data-value="{{value}}" data-filter-options-id="{{uniqid}}-filter-options">{{label}}</a>
+            <a class="dropdown-item" href="#" data-value="{{value}}" data-filter-type="{{inputtype}}">{{label}}</a>
             {{/filtertypes}}
         </div>
         <input type="hidden" id="{{uniqid}}-filter-type-selected" class="filter-type-value" value="">
     </div>
 
-    <!-- TODO: Need to look into if/how this can be implemented using core/form-autocomplete JS (that is what the existing one uses):-->
-    {{#filteroptions}}
-    <div id="{{uniqid}}-filter-options" name="{{uniqid}}-filter-options" class="position-relative filter-options hidden">
-        <input type="text" class="form-control" placeholder="{{#str}}typeorselect{{/str}}" role="combobox" aria-expanded="false" autocomplete="off"
-               autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="TODO" data-tags="1">
-        <span class="form-autocomplete-downarrow position-absolute p-1">▼</span>
-
-        <ul id="{{uniqid}}-filter-options-list" class="form-autocomplete-suggestions hidden">
-            {{#options}}
-            <li data-value="{{value}}">{{label}}</li>
-            {{/options}}
-        </ul>
-    </div>
-    {{/filteroptions}}
+    {{> core_user/filter_types/enhanced_dropdown }}
 
     <div id="{{uniqid}}-filter-options-set" name="{{uniqid}}-filter-options-set" class="d-inline-block"></div>
-
-    <!--START TESTING -->
-    {{#filteroptions}}
-    <label for="{{uniqid}}-filter-options-listTODO" class="sr-only">TESTING:</label>
-    <select name="{{uniqid}}-filter-options-list" id="{{uniqid}}-filter-options-listTODO" multiple="multiple" data-originaloptionsjson="{blah:1}" class="form-autocomplete-original-select">
-        {{#options}}
-            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
-        {{/options}}
-    </select>
-    {{/filteroptions}}
-    <!--END TESTING -->
-
 
     <i class="icon fa fa-times-circle float-right pt-2"></i>
 </div>
 
 {{#js}}
 
-//TODO: THIS WOULD NEED TO BE DONE IN THE OUTER filter_form.mustache, SO IT'S ONLY SET UP ONCE, NOT ONCE PER FILTER
-
 require(['core_user/user_filters'], function(Filter) {
     Filter.init('{{uniqid}}');
 });
-
-//require(['core_user/unified_filter'], function(Filter) {
-//    Filter.init();
-//});
-
-/////////////////TODO//////////////
-//require(['core_user/TODO'], function(Filter) {
-//    //Filter.init();
-//});
 
 {{/js}}
 
