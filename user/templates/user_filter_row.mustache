@@ -117,6 +117,18 @@ TODO
 
     <div id="{{uniqid}}-filter-options-set" name="{{uniqid}}-filter-options-set" class="d-inline-block"></div>
 
+    <!--START TESTING -->
+    {{#filteroptions}}
+    <label for="{{uniqid}}-filter-options-listTODO" class="sr-only">TESTING:</label>
+    <select name="{{uniqid}}-filter-options-list" id="{{uniqid}}-filter-options-listTODO" multiple="multiple" data-originaloptionsjson="{blah:1}" class="form-autocomplete-original-select">
+        {{#options}}
+            <option value="{{value}}" {{#selected}}selected="selected"{{/selected}}>{{{label}}}</option>
+        {{/options}}
+    </select>
+    {{/filteroptions}}
+    <!--END TESTING -->
+
+
     <i class="icon fa fa-times-circle float-right pt-2"></i>
 </div>
 

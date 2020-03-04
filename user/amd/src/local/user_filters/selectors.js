@@ -14,16 +14,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Module responsible for handling forum summary report filters.
+ * Module containing the selectors for user filters.
  *
- * @module     core_user/user_filter
+ * @module     core_user/local/user_filter/selectors
  * @package    core_user
  * @copyright  2020 Michael Hawkins <michaelh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import {init as initDropdowns} from './local/user_filters/dropdowns';
-
-export const init = uniqid => {
-    initDropdowns(uniqid);
+export default {
+    filters: {
+        types: {
+            text: 'input[type="text"]',
+        },
+        blah: {
+            example: '[data-region="filter-groups"] input[type="checkbox"]',
+            getModuleSelector: uniqid => `[role="menuitem"][data-modname="${uniqid}"]`,
+            somthing: '[data-region="filter-groups"] .filter-clear',
+        },
+    },
 };
