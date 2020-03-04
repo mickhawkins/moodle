@@ -30,8 +30,8 @@ export default {
         dropdown: {
             toEnhance: uniqid => `#${uniqid}-filter-options-dropdown`,
         },
-        blah: {
-            example: '[data-region="filter-groups"] input[type="checkbox"]',
+        submit: {
+            matchType: uniqid => `#${uniqid}-match-type`,
             getModuleSelector: uniqid => `[role="menuitem"][data-modname="${uniqid}"]`,
             somthing: '[data-region="filter-groups"] .filter-clear',
         },

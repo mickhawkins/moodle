@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Module responsible for handling forum summary report filters.
+ * Module responsible for initialising the participants filter.
  *
  * @module     core_user/user_filter
  * @package    core_user

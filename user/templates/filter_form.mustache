@@ -35,29 +35,26 @@
     }
 }}
 
-<div class="filter-group mt-5 p-3 rounded border border-secondary">
-    <!-- <form method="post" action="{{action}}" class="mb-1" role="TODO - is this needed?"> -->
-    <form method="post" action="#" class="mb-1" role="TODO - is this needed?">
+<div id="{{uniqid}}-user-filters" class="filter-group mt-5 p-3 rounded border border-secondary">
+    {{> core_user/user_filter_row }}
 
-        {{> core_user/user_filter_row }}
+    <div class="display-block">
+        &nbsp;
+        <button type="button" class="btn btn-link d-inline-block float-left">
+            <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
+        </button>
 
-        <div class="display-block">
-            &nbsp;
-            <button type="button" class="btn btn-link d-inline-block float-left">
-                <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
-            </button>
-
-            <div class="float-right">
-                <button type="button" class="btn btn-link d-inline-block">{{#str}}clearfilters{{/str}}</button>
-                <button type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
-            </div>
+        <div class="float-right">
+            <button type="button" class="btn btn-link d-inline-block">{{#str}}clearfilters{{/str}}</button>
+            <button id ="{{uniqid}}-submit" type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
         </div>
-    </form>
+    </div>
 </div>
 
 {{#js}}
-/////////////////TODO//////////////
-//require(['core_user/TODO'], function(Filter) {
-    //Filter.init();
-//});
+
+require(['core_user/local/user_filters/submit'], function(SubmitFilters) {
+    SubmitFilters.init('{{uniqid}}');
+});
+
 {{/js}}

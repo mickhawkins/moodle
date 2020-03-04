@@ -69,8 +69,8 @@ TODO
     }
 }}
 
-<div id="filter-row-{{uniqid}}" class="rounded mb-3 p-2 align-middle bg-white border border-secondary">
-    <label for="match-type-{{uniqid}}">{{#str}}match{{/str}}</label>
+<div id="{{uniqid}}-filter-row" class="rounded mb-3 p-2 align-middle bg-white border border-secondary" data-filter-uniqid="{{uniqid}}">
+    <label for="{{uniqid}}-match-type">{{#str}}match{{/str}}</label>
 
     <div class="dropdown d-inline-block">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-match-type" data-toggle="dropdown"
