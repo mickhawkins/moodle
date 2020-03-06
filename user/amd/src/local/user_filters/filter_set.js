@@ -24,6 +24,7 @@
 
 import Selectors from './selectors';
 
+// Submit filter values in the filter set.
 const submitFilters = (filterSetDiv) => {
     const filterSet = [];
 
@@ -58,9 +59,32 @@ const submitFilters = (filterSetDiv) => {
     window.console.log(filterSet);
 };
 
+// Clear all values in the filter set.
+const clearFilters = (filterSetDiv) => {
+    // Clear data from each filter and return to single default filter.
+    const firstFilter = filterSetDiv.querySelector('[data-filter-uniqid]');
+    const uniqid = firstFilter.getAttribute('data-filter-uniqid');
+    const matchType = document.getElementById(Selectors.filters.row.matchType(uniqid)).getAttribute('data-option-selected');
+    const filterType = document.getElementById(Selectors.filters.row.filterType(uniqid)).getAttribute('data-option-selected');
+    const filterValuesDiv = filterRow.querySelector(Selectors.filters.row.enhancedValuesClass);
+
+    //TODO: Set the first (currently only) filter back to defaults, THEN any subsequent ones should have their filter row divs completely removed, so we end up with a single filter.
+
+data-option-selected="{{matchtypesdefaultvalue}}"
+                data-default-selected="{{matchtypesdefaultvalue}}" data-default-label="{{matchtypesdefaultlabel}}">
+
+
+}
+
+// Initialise handlers in the filter set.
 export const init = uniqid => {
     const filterSetDiv = document.getElementById(`${uniqid}-user-filters`);
+
     document.getElementById(`${uniqid}-submit`).addEventListener('click', function(){
         submitFilters(filterSetDiv);
+    });
+
+    document.getElementById(`${uniqid}-clearall`).addEventListener('click', function(){
+        clearFilters(filterSetDiv);
     });
 };
