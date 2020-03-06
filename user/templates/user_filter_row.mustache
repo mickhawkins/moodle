@@ -74,8 +74,8 @@ TODO
 
     <div class="dropdown d-inline-block">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-match-type" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="TODO: Pass in the default value">
-            {{matchtypesdefault}}
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{matchtypesdefaultvalue}}">
+            {{matchtypesdefaultlabel}}
         </button>
         <div class="dropdown-menu user-filter-select" id="{{uniqid}}-match-type-options" aria-labelledby="{{uniqid}}-match-type">
             {{#matchtypes}}
@@ -86,8 +86,8 @@ TODO
 
     <div class="dropdown d-inline-block">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-filter-type" data-toggle="dropdown"
-                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="">
-            {{filtertypesdefault}}
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{filtertypesdefaultvalue}}">
+            {{filtertypesdefaultlabel}}
         </button>
         <div class="dropdown-menu user-filter-select" id="{{uniqid}}-filter-type-options" aria-labelledby="{{uniqid}}-filter-type">
             {{#filtertypes}}

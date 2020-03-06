@@ -30,10 +30,11 @@ export default {
         dropdown: {
             toEnhance: uniqid => `#${uniqid}-filter-options-dropdown`,
         },
-        submit: {
-            matchType: uniqid => `#${uniqid}-match-type`,
+        row: {
+            matchType: uniqid => `${uniqid}-match-type`,
+            filterType: uniqid => `${uniqid}-filter-type`,
+            enhancedValuesClass: '.form-autocomplete-selection',
             getModuleSelector: uniqid => `[role="menuitem"][data-modname="${uniqid}"]`,
-            somthing: '[data-region="filter-groups"] .filter-clear',
         },
     },
 };

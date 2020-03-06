@@ -89,14 +89,20 @@ class user_filter implements renderable, templatable {
             participants_table::MATCH_NONE => get_string('none'),
         ];
 
-        $this->matchtypesdefault = $this->matchtypes[participants_table::MATCH_ALL];
+        $this->matchtypesdefault = [
+            'value' => participants_table::MATCH_ALL,
+            'label' => $this->matchtypes[participants_table::MATCH_ALL],
+        ];
     }
 
     /**
      * Prepare filter options available to this user, as well as any values for enumerated filter types.
      */
     protected function prepare_filters() {
-        $this->filtertypesdefault = get_string('selectfilter');
+        $this->filtertypesdefault = [
+            'value' => '',
+            'label' => get_string('selectfilter'),
+        ];
 
         // Status filter.
         $canreviewenrol = has_capability('moodle/course:enrolreview', $this->context);
@@ -130,8 +136,10 @@ class user_filter implements renderable, templatable {
         $data->filtertypes = [];
         $data->filteroptions = [];
 
-        $data->matchtypesdefault = $this->matchtypesdefault;
-        $data->filtertypesdefault = $this->filtertypesdefault;
+        $data->matchtypesdefaultlabel = $this->matchtypesdefault['label'];
+        $data->matchtypesdefaultvalue = $this->matchtypesdefault['value'];
+        $data->filtertypesdefaultlabel = $this->filtertypesdefault['label'];
+        $data->filtertypesdefaultvalue = $this->filtertypesdefault['value'];
 
         foreach ($this->matchtypes as $matchvalue => $matchlabel) {
             $data->matchtypes[] = (object) [

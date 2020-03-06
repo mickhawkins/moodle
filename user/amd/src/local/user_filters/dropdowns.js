@@ -23,10 +23,11 @@
  */
 
 import Autocomplete from 'core/form-autocomplete';
+import {get_string} from 'core/str';
 import Selectors from './selectors';
 
 // Set values for single dropdowns.
-const setDropdownValue = (e, uniqid) => {
+const setDropdownValue = async (e, uniqid) => {
     e.preventDefault();
 
     const optionSelected = e.target;
@@ -43,7 +44,10 @@ const setDropdownValue = (e, uniqid) => {
         // Filter type enhanced dropdowns need to display the filter options.
         if (optionSelected.hasAttribute("data-filter-type") && !previouslySet &&
                 optionSelected.getAttribute("data-filter-type") === 'enhanceddropdown') {
-            Autocomplete.enhance(Selectors.filters.dropdown.toEnhance(uniqid), true, null, 'String goes here',
+
+            const selectString = await get_string('typeorselect', 'core');
+
+            Autocomplete.enhance(Selectors.filters.dropdown.toEnhance(uniqid), true, null, selectString,
                     false, true, null, true);
         }
     }
@@ -53,6 +57,8 @@ const setDropdownValue = (e, uniqid) => {
 export const init = uniqid => {
     // Set listener on each filter dropdown menu.
     document.querySelectorAll('.dropdown-menu.user-filter-select').forEach((dropdown) => {
-        dropdown.addEventListener('click', function(e) {setDropdownValue(e, uniqid);});
+        dropdown.addEventListener('click', function(e) {
+            setDropdownValue(e, uniqid);
+        });
     });
 };
