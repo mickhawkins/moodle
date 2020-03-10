@@ -47,8 +47,8 @@ const setDropdownValue = async (e, uniqid) => {
 
             const selectString = await get_string('typeorselect', 'core');
 
-            Autocomplete.enhance(Selectors.filters.dropdown.toEnhance(uniqid), true, null, selectString,
-                    false, true, null, true);
+            Autocomplete.enhance(Selectors.filters.dropdown.select(uniqid), true, null, selectString,
+                    false, true, null, false);
         }
     }
 };

@@ -22,6 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+import Autocomplete from 'core/form-autocomplete';
 import Selectors from './selectors';
 
 // Submit filter values in the filter set.
@@ -59,22 +60,44 @@ const submitFilters = (filterSetDiv) => {
     window.console.log(filterSet);
 };
 
-// Clear all values in the filter set.
+// Clear all values in the filter set, leaving a single default filter.
 const clearFilters = (filterSetDiv) => {
-    // Clear data from each filter and return to single default filter.
     const firstFilter = filterSetDiv.querySelector('[data-filter-uniqid]');
     const uniqid = firstFilter.getAttribute('data-filter-uniqid');
-    const matchType = document.getElementById(Selectors.filters.row.matchType(uniqid)).getAttribute('data-option-selected');
-    const filterType = document.getElementById(Selectors.filters.row.filterType(uniqid)).getAttribute('data-option-selected');
-    const filterValuesDiv = filterRow.querySelector(Selectors.filters.row.enhancedValuesClass);
+    const matchTypeElement = document.getElementById(Selectors.filters.row.matchType(uniqid));
+    const filterTypeElement = document.getElementById(Selectors.filters.row.filterType(uniqid));
+    const enhancedDropdown = firstFilter.querySelector('div [data-autocomplete-uniqueid]');
+    const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
 
-    //TODO: Set the first (currently only) filter back to defaults, THEN any subsequent ones should have their filter row divs completely removed, so we end up with a single filter.
+    // Clear data from first filter to return it to default.
 
-data-option-selected="{{matchtypesdefaultvalue}}"
-                data-default-selected="{{matchtypesdefaultvalue}}" data-default-label="{{matchtypesdefaultlabel}}">
+    matchTypeElement.setAttribute('data-option-selected', matchTypeElement.getAttribute('data-default-selected'));
+    matchTypeElement.innerText = matchTypeElement.getAttribute('data-default-label');
+    filterTypeElement.setAttribute('data-option-selected', filterTypeElement.getAttribute('data-default-selected'));
+    filterTypeElement.innerText = filterTypeElement.getAttribute('data-default-label');
 
 
-}
+//<div class="d-inline-block position-relative" data-autocomplete-uniqueid="{{formUniqueId}}
+
+    Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
+
+
+
+    // Remove all other filter rows.
+    //TODO
+
+
+//TODO: Some of this will be relevant for the row specific deletes, so might need to be moved out into functions.
+//^^^^^^^^^ Perhaps this just loops, and if it's the first element, call one method (clearRow) else call another (remove Row).
+
+//TODO: Set the first (currently only) filter back to defaults,
+//THEN any subsequent ones should have their filter row divs completely removed, so we end up with a single filter.
+
+//data-option-selected="{{matchtypesdefaultvalue}}"
+  ///              data-default-selected="{{matchtypesdefaultvalue}}" data-default-label="{{matchtypesdefaultlabel}}">
+
+
+};
 
 // Initialise handlers in the filter set.
 export const init = uniqid => {

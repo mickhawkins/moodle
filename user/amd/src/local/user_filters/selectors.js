@@ -28,7 +28,7 @@ export default {
             text: 'input[type="text"]',
         },
         dropdown: {
-            toEnhance: uniqid => `#${uniqid}-filter-options-dropdown`,
+            select: uniqid => `#${uniqid}-filter-options-dropdown`,
         },
         row: {
             matchType: uniqid => `${uniqid}-match-type`,
