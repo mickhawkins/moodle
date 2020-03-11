@@ -103,7 +103,9 @@ TODO
 
     <div id="{{uniqid}}-filter-options-set" name="{{uniqid}}-filter-options-set" class="d-inline-block"></div>
 
-    <i class="icon fa fa-times-circle float-right pt-2"></i>
+    <button id="{{uniqid}}-filter-row-clear" class="btn btn-link d-inline-block disabled text-reset float-right">
+        <i class="icon fa fa-times-circle pt-2"></i>
+    </button>
 </div>
 
 {{#js}}
@@ -113,20 +115,3 @@ require(['core_user/user_filters'], function(Filter) {
 });
 
 {{/js}}
-
-<!--TODO: each little selected element will use this for closing: <i class="icon fa fa-times"></i>
-
-Plan:
-
-Type or select:
-    -Selection:
-        -closes the select box
-        -Adds the selected text to a little crossable box
-        -Removes that item from the dropdown
-
-    -Clicking cross on a previously selected item:
-        -Removes that element
-        -Re-adds that item in its original place in the dropdown    <<<<<<<<<<< need to keep track of where it would have gone?
-
-    Clear filters:
-        -Removes all items and resets all drop downs-->

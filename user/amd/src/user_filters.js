@@ -26,4 +26,5 @@ import {init as initDropdowns} from './local/user_filters/dropdowns';
 
 export const init = uniqid => {
     initDropdowns(uniqid);
+    initResetRowButton(uniqid);
 };

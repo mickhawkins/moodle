@@ -41,6 +41,11 @@ const setDropdownValue = async (e, uniqid) => {
         dropdownButton.innerText = optionSelected.innerText;
         dropdownButton.setAttribute('data-option-selected', optionSelected.getAttribute('data-value'));
 
+        // Enable the 'clear' button for the filter row, if the dropdown changes from default.
+        if (dropdownButton.getAttribute('data-option-selected') !== dropdownButton.getAttribute('data-default-selected')) {
+            document.getElementById(Selectors.filters.row.clear(uniqid)).classList.remove('disabled');
+        }
+
         // Filter type enhanced dropdowns need to display the filter options.
         if (optionSelected.hasAttribute("data-filter-type") && !previouslySet &&
                 optionSelected.getAttribute("data-filter-type") === 'enhanceddropdown') {
@@ -48,7 +53,7 @@ const setDropdownValue = async (e, uniqid) => {
             const selectString = await get_string('typeorselect', 'core');
 
             Autocomplete.enhance(Selectors.filters.dropdown.select(uniqid), true, null, selectString,
-                    false, true, null, false, true);
+                    false, true, null, false, true, 'right');
         }
     }
 };

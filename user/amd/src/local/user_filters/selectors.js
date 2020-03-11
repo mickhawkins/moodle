@@ -31,6 +31,8 @@ export default {
             select: uniqid => `#${uniqid}-filter-options-dropdown`,
         },
         row: {
+            id: uniqid => `${uniqid}-filter-row`,
+            clear: uniqid => `${uniqid}-filter-row-clear`,
             matchType: uniqid => `${uniqid}-match-type`,
             filterType: uniqid => `${uniqid}-filter-type`,
             enhancedValuesClass: '.form-autocomplete-selection',

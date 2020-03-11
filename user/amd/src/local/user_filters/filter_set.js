@@ -24,6 +24,7 @@
 
 import Autocomplete from 'core/form-autocomplete';
 import Selectors from './selectors';
+//import {resetFilterRow} from './local/user_filters/reset_row';
 
 // Submit filter values in the filter set.
 const submitFilters = (filterSetDiv) => {
@@ -70,18 +71,14 @@ const clearFilters = (filterSetDiv) => {
     const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
 
     // Clear data from first filter to return it to default.
+    //resetFilterRow(uniqid); TODO - this should replace the lines below when it's working
 
     matchTypeElement.setAttribute('data-option-selected', matchTypeElement.getAttribute('data-default-selected'));
     matchTypeElement.innerText = matchTypeElement.getAttribute('data-default-label');
     filterTypeElement.setAttribute('data-option-selected', filterTypeElement.getAttribute('data-default-selected'));
     filterTypeElement.innerText = filterTypeElement.getAttribute('data-default-label');
-
-
-//<div class="d-inline-block position-relative" data-autocomplete-uniqueid="{{formUniqueId}}
-
     Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
-
-
+    document.getElementById(`${uniqid}-filter-row-clear`).classList.add('disabled');
 
     // Remove all other filter rows.
     //TODO
