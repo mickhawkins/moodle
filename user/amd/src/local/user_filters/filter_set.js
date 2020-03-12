@@ -22,9 +22,9 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import Autocomplete from 'core/form-autocomplete';
+//import Autocomplete from 'core/form-autocomplete';
 import Selectors from './selectors';
-//import {resetFilterRow} from './local/user_filters/reset_row';
+import {resetFilterRow} from './reset_row';
 
 // Submit filter values in the filter set.
 const submitFilters = (filterSetDiv) => {
@@ -65,35 +65,12 @@ const submitFilters = (filterSetDiv) => {
 const clearFilters = (filterSetDiv) => {
     const firstFilter = filterSetDiv.querySelector('[data-filter-uniqid]');
     const uniqid = firstFilter.getAttribute('data-filter-uniqid');
-    const matchTypeElement = document.getElementById(Selectors.filters.row.matchType(uniqid));
-    const filterTypeElement = document.getElementById(Selectors.filters.row.filterType(uniqid));
-    const enhancedDropdown = firstFilter.querySelector('div [data-autocomplete-uniqueid]');
-    const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
 
     // Clear data from first filter to return it to default.
-    //resetFilterRow(uniqid); TODO - this should replace the lines below when it's working
-
-    matchTypeElement.setAttribute('data-option-selected', matchTypeElement.getAttribute('data-default-selected'));
-    matchTypeElement.innerText = matchTypeElement.getAttribute('data-default-label');
-    filterTypeElement.setAttribute('data-option-selected', filterTypeElement.getAttribute('data-default-selected'));
-    filterTypeElement.innerText = filterTypeElement.getAttribute('data-default-label');
-    Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
-    document.getElementById(`${uniqid}-filter-row-clear`).classList.add('disabled');
+    resetFilterRow(uniqid);
 
     // Remove all other filter rows.
     //TODO
-
-
-//TODO: Some of this will be relevant for the row specific deletes, so might need to be moved out into functions.
-//^^^^^^^^^ Perhaps this just loops, and if it's the first element, call one method (clearRow) else call another (remove Row).
-
-//TODO: Set the first (currently only) filter back to defaults,
-//THEN any subsequent ones should have their filter row divs completely removed, so we end up with a single filter.
-
-//data-option-selected="{{matchtypesdefaultvalue}}"
-  ///              data-default-selected="{{matchtypesdefaultvalue}}" data-default-label="{{matchtypesdefaultlabel}}">
-
-
 };
 
 // Initialise handlers in the filter set.

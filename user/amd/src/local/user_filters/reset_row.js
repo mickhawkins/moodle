@@ -30,19 +30,23 @@ export const resetFilterRow = (uniqid) => {
     const matchTypeElement = document.getElementById(Selectors.filters.row.matchType(uniqid));
     const filterTypeElement = document.getElementById(Selectors.filters.row.filterType(uniqid));
     const enhancedDropdown = filterRow.querySelector('div [data-autocomplete-uniqueid]');
-    const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
 
     matchTypeElement.setAttribute('data-option-selected', matchTypeElement.getAttribute('data-default-selected'));
     matchTypeElement.innerText = matchTypeElement.getAttribute('data-default-label');
     filterTypeElement.setAttribute('data-option-selected', filterTypeElement.getAttribute('data-default-selected'));
     filterTypeElement.innerText = filterTypeElement.getAttribute('data-default-label');
-    Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
+
+    if (enhancedDropdown) {
+        const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
+        Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
+    }
+
     document.getElementById(`${uniqid}-filter-row-clear`).classList.add('disabled');
 };
 
 // Initialise the button that resets a row.
 export const initResetRowButton = (uniqid) => {
-    document.getElementById(Selectors.filters.row.clear(uniqid)).addEventListener('click', function(uniqid) {
+    document.getElementById(Selectors.filters.row.clear(uniqid)).addEventListener('click', () => {
         resetFilterRow(uniqid);
     });
 };

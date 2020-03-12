@@ -23,6 +23,7 @@
  */
 
 import {init as initDropdowns} from './local/user_filters/dropdowns';
+import {initResetRowButton} from './local/user_filters/reset_row';
 
 export const init = uniqid => {
     initDropdowns(uniqid);
