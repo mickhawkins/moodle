@@ -249,6 +249,7 @@ $string['changesmadereallygoaway'] = 'You have made changes. Are you sure you wa
 $string['city'] = 'City/town';
 $string['cleaningtempdata'] = 'Cleaning temp data';
 $string['clear'] = 'Clear';
+$string['clearfilterrow'] = 'Clear single filter row';
 $string['clearfilters'] = 'Clear filters';
 $string['clearsearch'] = 'Clear search input';
 $string['clickhelpiconformoreinfo'] = '... continues ... Click on the help icon to read the full article';

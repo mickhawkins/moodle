@@ -69,10 +69,10 @@ TODO
     }
 }}
 
-<div id="{{uniqid}}-filter-row" class="rounded mb-3 p-2 align-middle bg-white border border-secondary" data-filter-uniqid="{{uniqid}}">
-    <label for="{{uniqid}}-match-type">{{#str}}match{{/str}}</label>
+<div id="{{uniqid}}-filter-row" class="rounded mb-3 p-2 bg-white border border-secondary d-flex align-items-center" data-filter-uniqid="{{uniqid}}">
+    <label for="{{uniqid}}-match-type" class="pt-2">{{#str}}match{{/str}}</label>
 
-    <div class="dropdown d-inline-block">
+    <div class="dropdown">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-match-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{matchtypesdefaultvalue}}"
                 data-default-selected="{{matchtypesdefaultvalue}}" data-default-label="{{matchtypesdefaultlabel}}">
@@ -85,7 +85,7 @@ TODO
         </div>
     </div>
 
-    <div class="dropdown d-inline-block">
+    <div class="dropdown">
         <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-filter-type" data-toggle="dropdown"
                 aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{filtertypesdefaultvalue}}"
                 data-default-selected="{{filtertypesdefaultvalue}}" data-default-label="{{filtertypesdefaultlabel}}">
@@ -101,9 +101,7 @@ TODO
 
     {{> core_user/filter_types/enhanced_dropdown }}
 
-    <div id="{{uniqid}}-filter-options-set" name="{{uniqid}}-filter-options-set" class="d-inline-block"></div>
-
-    <button id="{{uniqid}}-filter-row-clear" class="btn btn-link d-inline-block disabled text-reset float-right">
+    <button id="{{uniqid}}-filter-row-clear" class="ml-auto btn btn-link disabled text-reset" aria-label="{{#str}}clearfilterrow{{/str}}">
         <i class="icon fa fa-times-circle pt-2"></i>
     </button>
 </div>
