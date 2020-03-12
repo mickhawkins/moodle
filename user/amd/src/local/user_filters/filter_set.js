@@ -70,7 +70,7 @@ const clearFilters = (filterSetDiv) => {
     resetFilterRow(uniqid);
 
     // Remove all other filter rows.
-    //TODO
+    // TODO when more than one filter row can exist.
 };
 
 // Initialise handlers in the filter set.
