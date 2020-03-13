@@ -30,14 +30,24 @@
     * selectionId The dom id of the current selection list.
     * items List of items with label and value fields (used by the partial).
     * noSelectionString String to use when no items are selected (used by the partial).
+    * positionRight True if the selected items should be listed to the right of the select box.
 
     Example context (json):
-    { "multiple": true, "selectionId": 1, "items": [
-        { "label": "Item label with <strong>tags</strong>", "value": "5" },
-        { "label": "Another item label with <strong>tags</strong>", "value": "4" }
-    ], "noSelectionString": "No selection" }
+    {
+        "multiple": true,
+        "selectionId": 1,
+        "items": [
+            { "label": "Item label with <strong>tags</strong>", "value": "5" },
+            { "label": "Another item label with <strong>tags</strong>", "value": "4" }
+        ],
+        "noSelectionString": "No selection",
+        "positionRight": false
+    }
 }}
-<div class="form-autocomplete-selection w-100 {{#multiple}}form-autocomplete-multiple{{/multiple}}" id="{{selectionId}}" role="list" aria-atomic="true" {{#multiple}}tabindex="0" aria-multiselectable="true"{{/multiple}}>
+<div class="form-autocomplete-selection {{#positionRight}}d-inline-block px-2{{/positionRight}}
+        {{#multiple}}form-autocomplete-multiple{{/multiple}}
+        {{^positionRight}}w-100{{/positionRight}}" id="{{selectionId}}"
+        role="list" aria-atomic="true" {{#multiple}}tabindex="0" aria-multiselectable="true"{{/multiple}}>
 <span class="accesshide">{{#str}}selecteditems, form{{/str}}</span>
     {{> core/form_autocomplete_selection_items }}
 </div>

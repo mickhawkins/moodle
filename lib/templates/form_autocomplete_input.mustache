@@ -30,13 +30,21 @@
     * suggestionsId The dom id of the suggestions list.
     * selectionId The dom id of the current selection list.
     * downArrowId The dom id of the down arrow to open the suggestions.
-    * placeholder The place holder text when the field is empty
+    * placeholder The place holder text when the field is empty.
+    * formUniqueId The uniqid generated and used to identify the autocomplete.
 
     Example context (json):
-    { "inputID": 1, "suggestionsId": 2, "selectionId": 3, "downArrowId": 4, "placeholder": "Select something" }
+    {
+        "inputID": 1,
+        "suggestionsId": 2,
+        "selectionId": 3,
+        "downArrowId": 4,
+        "placeholder": "Select something",
+        "formUniqueId": "1583739921337"
+    }
 }}
 {{#showSuggestions}}
-<div class="d-inline-block position-relative">
+<div class="d-inline-block position-relative" data-autocomplete-uniqueid="{{formUniqueId}}">
     <input type="text" id="{{inputId}}" class="form-control" list="{{suggestionsId}}" placeholder="{{placeholder}}" role="combobox" aria-expanded="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-autocomplete="list" aria-owns="{{suggestionsId}} {{selectionId}}" {{#tags}}data-tags="1"{{/tags}}/>
     <span class="form-autocomplete-downarrow position-absolute p-1" id="{{downArrowId}}">&#x25BC;</span>
 </div>
