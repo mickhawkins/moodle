@@ -1,0 +1,86 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_user/filter_form
+
+    Template for the form containing one or more filter rows.
+
+    Example context (json):
+    {
+        "jointypes": [
+            {
+                "value": 1,
+                "label": "All",
+                "selected": true
+            },
+            {
+                "value": 2,
+                "label": "Any",
+                "selected": false
+            },
+            {
+                "value": 0,
+                "label": "None",
+                "selected": false
+            }
+        ],
+        "filtertypes": [
+            {
+                "value": "status",
+                "label": "Status"
+            }
+        ],
+        "enhanceddropdown": [
+            {
+                "options": [
+                    {
+                        "value": "0",
+                        "label": "active"
+                    },
+                    {
+                        "value": "1",
+                        "label": "inactive"
+                    }
+                ]
+            }
+        ]
+    }
+}}
+
+<div id="{{uniqid}}-user-filters" class="filter-group mt-5 p-3 rounded border border-secondary">
+    {{> core_user/user_filter_row }}
+
+    <div class="display-block">
+        &nbsp;
+        <button type="button" class="btn btn-link d-inline-block float-left disabled">
+            <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
+        </button>
+
+        <div class="float-right">
+            <button id ="{{uniqid}}-clearall" type="button" class="btn btn-light d-inline-block">{{#str}}clearfilters{{/str}}</button>
+            <button id ="{{uniqid}}-submit" type="button" class="btn btn-primary d-inline-block">{{#str}}applyfilters{{/str}}</button>
+        </div>
+    </div>
+</div>
+
+{{#js}}
+
+require(['core_user/local/user_filters/filter_set'], function(FilterSet) {
+    FilterSet.init('{{uniqid}}');
+});
+
+{{/js}}

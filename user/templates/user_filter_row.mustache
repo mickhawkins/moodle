@@ -1,0 +1,112 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_user/user_filter_row
+
+    Template for use by each filter condition.
+
+    Context variables required for this template:
+      * jointypes - Array of join types possible within the filter.
+      * filtertypes - Array of filter types available.
+      * enhanceddropdown - Options available if the filter uses an enhanced dropdown.
+
+    Example context (json):
+    {
+        "jointypes": [
+            {
+                "value": 1,
+                "label": "All",
+                "selected": true
+            },
+            {
+                "value": 2,
+                "label": "Any",
+                "selected": false
+            },
+            {
+                "value": 0,
+                "label": "None",
+                "selected": false
+            }
+        ],
+        "filtertypes": [
+            {
+                "value": "status",
+                "label": "Status"
+            }
+        ],
+        "enhanceddropdown": [
+            {
+                "options": [
+                    {
+                        "value": "0",
+                        "label": "active"
+                    },
+                    {
+                        "value": "1",
+                        "label": "inactive"
+                    }
+                ]
+            }
+        ]
+    }
+}}
+
+<div id="{{uniqid}}-filter-row" class="rounded mb-3 p-2 bg-white border border-secondary d-flex align-items-center" data-filter-uniqid="{{uniqid}}">
+    <label for="{{uniqid}}-join-type" class="pt-2">{{#str}}match{{/str}}</label>
+
+    <div class="dropdown">
+        <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-join-type" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{jointypesdefaultvalue}}"
+                data-default-selected="{{jointypesdefaultvalue}}" data-default-label="{{jointypesdefaultlabel}}">
+            {{jointypesdefaultlabel}}
+        </button>
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-join-type-options" aria-labelledby="{{uniqid}}-join-type">
+            {{#jointypes}}
+            <a class="dropdown-item" href="#" data-value="{{value}}">{{label}}</a>
+            {{/jointypes}}
+        </div>
+    </div>
+
+    <div class="dropdown">
+        <button type="button" class="btn btn-light dropdown-toggle font-weight-bold" id="{{uniqid}}-filter-type" data-toggle="dropdown"
+                aria-haspopup="true" aria-expanded="false" data-reference="parent" data-option-selected="{{filtertypesdefaultvalue}}"
+                data-default-selected="{{filtertypesdefaultvalue}}" data-default-label="{{filtertypesdefaultlabel}}">
+            {{filtertypesdefaultlabel}}
+        </button>
+        <div class="dropdown-menu user-filter-select" id="{{uniqid}}-filter-type-options" aria-labelledby="{{uniqid}}-filter-type">
+            {{#filtertypes}}
+            <a class="dropdown-item" href="#" data-value="{{value}}" data-filter-type="{{inputtype}}">{{label}}</a>
+            {{/filtertypes}}
+        </div>
+        <input type="hidden" id="{{uniqid}}-filter-type-selected" class="filter-type-value" value="">
+    </div>
+
+    {{> core_user/filter_types/enhanced_dropdown }}
+
+    <button id="{{uniqid}}-filter-row-clear" class="ml-auto btn btn-link disabled text-reset" aria-label="{{#str}}clearfilterrow{{/str}}">
+        <i class="icon fa fa-times-circle pt-2"></i>
+    </button>
+</div>
+
+{{#js}}
+
+require(['core_user/user_filters'], function(Filter) {
+    Filter.init('{{uniqid}}');
+});
+
+{{/js}}
