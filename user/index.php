@@ -238,6 +238,11 @@ $baseurl = new moodle_url('/user/index.php', array(
         'id' => $course->id,
         'perpage' => $perpage));
 
+// Render the user filters.
+$renderer = $PAGE->get_renderer('core_user');
+
+echo $renderer->user_filter($context, $baseurl);
+
 // Render the unified filter.
 $renderer = $PAGE->get_renderer('core_user');
 echo $renderer->unified_filter($course, $context, $filtersapplied, $baseurl);

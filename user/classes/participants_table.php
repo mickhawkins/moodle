@@ -47,6 +47,15 @@ require_once($CFG->dirroot . '/user/lib.php');
  */
 class participants_table extends \table_sql implements dynamic_table {
 
+    /** 'Join none' used within or between filter to indicate they should be queries using logical NOT */
+    const JOIN_NONE = 0;
+
+    /** 'Join all' used within or between filter to indicate they should be queries using logical AND */
+    const JOIN_ALL = 1;
+
+    /** 'Join any' used within or between filter to indicate they should be queries using logical OR */
+    const JOIN_ANY = 2;
+
     /**
      * @var int $courseid The course id
      */
