@@ -122,6 +122,33 @@ class user_filter implements renderable, templatable {
                 ENROL_USER_SUSPENDED => get_string('inactive'),
             ];
         }
+
+        // Roles filter.
+        $roleseditable = has_capability('moodle/role:assign', $this->context);
+        $roles = get_viewable_roles($this->context);
+
+        if ($roleseditable) {
+            $roles += get_assignable_roles($this->context, ROLENAME_ALIAS);
+        }
+
+        // Include roles filter if user has access.
+        if (!empty($roles)) {
+            $roleslabel = get_string('role');
+            $rolesname = strtolower($roleslabel);
+
+            $this->filtertypes[$rolesname] = [
+                'inputtype' => 'enhanceddropdown',
+                'label' => $roleslabel,
+            ];
+
+            $this->filteroptions[$rolesname] = [
+                -1 => get_string('noroles', 'role'),
+            ];
+
+            foreach ($roles as $value => $label) {
+                $this->filteroptions[$rolesname][$value] = $label;
+            }
+        }
     }
 
     /**

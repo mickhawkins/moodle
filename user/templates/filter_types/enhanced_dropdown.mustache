@@ -26,6 +26,7 @@
     {
         "enhanceddropdown": [
             {
+                "filtername": "status",
                 "options": [
                     {
                         "value": "0",
@@ -42,7 +43,7 @@
 }}
 
 {{#enhanceddropdown}}
-<select name="{{uniqid}}-filter-options-dropdown" id="{{uniqid}}-filter-options-dropdown" multiple="multiple"
+<select name="{{uniqid}}-{{filtername}}-filter-options-dropdown" id="{{uniqid}}-{{filtername}}-filter-options-dropdown" multiple="multiple"
         class="form-autocomplete-original-select hidden">
     {{#options}}
         <option value="{{value}}">{{label}}</option>

@@ -28,7 +28,7 @@ export default {
             text: 'input[type="text"]',
         },
         dropdown: {
-            select: uniqid => `#${uniqid}-filter-options-dropdown`,
+            select: filterid => `#${filterid}-filter-options-dropdown`,
         },
         row: {
             id: uniqid => `${uniqid}-filter-row`,

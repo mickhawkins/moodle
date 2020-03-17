@@ -36,10 +36,11 @@ const setDropdownValue = async(e, uniqid) => {
     if (optionSelected.classList.contains('dropdown-item')) {
         const dropdownButton = optionSelected.parentNode.parentNode.querySelector('button');
         const previouslySet = dropdownButton.getAttribute('data-option-selected');
+        const selectedValue = optionSelected.getAttribute('data-value');
 
         // Display the selection and set the hidden value.
         dropdownButton.innerText = optionSelected.innerText;
-        dropdownButton.setAttribute('data-option-selected', optionSelected.getAttribute('data-value'));
+        dropdownButton.setAttribute('data-option-selected', selectedValue);
 
         // Enable the 'clear' button for the filter row, if the dropdown changes from default.
         if (dropdownButton.getAttribute('data-option-selected') !== dropdownButton.getAttribute('data-default-selected')) {
@@ -51,8 +52,7 @@ const setDropdownValue = async(e, uniqid) => {
                 optionSelected.getAttribute("data-filter-type") === 'enhanceddropdown') {
 
             const selectString = await getString('typeorselect', 'core');
-
-            Autocomplete.enhance(Selectors.filters.dropdown.select(uniqid), false, null, selectString,
+            Autocomplete.enhance(Selectors.filters.dropdown.select(`${uniqid}-${selectedValue}`), false, null, selectString,
                     false, true, null, false, true, 'right');
         }
     }
