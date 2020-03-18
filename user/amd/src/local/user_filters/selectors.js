@@ -39,4 +39,11 @@ export default {
             getModuleSelector: uniqid => `[role="menuitem"][data-modname="${uniqid}"]`,
         },
     },
+    filterset: {
+        addCondition: uniqid => `${uniqid}-addcondition`,
+        baseData: uniqid => `${uniqid}-filterset-base-data`,
+        clearAll: uniqid => `${uniqid}-clearall`,
+        submit: uniqid => `${uniqid}-submit`,
+        userFilters: uniqid => `${uniqid}-user-filters`,
+    }
 };

@@ -22,8 +22,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import Selectors from './selectors';
+import Notification from 'core/notification';
 import {resetFilterRow} from './reset_row';
+import Selectors from './selectors';
+import Templates from 'core/templates';
 
 // Submit filter values in the filter set.
 const submitFilters = (filterSetDiv) => {
@@ -72,15 +74,42 @@ const clearFilters = (filterSetDiv) => {
     // TODO when more than one filter row can exist.
 };
 
+// Add a new condition (filter row) to the filter set.
+const addCondition = (filterSetUniqid) => {
+    const userFiltersDiv = document.getElementById(Selectors.filterset.userFilters(filterSetUniqid));
+    const baseFilterData = document.getElementById(Selectors.filterset.baseData(filterSetUniqid));
+    const joinTypesDefault = JSON.parse(baseFilterData.getAttribute('data-join-types-default'));
+    const filterTypesDefault = JSON.parse(baseFilterData.getAttribute('data-filter-types-default'));
+
+    const context = {
+        "jointypes": JSON.parse(baseFilterData.getAttribute('data-join-types')),
+        "jointypesdefaultvalue": joinTypesDefault.value,
+        "jointypesdefaultlabel": joinTypesDefault.label,
+        "filtertypes": JSON.parse(baseFilterData.getAttribute('data-filter-types')),
+        "filtertypesdefaultvalue": filterTypesDefault.value,
+        "filtertypesdefaultlabel": filterTypesDefault.label
+    };
+
+    Templates.render('core_user/user_filter_row', context)
+        .then((html, js) => {
+            Templates.appendNodeContents(userFiltersDiv, html, js);
+        })
+        .fail(Notification.exception);
+};
+
 // Initialise handlers in the filter set.
 export const init = uniqid => {
-    const filterSetDiv = document.getElementById(`${uniqid}-user-filters`);
+    const filterSetDiv = document.getElementById(`${uniqid}-user-filterset`);
 
-    document.getElementById(`${uniqid}-submit`).addEventListener('click', function() {
+    document.getElementById(Selectors.filterset.submit(uniqid)).addEventListener('click', () => {
         submitFilters(filterSetDiv);
     });
 
-    document.getElementById(`${uniqid}-clearall`).addEventListener('click', function() {
+    document.getElementById(Selectors.filterset.clearAll(uniqid)).addEventListener('click', () => {
         clearFilters(filterSetDiv);
+    });
+
+    document.getElementById(Selectors.filterset.addCondition(uniqid)).addEventListener('click', () => {
+        addCondition(uniqid);
     });
 };

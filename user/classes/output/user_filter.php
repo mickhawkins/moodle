@@ -200,6 +200,17 @@ class user_filter implements renderable, templatable {
                 // Insert the options into the correct input type in the template.
                 $data->{$inputtype}[] = (object) $dataoptions;
             }
+
+            $data->jointypesjson = json_encode($data->jointypes);
+            $data->filtertypesjson = json_encode($data->filtertypes);
+            $data->jointypesdefaultjson = json_encode((object) [
+                'value' => $data->jointypesdefaultvalue,
+                'label' => $data->jointypesdefaultlabel,
+            ]);
+            $data->filtertypesdefaultjson = json_encode((object) [
+                'value' => $data->filtertypesdefaultvalue,
+                'label' => $data->filtertypesdefaultlabel,
+            ]);
         }
 
         return $data;

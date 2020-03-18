@@ -25,25 +25,26 @@
             {
                 "value": 1,
                 "label": "All",
-                "selected": true
             },
             {
                 "value": 2,
                 "label": "Any",
-                "selected": false
             },
             {
                 "value": 0,
                 "label": "None",
-                "selected": false
             }
         ],
+        "jointypesdefaultvalue": 1,
+        "jointypesdefaultlabel": "All",
         "filtertypes": [
             {
                 "value": "status",
                 "label": "Status"
             }
         ],
+        "filtertypesdefaultvalue": "",
+        "filtertypesdefaultlabel": "Select",
         "enhanceddropdown": [
             {
                 "options": [
@@ -61,12 +62,16 @@
     }
 }}
 
-<div id="{{uniqid}}-user-filters" class="filter-group mt-5 p-3 rounded border border-secondary">
-    {{> core_user/user_filter_row }}
+<div id="{{uniqid}}-user-filterset" class="filter-group mt-5 p-3 rounded border border-secondary" data-participants-filterset="true">
+    <div id="{{uniqid}}-filterset-base-data" data-join-types="{{jointypesjson}}" data-filter-types="{{filtertypesjson}}"
+         data-join-types-default="{{jointypesdefaultjson}}" data-filter-types-default="{{filtertypesdefaultjson}}"></div>
 
+    <div id="{{uniqid}}-user-filters">
+        {{> core_user/user_filter_row }}
+    </div>
     <div class="display-block">
         &nbsp;
-        <button type="button" class="btn btn-link d-inline-block float-left disabled">
+        <button id="{{uniqid}}-addcondition" type="button" class="btn btn-link d-inline-block float-left">
             <i class="fa fa-plus"></i><span class="pl-3">{{#str}}addcondition{{/str}}</span>
         </button>
 
