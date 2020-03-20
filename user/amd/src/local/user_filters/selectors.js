@@ -28,7 +28,9 @@ export default {
             text: 'input[type="text"]',
         },
         dropdown: {
-            select: filterid => `#${filterid}-filter-options-dropdown`,
+            base: filterid => `${filterid}-filter-options-dropdown`,
+            enhanced: uniqid => `${uniqid}-options-dropdown`,
+            enhancedSelector: uniqid => `#${uniqid}-options-dropdown`,
         },
         row: {
             id: uniqid => `${uniqid}-filter-row`,
@@ -44,6 +46,8 @@ export default {
         baseData: uniqid => `${uniqid}-filterset-base-data`,
         clearAll: uniqid => `${uniqid}-clearall`,
         submit: uniqid => `${uniqid}-submit`,
+        uniqidSelector: 'div[data-filterset-uniqid]',
+        uniqidAttr: 'data-filterset-uniqid',
         userFilters: uniqid => `${uniqid}-user-filters`,
     }
 };

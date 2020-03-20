@@ -24,15 +24,15 @@
         "jointypes": [
             {
                 "value": 1,
-                "label": "All",
+                "label": "All"
             },
             {
                 "value": 2,
-                "label": "Any",
+                "label": "Any"
             },
             {
                 "value": 0,
-                "label": "None",
+                "label": "None"
             }
         ],
         "jointypesdefaultvalue": 1,
@@ -47,14 +47,32 @@
         "filtertypesdefaultlabel": "Select",
         "enhanceddropdown": [
             {
+                "filtername": "status",
                 "options": [
                     {
                         "value": "0",
-                        "label": "active"
+                        "label": "Active"
                     },
                     {
                         "value": "1",
-                        "label": "inactive"
+                        "label": "Inactive"
+                    }
+                ]
+            },
+           {
+                "filtername": "role",
+                "options": [
+                    {
+                        "value": "-1",
+                        "label": "No roles"
+                    },
+                    {
+                        "value": "3",
+                        "label": "Teacher"
+                    },
+                    {
+                        "value": "5",
+                        "label": "Student"
                     }
                 ]
             }
@@ -62,9 +80,11 @@
     }
 }}
 
-<div id="{{uniqid}}-user-filterset" class="filter-group mt-5 p-3 rounded border border-secondary" data-participants-filterset="true">
+<div id="{{uniqid}}-user-filterset" class="filter-group mt-5 p-3 rounded border border-secondary" data-filterset-uniqid="{{uniqid}}">
     <div id="{{uniqid}}-filterset-base-data" data-join-types="{{jointypesjson}}" data-filter-types="{{filtertypesjson}}"
          data-join-types-default="{{jointypesdefaultjson}}" data-filter-types-default="{{filtertypesdefaultjson}}"></div>
+
+    {{> core_user/filter_types/enhanced_dropdown }}
 
     <div id="{{uniqid}}-user-filters">
         {{> core_user/user_filter_row }}

@@ -20,7 +20,6 @@
     Template used by enahanced dropdown filters.
 
     Context variables required for this template:
-      * uniqid - ID unique to the current filter row's template.
 
     Example context (json):
     {
@@ -35,6 +34,23 @@
                     {
                         "value": "1",
                         "label": "Inactive"
+                    }
+                ]
+            },
+           {
+                "filtername": "role",
+                "options": [
+                    {
+                        "value": "-1",
+                        "label": "No roles"
+                    },
+                    {
+                        "value": "3",
+                        "label": "Teacher"
+                    },
+                    {
+                        "value": "5",
+                        "label": "Student"
                     }
                 ]
             }

@@ -50,21 +50,7 @@
             }
         ],
         "filtertypesdefaultvalue": "",
-        "filtertypesdefaultlabel": "Select",
-        "enhanceddropdown": [
-            {
-                "options": [
-                    {
-                        "value": "0",
-                        "label": "active"
-                    },
-                    {
-                        "value": "1",
-                        "label": "inactive"
-                    }
-                ]
-            }
-        ]
+        "filtertypesdefaultlabel": "Select"
     }
 }}
 
@@ -97,8 +83,6 @@
         </div>
         <input type="hidden" id="{{uniqid}}-filter-type-selected" class="filter-type-value" value="">
     </div>
-
-    {{> core_user/filter_types/enhanced_dropdown }}
 
     <button id="{{uniqid}}-filter-row-clear" class="ml-auto btn btn-link disabled text-reset" aria-label="{{#str}}clearfilterrow{{/str}}">
         <i class="icon fa fa-times-circle pt-2"></i>

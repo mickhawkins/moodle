@@ -38,7 +38,7 @@ export const resetFilterRow = (uniqid) => {
 
     if (enhancedDropdown) {
         const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
-        Autocomplete.remove(Selectors.filters.dropdown.select(uniqid), enhancedUniqueId);
+        Autocomplete.remove(Selectors.filters.dropdown.enhanced(uniqid), enhancedUniqueId);
     }
 
     document.getElementById(`${uniqid}-filter-row-clear`).classList.add('disabled');

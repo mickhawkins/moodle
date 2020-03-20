@@ -27,7 +27,7 @@ import {get_string as getString} from 'core/str';
 import Selectors from './selectors';
 
 // Set values for single dropdowns.
-const setDropdownValue = async(e, uniqid) => {
+const setDropdownValue = (e, uniqid) => {
     e.preventDefault();
 
     const optionSelected = e.target;
@@ -51,11 +51,25 @@ const setDropdownValue = async(e, uniqid) => {
         if (optionSelected.hasAttribute("data-filter-type") && !previouslySet &&
                 optionSelected.getAttribute("data-filter-type") === 'enhanceddropdown') {
 
-            const selectString = await getString('typeorselect', 'core');
-            Autocomplete.enhance(Selectors.filters.dropdown.select(`${uniqid}-${selectedValue}`), false, null, selectString,
-                    false, true, null, false, true, 'right');
+                insertEnhanced(uniqid, selectedValue);
         }
     }
+};
+
+// Insert enhanced dropdown for selected filter type.
+const insertEnhanced = async(uniqid, filterType) => {
+    const selectString = await getString('typeorselect', 'core');
+    const filterset = document.querySelector(Selectors.filterset.uniqidSelector);
+    const filtersetUniqid = filterset.getAttribute(Selectors.filterset.uniqidAttr);
+    const baseFilterDropdown = document.getElementById(Selectors.filters.dropdown.base(`${filtersetUniqid}-${filterType}`));
+    const filterRow = document.getElementById(Selectors.filters.row.id(uniqid));
+    const clearRow = document.getElementById(Selectors.filters.row.clear(uniqid));
+    const rowFilterDropdown = baseFilterDropdown.cloneNode(true);
+    rowFilterDropdown.id = Selectors.filters.dropdown.enhanced(uniqid);
+
+    filterRow.insertBefore(rowFilterDropdown, clearRow);
+    Autocomplete.enhance(Selectors.filters.dropdown.enhancedSelector(uniqid), false, null,
+            selectString, false, true, null, false, true, 'right');
 };
 
 // Initialise the dropdowns in a participants filter row.
