@@ -35,7 +35,7 @@ const setDropdownValue = (e, uniqid) => {
     // Only handle specific items being selected.
     if (optionSelected.classList.contains('dropdown-item')) {
         const dropdownButton = optionSelected.parentNode.parentNode.querySelector('button');
-        const previouslySet = dropdownButton.getAttribute('data-option-selected');
+        //const previouslySet = dropdownButton.getAttribute('data-option-selected');
         const selectedValue = optionSelected.getAttribute('data-value');
 
         // Display the selection and set the hidden value.
@@ -48,7 +48,7 @@ const setDropdownValue = (e, uniqid) => {
         }
 
         // Filter type enhanced dropdowns need to display the filter options.
-        if (optionSelected.hasAttribute("data-filter-type") && !previouslySet &&
+        if (optionSelected.hasAttribute("data-filter-type") &&
                 optionSelected.getAttribute("data-filter-type") === 'enhanceddropdown') {
 
                 insertEnhanced(uniqid, selectedValue);
@@ -67,9 +67,25 @@ const insertEnhanced = async(uniqid, filterType) => {
     const rowFilterDropdown = baseFilterDropdown.cloneNode(true);
     rowFilterDropdown.id = Selectors.filters.dropdown.enhanced(uniqid);
 
+    removeFilterTypeInput(uniqid);
+
     filterRow.insertBefore(rowFilterDropdown, clearRow);
     Autocomplete.enhance(Selectors.filters.dropdown.enhancedSelector(uniqid), false, null,
             selectString, false, true, null, false, true, 'right');
+};
+
+// Handle removing existing filter type input when switching filter types.
+const removeFilterTypeInput = uniqid => {
+    const filterRow = document.getElementById(Selectors.filters.row.id(uniqid));
+    const enhancedDropdown = filterRow.querySelector('div [data-autocomplete-uniqueid]');
+
+    if (enhancedDropdown) {
+        const filterSelect = filterRow.querySelector(`[id="${Selectors.filters.dropdown.enhanced(uniqid)}"]`);
+        const enhancedUniqueId = enhancedDropdown.getAttribute('data-autocomplete-uniqueid');
+
+        filterSelect.parentNode.removeChild(filterSelect);
+        Autocomplete.remove(Selectors.filters.dropdown.enhanced(uniqid), enhancedUniqueId);
+    }
 };
 
 // Initialise the dropdowns in a participants filter row.
