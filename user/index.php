@@ -153,6 +153,9 @@ $lastaccessfilter = new integer_filter('accesssince');
 $rolefilter = new integer_filter('roles');
 $statusfilter = new integer_filter('status');
 
+$participanttable = new \core_user\table\participants("user-index-participants-{$course->id}");
+$participanttable->set_selectall($selectall);
+
 foreach ($filtersapplied as $filter) {
     $filtervalue = explode(':', $filter, 2);
     $value = null;
@@ -244,6 +247,10 @@ $baseurl = new moodle_url('/user/index.php', array(
 $renderer = $PAGE->get_renderer('core_user');
 echo $renderer->unified_filter($course, $context, $filtersapplied, $baseurl);
 
+// Render the user filters.
+$userrenderer = $PAGE->get_renderer('core_user');
+echo $userrenderer->participants_filter($context, $participanttable->uniqueid);
+
 echo '<div class="userlist">';
 
 // Add filters to the baseurl after creating unified_filter to avoid losing them.
@@ -275,10 +282,8 @@ if (count($keywordfilter)) {
     $filterset->add_filter($keywordfilter);
 }
 
-$participanttable = new \core_user\table\participants("user-index-participants-{$course->id}");
-$participanttable->set_selectall($selectall);
+// TODO Move this to table instantation after MDL-68246 lands.
 $participanttable->set_filterset($filterset);
-$participanttable->define_baseurl($baseurl);
 
 // Do this so we can get the total number of rows.
 ob_start();
