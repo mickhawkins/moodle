@@ -22,6 +22,11 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['addcondition'] = 'Add condition';
+$string['applyfilters'] = 'Apply filters';
+$string['clearfilterrow'] = 'Remove filter row';
+$string['clearfilters'] = 'Clear filters';
+$string['match'] = 'Match';
 $string['privacy:courserequestpath'] = 'Requested courses';
 $string['privacy:descriptionpath'] = 'Profile description';
 $string['privacy:devicespath'] = 'User devices';
@@ -125,6 +130,8 @@ $string['privacy:passwordresetpath'] = 'Password resets';
 $string['privacy:profileimagespath'] = 'Profile images';
 $string['privacy:privatefilespath'] = 'Private files';
 $string['privacy:sessionpath'] = 'Session data';
+$string['selectfiltertype'] = 'Select';
 $string['target:upcomingactivitiesdue'] = 'Upcoming activities due';
 $string['target:upcomingactivitiesdue_help'] = 'This target generates reminders for upcoming activities due.';
 $string['target:upcomingactivitiesdueinfo'] = 'All upcoming activities due insights are listed here. These students have received these insights directly.';
+$string['typeorselect'] = 'Type or select...';
