@@ -53,9 +53,9 @@ class participants_table extends \table_sql implements dynamic_table {
     protected $courseid;
 
     /**
-     * @var int|false False if groups not used, int if groups used, 0 for all groups.
+     * @var int[]|false False if groups not used, array of integers if groups used, [0] for all groups.
      */
-    protected $currentgroup;
+    protected $currentgroups;
 
     /**
      * @var int $accesssince The time the user last accessed the site
@@ -63,22 +63,22 @@ class participants_table extends \table_sql implements dynamic_table {
     protected $accesssince;
 
     /**
-     * @var int $roleid The role we are including, 0 means all enrolled users
+     * @var int[] $roleids The applied filter for user roles, [0] means all enrolled users.
      */
-    protected $roleid;
+    protected $roleids;
 
     /**
-     * @var int $enrolid The applied filter for the user enrolment ID.
+     * @var int[] $enrolids The applied filter for user enrolment IDs.
      */
-    protected $enrolid;
+    protected $enrolids;
 
     /**
-     * @var int $status The applied filter for the user's enrolment status.
+     * @var int $statuses The applied filter for users' enrolment statuses.
      */
-    protected $status;
+    protected $statuses;
 
     /**
-     * @var string $search The string being searched.
+     * @var string $search The strings being searched.
      */
     protected $search;
 
@@ -131,6 +131,11 @@ class participants_table extends \table_sql implements dynamic_table {
      * @var \stdClass[] Profile roles in this course.
      */
     protected $profileroles;
+
+    /**
+     * @var filterset Filterset describing which participants to include.
+     */
+    protected $filterset;
 
     /** @var \stdClass[] $viewableroles */
     private $viewableroles;
@@ -427,9 +432,9 @@ class participants_table extends \table_sql implements dynamic_table {
      */
     public function query_db($pagesize, $useinitialsbar = true) {
         list($twhere, $tparams) = $this->get_sql_where();
+        $psearch = new participants_search($this->filterset);
 
-        $total = user_get_total_participants($this->course->id, $this->currentgroup, $this->accesssince,
-            $this->roleid, $this->enrolid, $this->status, $this->search, $twhere, $tparams);
+        $total = $psearch->get_total_participants_count($twhere, $tparams);
 
         $this->pagesize($pagesize, $total);
 
@@ -438,9 +443,8 @@ class participants_table extends \table_sql implements dynamic_table {
             $sort = 'ORDER BY ' . $sort;
         }
 
-        $rawdata = user_get_participants($this->course->id, $this->currentgroup, $this->accesssince,
-            $this->roleid, $this->enrolid, $this->status, $this->search, $twhere, $tparams, $sort, $this->get_page_start(),
-            $this->get_page_size());
+        $rawdata = $psearch->get_participants($twhere, $tparams, $sort, $this->get_page_start(), $this->get_page_size());
+
         $this->rawdata = [];
         foreach ($rawdata as $user) {
             $this->rawdata[$user->id] = $user;
@@ -500,24 +504,24 @@ class participants_table extends \table_sql implements dynamic_table {
         $this->context = \context_course::instance($this->courseid, MUST_EXIST);
 
         // Process the filterset.
-        $this->currentgroup = null;
+        $this->currentgroups = [];
         if ($filterset->has_filter('groups')) {
-            $this->currentgroup = $filterset->get_filter('groups')->current();
+            $this->currentgroups = $filterset->get_filter('groups')->get_filter_values();
         }
 
-        $this->roleid = null;
+        $this->roleids = [];
         if ($filterset->has_filter('roles')) {
-            $this->roleid = $filterset->get_filter('roles')->current();
+            $this->roleids = $filterset->get_filter('roles')->get_filter_values();
         }
 
-        $this->enrolid = null;
+        $this->enrolids = [];
         if ($filterset->has_filter('enrolments')) {
-            $this->enrolid = $filterset->get_filter('enrolments')->current();
+            $this->enrolids = $filterset->get_filter('enrolments')->get_filter_values();
         }
 
-        $this->status = -1;
+        $this->statuses = [-1];
         if ($filterset->has_filter('status')) {
-            $this->status = $filterset->get_filter('status')->current();
+            $this->status = $filterset->get_filter('status')->get_filter_values();
         }
 
         $this->accesssince = null;
@@ -525,7 +529,7 @@ class participants_table extends \table_sql implements dynamic_table {
             $this->accesssince = $filterset->get_filter('accesssince')->current();
         }
 
-        $this->search = null;
+        $this->search = [];
         if ($filterset->has_filter('keywords')) {
             $this->search = $filterset->get_filter('keywords')->get_filter_values();
         }
