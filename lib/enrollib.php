@@ -1460,14 +1460,20 @@ function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, 
  * @param string $useridcolumn User id column used the calling query, e.g. u.id
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
+ * @param int|array $enrolids The enrolment IDs. If not 0 or [], only users enrolled using these enrolment methods will be returned.
  * @return \core\dml\sql_join Contains joins, wheres, params
  */
-function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolid = 0) {
+function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolids = []) {
+    global $DB;
+
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
     $i++;
     $prefix = 'ej' . $i . '_';
+
+    if (!is_array($enrolids)) {
+        $enrolids = $enrolids ? [$enrolids] : [];
+    }
 
     // First find the course context.
     $coursecontext = $context->get_course_context();
@@ -1492,14 +1498,18 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         $where1 = "{$prefix}ue.status = :{$prefix}active AND {$prefix}e.status = :{$prefix}enabled";
         $where2 = "{$prefix}ue.timestart < :{$prefix}now1 AND ({$prefix}ue.timeend = 0 OR {$prefix}ue.timeend > :{$prefix}now2)";
 
-        $enrolconditions = array(
+        $enrolconditions = [
             "{$prefix}e.id = {$prefix}ue.enrolid",
             "{$prefix}e.courseid = :{$prefix}courseid",
-        );
-        if ($enrolid) {
-            $enrolconditions[] = "{$prefix}e.id = :{$prefix}enrolid";
-            $params[$prefix . 'enrolid'] = $enrolid;
+        ];
+
+        // TODO: This only handly 'Any' (logical OR) of the provided enrol IDs, but not 'All' or 'None'.
+        if (!empty($enrolids)) {
+            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+            $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
+            $params = array_merge($params, $enrolidsparams);
         }
+
         $enrolconditionssql = implode(" AND ", $enrolconditions);
         $ejoin = "JOIN {enrol} {$prefix}e ON ($enrolconditionssql)";
 
@@ -1521,10 +1531,12 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
                 "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
             ];
 
-            if ($enrolid) {
-                $enrolconditions[] = "{$prefix}e1.id = :{$prefix}e1_enrolid";
-                $params[$prefix . 'e1_enrolid'] = $enrolid;
+            if (!empty($enrolids)) {
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+                $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
+                $params = array_merge($params, $enrolidsparams);
             }
+
             $enrolconditionssql = implode(" AND ", $enrolconditions);
             $joins[] = "JOIN {enrol} {$prefix}e1 ON ($enrolconditionssql)";
             $params["{$prefix}_e1_courseid"] = $coursecontext->instanceid;
