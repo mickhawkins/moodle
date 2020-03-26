@@ -1375,19 +1375,27 @@ function is_enrolled(context $context, $user = null, $withcapability = '', $only
  * @param string|array $capability optional, may include a capability name, or array of names.
  *      If an array is provided then this is the equivalent of a logical 'OR',
  *      i.e. the user needs to have one of these capabilities.
- * @param int $group optional, 0 indicates no current group and USERSWITHOUTGROUP users without any group; otherwise the group id
+ * @param array $groupids optional, [] indicates no current group and USERSWITHOUTGROUP users without any group; otherwise the group ids
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
+ * @param array $enrolids The enrolment IDs. If not empty, only users enrolled using these enrolment methods will be returned.
  * @return \core\dml\sql_join Contains joins, wheres, params
  */
-function get_enrolled_with_capabilities_join(context $context, $prefix = '', $capability = '', $group = 0,
-        $onlyactive = false, $onlysuspended = false, $enrolid = 0) {
+function get_enrolled_with_capabilities_join(context $context, $prefix = '', $capability = '', $groupids = [],
+        $onlyactive = false, $onlysuspended = false, $enrolids = []) {
     $uid = $prefix . 'u.id';
     $joins = array();
     $wheres = array();
 
-    $enrolledjoin = get_enrolled_join($context, $uid, $onlyactive, $onlysuspended, $enrolid);
+    if (!is_array($groupids)) {
+        $groupids = $groupids ? [$groupids] : [];
+    }
+
+    if (!is_array($enrolids)) {
+        $enrolids = $enrolids ? [$enrolids] : [];
+    }
+
+    $enrolledjoin = get_enrolled_join($context, $uid, $onlyactive, $onlysuspended, $enrolids);
     $joins[] = $enrolledjoin->joins;
     $wheres[] = $enrolledjoin->wheres;
     $params = $enrolledjoin->params;
@@ -1399,8 +1407,8 @@ function get_enrolled_with_capabilities_join(context $context, $prefix = '', $ca
         $params = array_merge($params, $capjoin->params);
     }
 
-    if ($group) {
-        $groupjoin = groups_get_members_join($group, $uid, $context);
+    if ($groupids) {
+        $groupjoin = groups_get_members_join($groupids, $uid, $context);
         $joins[] = $groupjoin->joins;
         $params = array_merge($params, $groupjoin->params);
         if (!empty($groupjoin->wheres)) {
@@ -1423,14 +1431,15 @@ function get_enrolled_with_capabilities_join(context $context, $prefix = '', $ca
  *
  * @param context $context
  * @param string $withcapability
- * @param int $groupid 0 means ignore groups, USERSWITHOUTGROUP without any group and any other value limits the result by group id
+ * @param array $groupids array of group IDs to limit results by
+ *              [] means ignore groups, USERSWITHOUTGROUP means include users with no group
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
+ * @param array $enrolids The enrolment IDs. If not empty, only users enrolled using these enrolment methods will be returned.
  * @return array list($sql, $params)
  */
-function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, $onlyactive = false, $onlysuspended = false,
-                          $enrolid = 0) {
+function get_enrolled_sql(context $context, $withcapability = '', $groupids = [], $onlyactive = false, $onlysuspended = false,
+                          $enrolids = []) {
 
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
@@ -1438,7 +1447,7 @@ function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, 
     $prefix = 'eu' . $i . '_';
 
     $capjoin = get_enrolled_with_capabilities_join(
-            $context, $prefix, $withcapability, $groupid, $onlyactive, $onlysuspended, $enrolid);
+            $context, $prefix, $withcapability, $groupids, $onlyactive, $onlysuspended, $enrolids);
 
     $sql = "SELECT DISTINCT {$prefix}u.id
               FROM {user} {$prefix}u
@@ -1460,14 +1469,20 @@ function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, 
  * @param string $useridcolumn User id column used the calling query, e.g. u.id
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
+ * @param int|array $enrolids The enrolment IDs. If not 0 or [], only users enrolled using these enrolment methods will be returned.
  * @return \core\dml\sql_join Contains joins, wheres, params
  */
-function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolid = 0) {
+function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolids = []) {
+    global $DB;
+
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
     $i++;
     $prefix = 'ej' . $i . '_';
+
+    if (!is_array($enrolids)) {
+        $enrolids = $enrolids ? [$enrolids] : [];
+    }
 
     // First find the course context.
     $coursecontext = $context->get_course_context();
@@ -1481,9 +1496,9 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         throw new coding_exception("onlysuspended is not supported on frontpage; please add your own early-exit!");
     }
 
-    $joins  = array();
-    $wheres = array();
-    $params = array();
+    $joins  = [];
+    $wheres = [];
+    $params = [];
 
     $wheres[] = "1 = 1"; // Prevent broken where clauses later on.
 
@@ -1492,14 +1507,18 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         $where1 = "{$prefix}ue.status = :{$prefix}active AND {$prefix}e.status = :{$prefix}enabled";
         $where2 = "{$prefix}ue.timestart < :{$prefix}now1 AND ({$prefix}ue.timeend = 0 OR {$prefix}ue.timeend > :{$prefix}now2)";
 
-        $enrolconditions = array(
+        $enrolconditions = [
             "{$prefix}e.id = {$prefix}ue.enrolid",
             "{$prefix}e.courseid = :{$prefix}courseid",
-        );
-        if ($enrolid) {
-            $enrolconditions[] = "{$prefix}e.id = :{$prefix}enrolid";
-            $params[$prefix . 'enrolid'] = $enrolid;
+        ];
+
+        // TODO: This only handly 'Any' (logical OR) of the provided enrol IDs, but not 'All' or 'None'.
+        if (!empty($enrolids)) {
+            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+            $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
+            $params = array_merge($params, $enrolidsparams);
         }
+
         $enrolconditionssql = implode(" AND ", $enrolconditions);
         $ejoin = "JOIN {enrol} {$prefix}e ON ($enrolconditionssql)";
 
@@ -1516,14 +1535,17 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             // Consider multiple enrols where one is not suspended or plain role_assign.
             $enrolselect = "SELECT DISTINCT {$prefix}ue.userid FROM {user_enrolments} {$prefix}ue $ejoin WHERE $where1 AND $where2";
             $joins[] = "JOIN {user_enrolments} {$prefix}ue1 ON {$prefix}ue1.userid = $useridcolumn";
-            $enrolconditions = array(
+            $enrolconditions = [
                 "{$prefix}e1.id = {$prefix}ue1.enrolid",
                 "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
-            );
-            if ($enrolid) {
-                $enrolconditions[] = "{$prefix}e1.id = :{$prefix}e1_enrolid";
-                $params[$prefix . 'e1_enrolid'] = $enrolid;
+            ];
+
+            if (!empty($enrolids)) {
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+                $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
+                $params = array_merge($params, $enrolidsparams);
             }
+
             $enrolconditionssql = implode(" AND ", $enrolconditions);
             $joins[] = "JOIN {enrol} {$prefix}e1 ON ($enrolconditionssql)";
             $params["{$prefix}_e1_courseid"] = $coursecontext->instanceid;
@@ -1532,9 +1554,10 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
 
         if ($onlyactive || $onlysuspended) {
             $now = round(time(), -2); // Rounding helps caching in DB.
-            $params = array_merge($params, array($prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
+            $params = array_merge($params, [
+                    $prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
                     $prefix . 'active' => ENROL_USER_ACTIVE,
-                    $prefix . 'now1' => $now, $prefix . 'now2' => $now));
+                    $prefix . 'now1' => $now, $prefix . 'now2' => $now]);
         }
     }
 
