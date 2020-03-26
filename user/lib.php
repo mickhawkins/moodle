@@ -1291,18 +1291,18 @@ function user_get_tagged_users($tag, $exclusivemode = false, $fromctx = 0, $ctx 
  * Returns the SQL used by the participants table.
  *
  * @param int $courseid The course id
- * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param array $groupids The groupids, [] means all groups and [USERSWITHOUTGROUP] no group
  * @param int $accesssince The time since last access, 0 means any time
- * @param int $roleid The role id, 0 means all roles and -1 no roles
- * @param int $enrolid The enrolment id, 0 means all enrolment methods will be returned.
- * @param int $statusid The user enrolment status, -1 means all enrolments regardless of the status will be returned, if allowed.
- * @param string|array $search The search that was performed, empty means perform no search
+ * @param array $roleids The role ids, [] means all roles and [-1] no roles
+ * @param array $enrolids The enrolment ids, [] means all enrolment methods will be returned
+ * @param array $statusids The user enrolment status IDs, [-1] means all enrolments regardless of the status will be returned, if allowed
+ * @param array $search The strings being searched, empty means perform no search
  * @param string $additionalwhere Any additional SQL to add to where
  * @param array $additionalparams The additional params
  * @return array
  */
-function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $roleid = 0, $enrolid = 0, $statusid = -1,
-                                   $search = '', $additionalwhere = '', $additionalparams = array()) {
+function user_get_participants_sql($courseid, $groupids = [], $accesssince = 0, $roleids = [], $enrolids = [],
+                                   $statusids = [-1], $search = [], $additionalwhere = '', $additionalparams = array()) {
     global $DB, $USER, $CFG;
 
     // Get the context.
@@ -1313,6 +1313,15 @@ function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $r
     // Default filter settings. We only show active by default, especially if the user has no capability to review enrolments.
     $onlyactive = true;
     $onlysuspended = false;
+
+    // TEMP: Treat including both status IDs as not filtering by status.
+    // TODO - Handle this more completely.
+    if (count($statusids) > 1) {
+        $statusid = -1;
+    } else {
+        $statusid = $statusids[0];
+    }
+
     if (has_capability('moodle/course:enrolreview', $context) && (has_capability('moodle/course:viewsuspendedusers', $context))) {
         switch ($statusid) {
             case ENROL_USER_ACTIVE:
@@ -1329,7 +1338,8 @@ function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $r
         }
     }
 
-    list($esql, $params) = get_enrolled_sql($context, null, $groupid, $onlyactive, $onlysuspended, $enrolid);
+    //TODO: This format currently only supports a single status.
+    list($esql, $params) = get_enrolled_sql($context, null, $groupids, $onlyactive, $onlysuspended, $enrolids);
 
     $joins = array('FROM {user} u');
     $wheres = array();
@@ -1362,19 +1372,35 @@ function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $r
     $joins[] = $ccjoin;
 
     // Limit list to users with some role only.
-    if ($roleid) {
+    if (!empty($roleids)) {
         // We want to query both the current context and parent contexts.
-        list($relatedctxsql, $relatedctxparams) = $DB->get_in_or_equal($context->get_parent_context_ids(true),
-            SQL_PARAMS_NAMED, 'relatedctx');
+        $rolecontextids = $context->get_parent_context_ids(true);
+        $roleswhere = '';
 
-        // Get users without any role.
-        if ($roleid == -1) {
-            $wheres[] = "u.id NOT IN (SELECT userid FROM {role_assignments} WHERE contextid $relatedctxsql)";
-            $params = array_merge($params, $relatedctxparams);
-        } else {
-            $wheres[] = "u.id IN (SELECT userid FROM {role_assignments} WHERE roleid = :roleid AND contextid $relatedctxsql)";
-            $params = array_merge($params, array('roleid' => $roleid), $relatedctxparams);
+        // Get users without any role, if needed.
+        if (($withoutkey = array_search(-1, $roleids)) !== false) {
+            list($relatedctxsql1, $relatedctxparams1) = $DB->get_in_or_equal($rolecontextids, SQL_PARAMS_NAMED, 'relatedctx1');
+
+            $roleswhere .= "(u.id NOT IN (SELECT userid FROM {role_assignments} WHERE contextid {$relatedctxsql1}))";
+            $params = array_merge($params, $relatedctxparams1);
+            unset($roleids[$withoutkey]);
+
+            if (!empty($roleids)) {
+                // Currently only handle 'Any' (logical OR) case within filters. This can be extended to support 'All'/'None' later.
+                $roleswhere .= ' OR ';
+            }
         }
+
+        // Get users with specified roles, if needed.
+        if (!empty($roleids)) {
+            list($relatedctxsql2, $relatedctxparams2) = $DB->get_in_or_equal($rolecontextids, SQL_PARAMS_NAMED, 'relatedctx2');
+            list($roleidssql, $roleidsparams) = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED);
+
+            $roleswhere .= "(u.id IN (SELECT userid FROM {role_assignments} WHERE roleid {$roleidssql} AND contextid {$relatedctxsql2}))";
+            $params = array_merge($params, $roleidsparams, $relatedctxparams2);
+        }
+
+        $wheres[] = "({$roleswhere})";
     }
 
     if (!empty($search)) {
@@ -1477,7 +1503,7 @@ function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $r
 
     $from = implode("\n", $joins);
     if ($wheres) {
-        $where = 'WHERE ' . implode(' AND ', $wheres);
+        $where = 'WHERE ' . implode(' AND ', $wheres); //TODO AND/OR
     } else {
         $where = '';
     }
@@ -1489,22 +1515,22 @@ function user_get_participants_sql($courseid, $groupid = 0, $accesssince = 0, $r
  * Returns the total number of participants for a given course.
  *
  * @param int $courseid The course id
- * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param array $groupids The array of groupids, [] means all groups and USERSWITHOUTGROUP no group
  * @param int $accesssince The time since last access, 0 means any time
- * @param int $roleid The role id, 0 means all roles
- * @param int $enrolid The applied filter for the user enrolment ID.
- * @param int $status The applied filter for the user's enrolment status.
- * @param string|array $search The search that was performed, empty means perform no search
+ * @param array $roleids The role ids, [] means all roles
+ * @param int $enrolids The applied filter for the user enrolment IDs, [] means all enrolment methods
+ * @param int $statusids The applied filter for the user's enrolment status
+ * @param array $search The text search that was performed, empty means perform no search
  * @param string $additionalwhere Any additional SQL to add to where
  * @param array $additionalparams The additional params
  * @return int
  */
-function user_get_total_participants($courseid, $groupid = 0, $accesssince = 0, $roleid = 0, $enrolid = 0, $statusid = -1,
-                                     $search = '', $additionalwhere = '', $additionalparams = array()) {
+function user_get_total_participants($courseid, $groupids = [], $accesssince = 0, $roleids = [], $enrolids = [], $statusids = [-1],
+                                     $search = [], $additionalwhere = '', $additionalparams = array()) {
     global $DB;
 
-    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupid, $accesssince, $roleid, $enrolid,
-        $statusid, $search, $additionalwhere, $additionalparams);
+    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupids, $accesssince, $roleids, $enrolids,
+        $statusids, $search, $additionalwhere, $additionalparams);
 
     return $DB->count_records_sql("SELECT COUNT(u.id) $from $where", $params);
 }
@@ -1513,12 +1539,12 @@ function user_get_total_participants($courseid, $groupid = 0, $accesssince = 0, 
  * Returns the participants for a given course.
  *
  * @param int $courseid The course id
- * @param int $groupid The groupid, 0 means all groups and USERSWITHOUTGROUP no group
+ * @param array $groupids The groupids, [0] means all groups and USERSWITHOUTGROUP no group
  * @param int $accesssince The time since last access
- * @param int $roleid The role id
- * @param int $enrolid The applied filter for the user enrolment ID.
- * @param int $status The applied filter for the user's enrolment status.
- * @param string $search The search that was performed
+ * @param array $roleids The role ids
+ * @param array $enrolids The applied filter for the user enrolment IDs
+ * @param array $statusids The applied filter for the users' possible enrolment statuses
+ * @param array $search The strings being searched
  * @param string $additionalwhere Any additional SQL to add to where
  * @param array $additionalparams The additional params
  * @param string $sort The SQL sort
@@ -1526,12 +1552,12 @@ function user_get_total_participants($courseid, $groupid = 0, $accesssince = 0, 
  * @param int $limitnum return a subset comprising this many records (optional, required if $limitfrom is set).
  * @return moodle_recordset
  */
-function user_get_participants($courseid, $groupid = 0, $accesssince, $roleid, $enrolid = 0, $statusid, $search,
-                               $additionalwhere = '', $additionalparams = array(), $sort = '', $limitfrom = 0, $limitnum = 0) {
+function user_get_participants($courseid, $groupids = [0], $accesssince, $roleids, $enrolids = [0], $statusids, $search,
+                               $additionalwhere = '', $additionalparams = [], $sort = '', $limitfrom = 0, $limitnum = 0) {
     global $DB;
 
-    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupid, $accesssince, $roleid, $enrolid,
-        $statusid, $search, $additionalwhere, $additionalparams);
+    list($select, $from, $where, $params) = user_get_participants_sql($courseid, $groupids, $accesssince, $roleids, $enrolids,
+        $statusids, $search, $additionalwhere, $additionalparams);
 
     return $DB->get_recordset_sql("$select $from $where $sort", $params, $limitfrom, $limitnum);
 }
