@@ -906,7 +906,7 @@ class core_userliblib_testcase extends advanced_testcase {
 
         // Now, when we perform the following search we should only return 1 user. A student who belongs to
         // the group and has the name 'searchforthis' and has also accessed the course in the last day.
-        $count = user_get_total_participants($course->id, $group->id, $accesssince + 1, $roleids['student'], 0, -1,
+        $count = user_get_total_participants($course->id, [$group->id], $accesssince + 1, [$roleids['student']], [], [-1],
             'searchforthis');
 
         $this->assertEquals(1, $count);
@@ -937,7 +937,7 @@ class core_userliblib_testcase extends advanced_testcase {
 
         // Now, when we perform the following search we should only return 2 users. Users who belong to
         // the group and have the name 'searchforthis' and have also accessed the site in the last day.
-        $count = user_get_total_participants(SITEID, $group->id, $accesssince + 1, 0, 0, -1, 'searchforthis');
+        $count = user_get_total_participants(SITEID, [$group->id], $accesssince + 1, [], [], [-1], 'searchforthis');
 
         $this->assertEquals(2, $count);
     }
@@ -995,13 +995,13 @@ class core_userliblib_testcase extends advanced_testcase {
 
         // Now, when we perform the following search we should only return 1 user. A student who belongs to
         // the group and has the name 'searchforthis' and has also accessed the course in the last day.
-        $userset = user_get_participants($course->id, $group->id, $accesssince + 1, $roleids['student'], 0, -1, 'searchforthis');
+        $userset = user_get_participants($course->id, [$group->id], $accesssince + 1, [$roleids['student']], [], [-1], 'searchforthis');
 
         $this->assertEquals($student1->id, $userset->current()->id);
         $this->assertEquals(1, iterator_count($userset));
 
         // Search for users without any group.
-        $userset = user_get_participants($course->id, USERSWITHOUTGROUP, 0, $roleids['student'], 0, -1, '');
+        $userset = user_get_participants($course->id, [USERSWITHOUTGROUP], 0, [$roleids['student']], [], [-1], '');
 
         $this->assertEquals($student3->id, $userset->current()->id);
         $this->assertEquals(1, iterator_count($userset));
@@ -1023,7 +1023,7 @@ class core_userliblib_testcase extends advanced_testcase {
         $user4 = self::getDataGenerator()->create_user(['firstname' => 'searchforthis', 'lastaccess' => $accesssince]);
 
         // Create a group.
-        $group = self::getDataGenerator()->create_group(array('courseid' => SITEID));
+        $group = self::getDataGenerator()->create_group(['courseid' => SITEID]);
 
         // Add 3 of the users to a group.
         groups_add_member($group->id, $user1->id);
@@ -1032,7 +1032,7 @@ class core_userliblib_testcase extends advanced_testcase {
 
         // Now, when we perform the following search we should only return 2 users. Users who belong to
         // the group and have the name 'searchforthis' and have also accessed the site in the last day.
-        $userset = user_get_participants(SITEID, $group->id, $accesssince + 1, 0, 0, -1, 'searchforthis', '', array(),
+        $userset = user_get_participants(SITEID, [$group->id], $accesssince + 1, [], [], [-1], 'searchforthis', '', [],
             'ORDER BY id ASC');
 
         $this->assertEquals($user1->id, $userset->current()->id);
