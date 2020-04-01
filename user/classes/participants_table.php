@@ -132,6 +132,11 @@ class participants_table extends \table_sql implements dynamic_table {
      */
     protected $profileroles;
 
+    /**
+     * @var filterset Filterset describing which participants to include.
+     */
+    protected $filterset;
+
     /** @var \stdClass[] $viewableroles */
     private $viewableroles;
 
@@ -424,9 +429,9 @@ class participants_table extends \table_sql implements dynamic_table {
      */
     public function query_db($pagesize, $useinitialsbar = true) {
         list($twhere, $tparams) = $this->get_sql_where();
+        $psearch = new participants_search($this->filterset);
 
-        $total = user_get_total_participants($this->course->id, $this->currentgroups, $this->accesssince,
-            $this->roleids, $this->enrolids, $this->statuses, $this->search, $twhere, $tparams);
+        $total = $psearch->get_total_participants_count($twhere, $tparams);
 
         $this->pagesize($pagesize, $total);
 
@@ -435,9 +440,8 @@ class participants_table extends \table_sql implements dynamic_table {
             $sort = 'ORDER BY ' . $sort;
         }
 
-        $rawdata = user_get_participants($this->course->id, $this->currentgroups, $this->accesssince,
-            $this->roleids, $this->enrolids, $this->statuses, $this->search, $twhere, $tparams, $sort, $this->get_page_start(),
-            $this->get_page_size());
+        $rawdata = $psearch->get_participants($twhere, $tparams, $sort, $this->get_page_start(), $this->get_page_size());
+
         $this->rawdata = [];
         foreach ($rawdata as $user) {
             $this->rawdata[$user->id] = $user;
