@@ -1441,6 +1441,9 @@ function get_enrolled_with_capabilities_join(context $context, $prefix = '', $ca
 function get_enrolled_sql(context $context, $withcapability = '', $groupids = [], $onlyactive = false, $onlysuspended = false,
                           $enrolids = []) {
 
+    //TODO: This is no longer used by participants_search, so can be returned to accepting single values,
+    //      once lib.php user_get_participants_sql is rolled back.
+
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
     $i++;

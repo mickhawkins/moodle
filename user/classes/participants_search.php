@@ -127,44 +127,11 @@ class participants_search {
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
         $isfrontpage = ($this->courseid == SITEID);
         $accesssince = $this->filterset->has_filter('accesssince') ? $this->filterset->get_filter('accesssince')->current() : 0;
-        $enrolids = $this->filterset->has_filter('enrolments') ? $this->filterset->get_filter('enrolments')->get_filter_values() : [];
-        $groupids = $this->filterset->has_filter('groups') ? $this->filterset->get_filter('groups')->get_filter_values() : [];
 
-        // Default status filter settings. We only show active by default, especially if the user has no capability to review enrolments.
-        // TODO: This needs to be re-evaluated along with get_enrolled_sql, so that multiple are supported, rather than passing them in separately.
-        $onlyactive = true;
-        $onlysuspended = false;
-
-        if (has_capability('moodle/course:enrolreview', $this->context) &&
-                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
-
-            $statusids = $this->filterset->has_filter('status') ? $this->filterset->get_filter('status')->get_filter_values() : [-1];
-
-            // TEMP: Treat including both status IDs as not filtering by status.
-            // TODO - Handle this more completely.
-            if (count($statusids) > 1) {
-                $statusid = -1;
-            } else {
-                $statusid = $statusids[0];
-            }
-
-            switch ($statusid) {
-                case ENROL_USER_ACTIVE:
-                    // Nothing to do here.
-                    break;
-                case ENROL_USER_SUSPENDED:
-                    $onlyactive = false;
-                    $onlysuspended = true;
-                    break;
-                default:
-                    // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
-                    $onlyactive = false;
-                    break;
-            }
-        }
-
-        //TODO: This format currently only supports a single status.
-        list($esql, $params) = get_enrolled_sql($this->context, null, $groupids, $onlyactive, $onlysuspended, $enrolids);
+        [
+            'sql' => $esql,
+            'params' => $params,
+        ] = $this->get_enrolled_sql();
 
         $joins = ['FROM {user} u'];
         $wheres = [];
@@ -246,6 +213,62 @@ class participants_search {
             'from' => $from,
             'where' => $where,
             'params' => $params,
+        ];
+    }
+
+    /**
+     * Prepare SQL and associated parameters for users enrolled in the course.
+     *
+     * @return array SQL query data in the format ['sql' => '', 'params' => []].
+     */
+    protected function get_enrolled_sql() {
+        // Default status filter settings. We only show active by default, especially if the user has no capability to review enrolments.
+        $onlyactive = true;
+        $onlysuspended = false;
+
+        $enrolids = $this->filterset->has_filter('enrolments') ? $this->filterset->get_filter('enrolments')->get_filter_values() : [];
+        $groupids = $this->filterset->has_filter('groups') ? $this->filterset->get_filter('groups')->get_filter_values() : [];
+
+        if (has_capability('moodle/course:enrolreview', $this->context) &&
+                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
+
+            $statusids = $this->filterset->has_filter('status') ? $this->filterset->get_filter('status')->get_filter_values() : [-1];
+
+            // If both status IDs are selected, treat it as not filtering by status.
+            // TODO - This will only work in the 'Any' case. 'All' and 'Not' cases require the related methods to be refactored.
+            if (count($statusids) > 1) {
+                $statusid = -1;
+            } else {
+                $statusid = $statusids[0];
+            }
+
+            switch ($statusid) {
+                case ENROL_USER_ACTIVE:
+                    // Nothing to do here.
+                    break;
+                case ENROL_USER_SUSPENDED:
+                    $onlyactive = false;
+                    $onlysuspended = true;
+                    break;
+                default:
+                    // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
+                    $onlyactive = false;
+                    break;
+            }
+        }
+
+        $prefix = 'eu_';
+        $capjoin = get_enrolled_with_capabilities_join(
+                $this->context, $prefix, null, $groupids, $onlyactive, $onlysuspended, $enrolids);
+
+        $sql = "SELECT DISTINCT {$prefix}u.id
+                  FROM {user} {$prefix}u
+                       {$capjoin->joins}
+                 WHERE {$capjoin->wheres}";
+
+        return [
+            'sql' => $sql,
+            'params' => $capjoin->params,
         ];
     }
 
