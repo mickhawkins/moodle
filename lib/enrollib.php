@@ -1375,27 +1375,19 @@ function is_enrolled(context $context, $user = null, $withcapability = '', $only
  * @param string|array $capability optional, may include a capability name, or array of names.
  *      If an array is provided then this is the equivalent of a logical 'OR',
  *      i.e. the user needs to have one of these capabilities.
- * @param array $groupids optional, [] indicates no current group and USERSWITHOUTGROUP users without any group; otherwise the group ids
+ * @param int $group optional, 0 indicates no current group and USERSWITHOUTGROUP users without any group; otherwise the group id
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param array $enrolids The enrolment IDs. If not empty, only users enrolled using these enrolment methods will be returned.
+ * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
  * @return \core\dml\sql_join Contains joins, wheres, params
  */
-function get_enrolled_with_capabilities_join(context $context, $prefix = '', $capability = '', $groupids = [],
-        $onlyactive = false, $onlysuspended = false, $enrolids = []) {
+function get_enrolled_with_capabilities_join(context $context, $prefix = '', $capability = '', $group = 0,
+        $onlyactive = false, $onlysuspended = false, $enrolid = 0) {
     $uid = $prefix . 'u.id';
     $joins = array();
     $wheres = array();
 
-    if (!is_array($groupids)) {
-        $groupids = $groupids ? [$groupids] : [];
-    }
-
-    if (!is_array($enrolids)) {
-        $enrolids = $enrolids ? [$enrolids] : [];
-    }
-
-    $enrolledjoin = get_enrolled_join($context, $uid, $onlyactive, $onlysuspended, $enrolids);
+    $enrolledjoin = get_enrolled_join($context, $uid, $onlyactive, $onlysuspended, $enrolid);
     $joins[] = $enrolledjoin->joins;
     $wheres[] = $enrolledjoin->wheres;
     $params = $enrolledjoin->params;
@@ -1407,8 +1399,8 @@ function get_enrolled_with_capabilities_join(context $context, $prefix = '', $ca
         $params = array_merge($params, $capjoin->params);
     }
 
-    if ($groupids) {
-        $groupjoin = groups_get_members_join($groupids, $uid, $context);
+    if ($group) {
+        $groupjoin = groups_get_members_join($group, $uid, $context);
         $joins[] = $groupjoin->joins;
         $params = array_merge($params, $groupjoin->params);
         if (!empty($groupjoin->wheres)) {
@@ -1431,18 +1423,14 @@ function get_enrolled_with_capabilities_join(context $context, $prefix = '', $ca
  *
  * @param context $context
  * @param string $withcapability
- * @param array $groupids array of group IDs to limit results by
- *              [] means ignore groups, USERSWITHOUTGROUP means include users with no group
+ * @param int $groupid 0 means ignore groups, USERSWITHOUTGROUP without any group and any other value limits the result by group id
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param array $enrolids The enrolment IDs. If not empty, only users enrolled using these enrolment methods will be returned.
+ * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
  * @return array list($sql, $params)
  */
-function get_enrolled_sql(context $context, $withcapability = '', $groupids = [], $onlyactive = false, $onlysuspended = false,
-                          $enrolids = []) {
-
-    //TODO: This is no longer used by participants_search, so can be returned to accepting single values,
-    //      once lib.php user_get_participants_sql is rolled back.
+function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, $onlyactive = false, $onlysuspended = false,
+                          $enrolid = 0) {
 
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
@@ -1450,7 +1438,7 @@ function get_enrolled_sql(context $context, $withcapability = '', $groupids = []
     $prefix = 'eu' . $i . '_';
 
     $capjoin = get_enrolled_with_capabilities_join(
-            $context, $prefix, $withcapability, $groupids, $onlyactive, $onlysuspended, $enrolids);
+            $context, $prefix, $withcapability, $groupid, $onlyactive, $onlysuspended, $enrolid);
 
     $sql = "SELECT DISTINCT {$prefix}u.id
               FROM {user} {$prefix}u
