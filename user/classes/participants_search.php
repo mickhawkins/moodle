@@ -229,13 +229,18 @@ class participants_search {
         $enrolids = $this->filterset->has_filter('enrolments') ? $this->filterset->get_filter('enrolments')->get_filter_values() : [];
         $groupids = $this->filterset->has_filter('groups') ? $this->filterset->get_filter('groups')->get_filter_values() : [];
 
+        $prefix = 'eu_';
+        $uid = "{$prefix}u.id";
+        $joins = [];
+        $wheres = [];
+
+        // Set enrolment types.
         if (has_capability('moodle/course:enrolreview', $this->context) &&
                 (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
 
             $statusids = $this->filterset->has_filter('status') ? $this->filterset->get_filter('status')->get_filter_values() : [-1];
 
             // If both status IDs are selected, treat it as not filtering by status.
-            // TODO - This will only work in the 'Any' case. 'All' and 'Not' cases require the related methods to be refactored.
             if (count($statusids) > 1) {
                 $statusid = -1;
             } else {
@@ -257,18 +262,36 @@ class participants_search {
             }
         }
 
-        $prefix = 'eu_';
-        $capjoin = get_enrolled_with_capabilities_join(
-                $this->context, $prefix, null, $groupids, $onlyactive, $onlysuspended, $enrolids);
+        // Prepare enrolment type filtering.
+        // This will need to use a custom method or new function when 'All'/'Not' cases are introduced,
+        // to avoid the separate passing in of status values ($onlyactive and $onlysuspended).
+        $enrolledjoin = get_enrolled_join($this->context, $uid, $onlyactive, $onlysuspended, $enrolids);
+        $joins[] = $enrolledjoin->joins;
+        $wheres[] = $enrolledjoin->wheres;
+        $params = $enrolledjoin->params;
+
+        // Prepare any groups filtering.
+        if ($groupids) {
+            $groupjoin = groups_get_members_join($groupids, $uid, $this->context);
+            $joins[] = $groupjoin->joins;
+            $params = array_merge($params, $groupjoin->params);
+            if (!empty($groupjoin->wheres)) {
+                $wheres[] = $groupjoin->wheres;
+            }
+        }
+
+        $joinsql = implode("\n", $joins);
+        $wheres[] = "{$prefix}u.deleted = 0";
+        $wheresql = implode(" AND ", $wheres);
 
         $sql = "SELECT DISTINCT {$prefix}u.id
                   FROM {user} {$prefix}u
-                       {$capjoin->joins}
-                 WHERE {$capjoin->wheres}";
+                       {$joinsql}
+                 WHERE {$wheresql}";
 
         return [
             'sql' => $sql,
-            'params' => $capjoin->params,
+            'params' => $params,
         ];
     }
 
@@ -300,7 +323,7 @@ class participants_search {
 
                 if (!empty($roleids)) {
                     // Currently only handle 'Any' (logical OR) case within filters.
-                    // This needs to be extended to support 'All'/'None' later.
+                    // This will need to be extended to support 'All'/'None'.
                     $where .= ' OR ';
                 }
             }
