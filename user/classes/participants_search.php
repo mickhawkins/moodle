@@ -126,7 +126,18 @@ class participants_search {
      */
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
         $isfrontpage = ($this->courseid == SITEID);
-        $accesssince = $this->filterset->has_filter('accesssince') ? $this->filterset->get_filter('accesssince')->current() : 0;
+        $accesssince = 0;
+        // Whether to match on users who HAVE accessed since the given time (ie false is 'inactive for more than x').
+        $matchaccesssince = false;
+
+        if ($this->filterset->has_filter('accesssince')) {
+            $accesssince = $this->filterset->get_filter('accesssince')->current();
+
+            // Last access filtering only supports matching or not matching, not any/all/none.
+            if ($this->filterset->get_filter('accesssince')->get_join_type() === $this->filterset->get_filter('accesssince')::JOINTYPE_NONE) {
+                $matchaccesssince = true;
+            }
+        }
 
         [
             'sql' => $esql,
@@ -142,7 +153,7 @@ class participants_search {
             $select = "SELECT $userfieldssql, u.lastaccess";
             $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Everybody on the frontpage usually.
             if ($accesssince) {
-                $wheres[] = user_get_user_lastaccess_sql($accesssince);
+                $wheres[] = user_get_user_lastaccess_sql($accesssince, 'u', $matchaccesssince);
             }
         } else {
             $select = "SELECT $userfieldssql, COALESCE(ul.timeaccess, 0) AS lastaccess";
@@ -151,7 +162,7 @@ class participants_search {
             $joins[] = 'LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = :courseid)';
             $params['courseid'] = $this->courseid;
             if ($accesssince) {
-                $wheres[] = user_get_course_lastaccess_sql($accesssince);
+                $wheres[] = user_get_course_lastaccess_sql($accesssince, 'ul', $matchaccesssince);
             }
         }
 
@@ -181,12 +192,12 @@ class participants_search {
         // Apply any keyword text searches.
         if ($this->filterset->has_filter('keywords')) {
             [
-                'wheres' => $keywordswheres,
+                'where' => $keywordswhere,
                 'params' => $keywordsparams,
             ] = $this->get_keywords_search_sql();
 
-            if (!empty($keywordswheres)) {
-                $wheres = array_merge($wheres, $keywordswheres);
+            if (!empty($keywordswhere)) {
+                $wheres[] = $keywordswhere;
             }
 
             if (!empty($keywordsparams)) {
@@ -432,19 +443,37 @@ class participants_search {
     }
 
     /**
-     * Prepare SQL where clauses and associated parameters for any keyword searches being performed.
+     * Prepare SQL where clause and associated parameters for any keyword searches being performed.
      *
-     * @return array SQL query data in the format ['wheres' => [], 'params' => []].
+     * @return array SQL query data in the format ['where' => '', 'params' => []].
      */
     protected function get_keywords_search_sql(): array {
         global $CFG, $DB, $USER;
 
         $keywords = [];
-        $wheres = [];
+        $where = '';
         $params = [];
+        $keywordsfilter = $this->filterset->get_filter('keywords');
+        $jointype = $keywordsfilter->get_join_type();
+        $notjoin = false;
+
+        // Determine how to match values in the query.
+        switch ($jointype) {
+            case $keywordsfilter::JOINTYPE_ALL:
+                $wherejoin = ' AND ';
+                break;
+            case $keywordsfilter::JOINTYPE_NONE:
+                $wherejoin = ' AND NOT ';
+                $notjoin = true;
+                break;
+            default:
+                // Default to 'Any' jointype.
+                $wherejoin = ' OR ';
+                break;
+        }
 
         if ($this->filterset->has_filter('keywords')) {
-            $keywords = $this->filterset->get_filter('keywords')->get_filter_values();
+            $keywords = $keywordsfilter->get_filter_values();
         }
 
         foreach ($keywords as $index => $keyword) {
@@ -463,6 +492,11 @@ class participants_search {
 
             // Search by email.
             $email = $DB->sql_like('email', ':' . $searchkey2, false, false);
+
+            if ($notjoin) {
+                $email = "(email IS NOT NULL AND {$email})";
+            }
+
             if (!in_array('email', $this->userfields)) {
                 $maildisplay = 'maildisplay' . $index;
                 $userid1 = 'userid' . $index . '1';
@@ -470,15 +504,21 @@ class participants_search {
                 // who aren't allowed to see hidden email addresses.
                 $email = "(". $email ." AND (" .
                         "u.maildisplay <> :$maildisplay " .
-                        "OR u.id = :$userid1". // User can always find himself.
+                        "OR u.id = :$userid1". // Users can always find themselves.
                         "))";
                 $params[$maildisplay] = core_user::MAILDISPLAY_HIDE;
                 $params[$userid1] = $USER->id;
             }
+
             $conditions[] = $email;
 
             // Search by idnumber.
             $idnumber = $DB->sql_like('idnumber', ':' . $searchkey3, false, false);
+
+            if ($notjoin) {
+                $idnumber = "(idnumber IS NOT NULL AND  {$idnumber})";
+            }
+
             if (!in_array('idnumber', $this->userfields)) {
                 $userid2 = 'userid' . $index . '2';
                 // Users who aren't allowed to see idnumbers should at most find themselves
@@ -486,6 +526,7 @@ class participants_search {
                 $idnumber = "(". $idnumber . " AND u.id = :$userid2)";
                 $params[$userid2] = $USER->id;
             }
+
             $conditions[] = $idnumber;
 
             if (!empty($CFG->showuseridentity)) {
@@ -499,6 +540,11 @@ class participants_search {
                     $param = $searchkey3 . $extrasearchfield;
                     $condition = $DB->sql_like($extrasearchfield, ':' . $param, false, false);
                     $params[$param] = "%$keyword%";
+
+                    if ($notjoin) {
+                        $condition = "($extrasearchfield IS NOT NULL AND {$condition})";
+                    }
+
                     if (!in_array($extrasearchfield, $this->userfields)) {
                         // User cannot see this field, but allow match if their own account.
                         $userid3 = 'userid' . $index . '3' . $extrasearchfield;
@@ -511,21 +557,48 @@ class participants_search {
 
             // Search by middlename.
             $middlename = $DB->sql_like('middlename', ':' . $searchkey4, false, false);
+
+            if ($notjoin) {
+                $middlename = "(middlename IS NOT NULL AND {$middlename})";
+            }
+
             $conditions[] = $middlename;
 
             // Search by alternatename.
             $alternatename = $DB->sql_like('alternatename', ':' . $searchkey5, false, false);
+
+            if ($notjoin) {
+                $alternatename = "(middlename IS NOT NULL AND {$alternatename})";
+            }
+
             $conditions[] = $alternatename;
 
             // Search by firstnamephonetic.
             $firstnamephonetic = $DB->sql_like('firstnamephonetic', ':' . $searchkey6, false, false);
+
+            if ($notjoin) {
+                $firstnamephonetic = "(middlename IS NOT NULL AND {$firstnamephonetic})";
+            }
+
             $conditions[] = $firstnamephonetic;
 
             // Search by lastnamephonetic.
             $lastnamephonetic = $DB->sql_like('lastnamephonetic', ':' . $searchkey7, false, false);
+
+            if ($notjoin) {
+                $lastnamephonetic = "(middlename IS NOT NULL AND {$lastnamephonetic})";
+            }
+
             $conditions[] = $lastnamephonetic;
 
-            $wheres[] = "(". implode(" OR ", $conditions) .") ";
+            if (!empty($where)) {
+                $where .= $wherejoin;
+            } else if ($jointype === $keywordsfilter::JOINTYPE_NONE) {
+                // 'None' requires the WHERE to begin with NOT.
+                $where .= ' NOT ';
+            }
+
+            $where .= "(". implode(" OR ", $conditions) .") ";
             $params[$searchkey1] = "%$keyword%";
             $params[$searchkey2] = "%$keyword%";
             $params[$searchkey3] = "%$keyword%";
@@ -536,7 +609,7 @@ class participants_search {
         }
 
         return [
-            'wheres' => $wheres,
+            'where' => $where,
             'params' => $params,
         ];
     }
