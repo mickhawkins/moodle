@@ -268,6 +268,16 @@ export const init = participantsRegionId => {
                 }
             });
         });
+
+        // Configure the state of the "Add row" button.
+        // This button is disabled when there is a filter row available for each condition.
+        const addRowButton = filterSet.querySelector(Selectors.filterset.actions.addRow);
+        const filterDataNode = filterSet.querySelectorAll(Selectors.data.fields.all);
+        if (filterDataNode.length <= filters.length) {
+            addRowButton.setAttribute('disabled', 'disabled');
+        } else {
+            addRowButton.removeAttribute('disabled');
+        }
     };
 
     /**
