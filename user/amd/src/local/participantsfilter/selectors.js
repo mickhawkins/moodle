@@ -56,6 +56,7 @@ export default {
     data: {
         fields: {
             byName: name => `[data-field-name="${name}"]`,
+            all: `${getFilterRegion('filtertypedata')} [data-field-name]`,
         },
         typeList: getFilterRegion('filtertypelist'),
     },
