@@ -278,6 +278,12 @@ export const init = participantsRegionId => {
         } else {
             addRowButton.removeAttribute('disabled');
         }
+
+        if (filters.length === 1) {
+            filterSet.querySelector(Selectors.filterset.regions.filtermatch).classList.add('hidden');
+        } else {
+            filterSet.querySelector(Selectors.filterset.regions.filtermatch).classList.remove('hidden');
+        }
     };
 
     /**
@@ -286,14 +292,11 @@ export const init = participantsRegionId => {
      * @return {Promise}
      */
     const updateTableFromFilter = () => {
-        // TODO The main join type does not exist yet.
-        const joinType = 1;
-
         return DynamicTable.setFilters(
             DynamicTable.getTableFromId(filterSet.dataset.tableRegion),
             {
                 filters: Object.values(activeFilters).map(filter => filter.filterValue),
-                jointype: joinType,
+                jointype: filterSet.querySelector(Selectors.filterset.fields.join).value,
             }
         );
     };
@@ -336,5 +339,9 @@ export const init = participantsRegionId => {
 
             addFilter(filter, typeField.value);
         }
+    });
+
+    filterSet.querySelector(Selectors.filterset.fields.join).addEventListener('change', e => {
+        filterSet.dataset.filterverb = e.target.value;
     });
 };
