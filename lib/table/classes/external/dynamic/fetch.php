@@ -215,6 +215,7 @@ class fetch extends external_api {
         }
 
         $filterset = new $filtersetclass();
+        $filterset->set_join_type($jointype);
         foreach ($filters as $rawfilter) {
             $filterset->add_filter_from_params(
                 $rawfilter['name'],

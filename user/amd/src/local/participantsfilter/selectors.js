@@ -49,8 +49,12 @@ export default {
             resetFilters: getFilterAction('reset'),
         },
         regions: {
+            filtermatch: getFilterRegion('filtermatch'),
             filterlist: getFilterRegion('filters'),
             datasource: getFilterRegion('filtertypedata'),
+        },
+        fields: {
+            join: `${getFilterRegion('filtermatch')} ${getFilterField('join')}`,
         },
     },
     data: {
