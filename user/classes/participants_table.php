@@ -53,36 +53,6 @@ class participants_table extends \table_sql implements dynamic_table {
     protected $courseid;
 
     /**
-     * @var int[]|false False if groups not used, array of integers if groups used, [0] for all groups.
-     */
-    protected $currentgroups;
-
-    /**
-     * @var int $accesssince The time the user last accessed the site
-     */
-    protected $accesssince;
-
-    /**
-     * @var int[] $roleids The applied filter for user roles, [0] means all enrolled users.
-     */
-    protected $roleids;
-
-    /**
-     * @var int[] $enrolids The applied filter for user enrolment IDs.
-     */
-    protected $enrolids;
-
-    /**
-     * @var int $statuses The applied filter for users' enrolment statuses.
-     */
-    protected $statuses;
-
-    /**
-     * @var string $search The strings being searched.
-     */
-    protected $search;
-
-    /**
      * @var bool $selectall Has the user selected all users on the page?
      */
     protected $selectall;
@@ -502,37 +472,6 @@ class participants_table extends \table_sql implements dynamic_table {
         $this->courseid = $filterset->get_filter('courseid')->current();
         $this->course = get_course($this->courseid);
         $this->context = \context_course::instance($this->courseid, MUST_EXIST);
-
-        // Process the filterset.
-        $this->currentgroups = [];
-        if ($filterset->has_filter('groups')) {
-            $this->currentgroups = $filterset->get_filter('groups')->get_filter_values();
-        }
-
-        $this->roleids = [];
-        if ($filterset->has_filter('roles')) {
-            $this->roleids = $filterset->get_filter('roles')->get_filter_values();
-        }
-
-        $this->enrolids = [];
-        if ($filterset->has_filter('enrolments')) {
-            $this->enrolids = $filterset->get_filter('enrolments')->get_filter_values();
-        }
-
-        $this->statuses = [-1];
-        if ($filterset->has_filter('status')) {
-            $this->status = $filterset->get_filter('status')->get_filter_values();
-        }
-
-        $this->accesssince = null;
-        if ($filterset->has_filter('accesssince')) {
-            $this->accesssince = $filterset->get_filter('accesssince')->current();
-        }
-
-        $this->search = [];
-        if ($filterset->has_filter('keywords')) {
-            $this->search = $filterset->get_filter('keywords')->get_filter_values();
-        }
 
         $this->define_baseurl($this->get_base_url());
     }
