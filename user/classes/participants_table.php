@@ -402,7 +402,7 @@ class participants_table extends \table_sql implements dynamic_table {
      */
     public function query_db($pagesize, $useinitialsbar = true) {
         list($twhere, $tparams) = $this->get_sql_where();
-        $psearch = new participants_search($this->filterset);
+        $psearch = new participants_search($this->course, $this->context, $this->filterset);
 
         $total = $psearch->get_total_participants_count($twhere, $tparams);
 
