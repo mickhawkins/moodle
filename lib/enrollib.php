@@ -1481,9 +1481,9 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         throw new coding_exception("onlysuspended is not supported on frontpage; please add your own early-exit!");
     }
 
-    $joins  = array();
-    $wheres = array();
-    $params = array();
+    $joins  = [];
+    $wheres = [];
+    $params = [];
 
     $wheres[] = "1 = 1"; // Prevent broken where clauses later on.
 
@@ -1516,10 +1516,11 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             // Consider multiple enrols where one is not suspended or plain role_assign.
             $enrolselect = "SELECT DISTINCT {$prefix}ue.userid FROM {user_enrolments} {$prefix}ue $ejoin WHERE $where1 AND $where2";
             $joins[] = "JOIN {user_enrolments} {$prefix}ue1 ON {$prefix}ue1.userid = $useridcolumn";
-            $enrolconditions = array(
+            $enrolconditions = [
                 "{$prefix}e1.id = {$prefix}ue1.enrolid",
                 "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
-            );
+            ];
+
             if ($enrolid) {
                 $enrolconditions[] = "{$prefix}e1.id = :{$prefix}e1_enrolid";
                 $params[$prefix . 'e1_enrolid'] = $enrolid;
@@ -1532,9 +1533,11 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
 
         if ($onlyactive || $onlysuspended) {
             $now = round(time(), -2); // Rounding helps caching in DB.
-            $params = array_merge($params, array($prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
+            $params = array_merge($params, [
+                    $prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
                     $prefix . 'active' => ENROL_USER_ACTIVE,
-                    $prefix . 'now1' => $now, $prefix . 'now2' => $now));
+                    $prefix . 'now1' => $now,
+                    $prefix . 'now2' => $now]);
         }
     }
 
