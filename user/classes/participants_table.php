@@ -29,6 +29,7 @@ use context;
 use core_table\dynamic as dynamic_table;
 use core_table\local\filter\filterset;
 use core_user\output\status_field;
+use core_user\table\participants_search;
 use moodle_url;
 
 defined('MOODLE_INTERNAL') || die;

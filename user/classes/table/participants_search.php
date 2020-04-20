@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace core_user;
+namespace core_user\table;
 
 use context;
 use context_helper;
