@@ -24,11 +24,12 @@
 
 namespace core_user;
 
-use context_course;
+use context;
 use context_helper;
 use core_table\local\filter\filterset;
 use core_user;
 use moodle_recordset;
+use stdClass;
 use user_picture;
 
 defined('MOODLE_INTERNAL') || die;
@@ -48,9 +49,9 @@ class participants_search {
     protected $filterset;
 
     /**
-     * @var int $courseid The course ID being searched.
+     * @var stdClass $course The course being searched.
      */
-    protected $courseid;
+    protected $course;
 
     /**
      * @var context_course $context The course context being searched.
@@ -65,12 +66,15 @@ class participants_search {
     /**
      * Class constructor.
      *
+     * @param stdclass $course The course being searched.
+     * @param context $context The context of the search.
      * @param filterset $filterset The filterset used to filter the participants in a course.
      */
-    public function __construct(filterset $filterset) {
+    public function __construct(stdClass $course, context $context, filterset $filterset) {
+        $this->course = $course;
+        $this->context = $context;
         $this->filterset = $filterset;
-        $this->courseid = $this->filterset->get_filter('courseid')->current();
-        $this->context = context_course::instance($this->courseid, MUST_EXIST);
+
         $this->userfields = get_extra_user_fields($this->context);
     }
 
@@ -125,7 +129,7 @@ class participants_search {
      * @return array
      */
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
-        $isfrontpage = ($this->courseid == SITEID);
+        $isfrontpage = ($this->course->id == SITEID);
         $accesssince = $this->filterset->has_filter('accesssince') ? $this->filterset->get_filter('accesssince')->current() : 0;
 
         [
@@ -149,7 +153,7 @@ class participants_search {
             $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Course enrolled users only.
             // Not everybody has accessed the course yet.
             $joins[] = 'LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = :courseid)';
-            $params['courseid'] = $this->courseid;
+            $params['courseid'] = $this->course->id;
             if ($accesssince) {
                 $wheres[] = user_get_course_lastaccess_sql($accesssince);
             }
@@ -255,7 +259,7 @@ class participants_search {
             // If both status IDs are selected, treat it as not filtering by status.
             // Note: This is a temporary measure that supports the existing logic.
             //       It will be updated when support is added for all logical operators (all/none).
-            if (count($statusids) > 1) {
+            if (count($statusids) !== 1) {
                 $statusid = -1;
             } else {
                 $statusid = $statusids[0];
@@ -302,7 +306,6 @@ class participants_search {
                   FROM {user} {$prefix}u
                        {$joinsql}
                  WHERE {$wheresql}";
-
         return [
             'sql' => $sql,
             'params' => $params,
