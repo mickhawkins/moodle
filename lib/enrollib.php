@@ -1503,9 +1503,9 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             "{$prefix}e.courseid = :{$prefix}courseid",
         ];
 
-        // TODO: This only handly 'Any' (logical OR) of the provided enrol IDs, but not 'All' or 'None'.
+        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
         if (!empty($enrolids)) {
-            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
             $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
             $params = array_merge($params, $enrolidsparams);
         }
@@ -1532,7 +1532,7 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             ];
 
             if (!empty($enrolids)) {
-                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED);
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
                 $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
                 $params = array_merge($params, $enrolidsparams);
             }

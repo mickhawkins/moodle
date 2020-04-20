@@ -1027,6 +1027,7 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
         throw new coding_exception('Missing or wrong $context parameter in an attempt to get members without any group');
     }
 
+    // Handle cases where we need to include users not in any groups.
     if (($nogroupskey = array_search(USERSWITHOUTGROUP, $groupids)) !== false) {
         // Get members without any group.
         $join = "LEFT JOIN (
@@ -1038,23 +1039,22 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
         $param = ["{$prefix}gcourseid" => $coursecontext->instanceid];
         unset($groupids[$nogroupskey]);
 
-        // Also include members within specified groups, if any.
-        // This results in members not in any groups, OR in one of the specified groups.
+        // Handle any groups that also need to be included (eg searching for users in no groups OR within specified groups).
         if (!empty($groupids)) {
-            list($groupssql, $groupsparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED);
+            list($groupssql, $groupsparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, $prefix);
 
             $join .= "LEFT JOIN {groups_members} {$prefix}gm2
                              ON ({$prefix}gm2.userid = {$useridcolumn} AND {$prefix}gm2.groupid {$groupssql})";
-            // TODO: This only handly 'Any' (logical OR) of the provided groups, but not 'All' or 'None'.
+            // TODO: This only handles 'Any' (logical OR) of the provided groups. MDL-68348 will add 'All' and 'None' support.
             $where .= ' OR gm2.userid = $useridcolumn';
             $param = array_merge($param, $groupsparams);
         }
 
     } else {
-        // Get members of defined group IDs.
-        list($groupssql, $param) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED);
+        // Get members of defined group IDs only.
+        list($groupssql, $param) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, $prefix);
 
-        // TODO: This only handly 'Any' (logical OR) of the provided groups, but not 'All' or 'None'.
+        // TODO: This only handles 'Any' (logical OR) of the provided groups. MDL-68348 will add 'All' and 'None' support.
         $join = "JOIN {groups_members} {$prefix}gm
                    ON ({$prefix}gm.userid = {$useridcolumn} AND {$prefix}gm.groupid {$groupssql})";
         $where = '';
