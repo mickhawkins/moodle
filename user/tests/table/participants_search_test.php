@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Provides {@link core_user_selector_testcase} class.
+ * Provides {@link core_user_table_participants_search_test} class.
  *
  * @package   core_user
  * @category  test
@@ -25,7 +25,7 @@
 
 declare(strict_types=1);
 
-namespace core_user;
+namespace core_user\table;
 
 use advanced_testcase;
 use context_course;
@@ -34,11 +34,12 @@ use core_table\local\filter\filter;
 use core_table\local\filter\integer_filter;
 use core_table\local\filter\string_filter;
 use core_user\table\participants_filterset;
+use core_user\table\participants_search;
 use moodle_recordset;
 use stdClass;
 
 /**
- * Tests for the implementation of {@link user_selector_base} class.
+ * Tests for the implementation of {@link core_user_table_participants_search} class.
  *
  * @copyright 2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -85,10 +86,10 @@ class participants_search_test extends advanced_testcase {
     /**
      * Create a new course with several types of user.
      *
-     * @param int $editingteachers
-     * @param int $teachers
-     * @param int $students
-     * @param int $norole
+     * @param int $editingteachers The number of editing teachers to create in the course.
+     * @param int $teachers The number of non-editing teachers to create in the course.
+     * @param int $students The number of students to create in the course.
+     * @param int $norole The number of users with no role to create in the course.
      * @return stdClass
      */
     protected function create_course_with_users(int $editingteachers, int $teachers, int $students, int $norole): stdClass {
@@ -105,11 +106,10 @@ class participants_search_test extends advanced_testcase {
         $data->editingteachers = $this->create_and_enrol_users($data->course, $editingteachers, 'editingteacher');
         $data->teachers = $this->create_and_enrol_users($data->course, $teachers, 'teacher');
         $data->students = $this->create_and_enrol_users($data->course, $students, 'student');
-        $data->norole = $this->create_and_enrol_users($data->course, $students);
+        $data->norole = $this->create_and_enrol_users($data->course, $norole);
 
         return $data;
     }
-
     /**
      * Ensure that the roles filter works as expected with the provided test cases.
      *
@@ -172,7 +172,7 @@ class participants_search_test extends advanced_testcase {
         $rolefilter->set_join_type($jointype);
 
         // Run the search.
-        $search = new participants_search($filterset);
+        $search = new participants_search($course, $coursecontext, $filterset);
         $rs = $search->get_participants();
         $this->assertInstanceOf(moodle_recordset::class, $rs);
         $records = $this->convert_recordset_to_array($rs);
@@ -249,7 +249,8 @@ class participants_search_test extends advanced_testcase {
                     ],
                 ],
                 'expect' => [
-                    'ANY: No role' => (object) [
+                    // Tests for jointype: ANY.
+                    'ANY: No role filter' => (object) [
                         'roles' => [],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 8,
@@ -304,7 +305,8 @@ class participants_search_test extends advanced_testcase {
                         ],
                     ],
 
-                    'ALL: No role' => (object) [
+                    // Tests for jointype: ALL.
+                    'ALL: No role filter' => (object) [
                         'roles' => [],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 8,
@@ -409,7 +411,8 @@ class participants_search_test extends advanced_testcase {
                     ],
                 ],
                 'expect' => [
-                    'ANY: No role' => (object) [
+                    // Tests for jointype: ANY.
+                    'ANY: No role filter' => (object) [
                         'roles' => [],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 8,
@@ -496,9 +499,8 @@ class participants_search_test extends advanced_testcase {
                         ],
                     ],
 
-
                     // Tests for jointype: ALL.
-                    'ALL: No role' => (object) [
+                    'ALL: No role filter' => (object) [
                         'roles' => [],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 8,
@@ -579,7 +581,7 @@ class participants_search_test extends advanced_testcase {
         $finaltests = [];
         foreach ($tests as $testname => $testdata) {
             foreach ($testdata->expect as $expectname => $expectdata) {
-                $finaltests["$testname => {$expectname}"] = [
+                $finaltests["{$testname} => {$expectname}"] = [
                     'users' => $testdata->users,
                     'roles' => $expectdata->roles,
                     'jointype' => $expectdata->jointype,
@@ -593,24 +595,18 @@ class participants_search_test extends advanced_testcase {
     }
 
     /**
-     * Ensure that the keyword filter works as expected with the provided test cases.
+     * Ensure that the keywords filter works as expected with the provided test cases.
      *
      * @param array $usersdata The list of users to create
-     * @param array $keyweords The list of keyweords to filter by
+     * @param array $keywords The list of keywords to filter by
      * @param int $jointype The join type to use when combining filter values
      * @param int $count The expected count
      * @param array $expectedusers
-     * @dataProvider keyword_provider
+     * @dataProvider keywords_provider
      */
-    public function test_keyword_filter(array $usersdata, array $keywords, int $jointype, int $count, array $expectedusers): void {
-        global $DB;
-
+    public function test_keywords_filter(array $usersdata, array $keywords, int $jointype, int $count, array $expectedusers): void {
         $course = $this->getDataGenerator()->create_course();
         $coursecontext = context_course::instance($course->id);
-
-        $category = $DB->get_record('course_categories', ['id' => $course->category]);
-        $categorycontext = context_coursecat::instance($category->id);
-
         $users = [];
 
         foreach ($usersdata as $username => $userdata) {
@@ -637,7 +633,7 @@ class participants_search_test extends advanced_testcase {
         $keywordfilter->set_join_type($jointype);
 
         // Run the search.
-        $search = new participants_search($filterset);
+        $search = new participants_search($course, $coursecontext, $filterset);
         $rs = $search->get_participants();
         $this->assertInstanceOf(moodle_recordset::class, $rs);
         $records = $this->convert_recordset_to_array($rs);
@@ -648,15 +644,14 @@ class participants_search_test extends advanced_testcase {
         foreach ($expectedusers as $expecteduser) {
             $this->assertArrayHasKey($users[$expecteduser]->id, $records);
         }
-
     }
 
     /**
-     * Data provider for keyword tests.
+     * Data provider for keywords tests.
      *
      * @return array
      */
-    public function keyword_provider(): array {
+    public function keywords_provider(): array {
         $tests = [
             // Users where the keyword matches firstname, lastname, or username.
             'Users with basic names' => (object) [
@@ -684,6 +679,7 @@ class participants_search_test extends advanced_testcase {
                     ],
                 ],
                 'expect' => [
+                    // Tests for jointype: ANY.
                     'ANY: No filter' => (object) [
                         'keywords' => [],
                         'jointype' => filter::JOINTYPE_ANY,
@@ -721,7 +717,7 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
-                    'ANY: Username (not searched)' => (object) [
+                    'ANY: Username (no match)' => (object) [
                         'keywords' => ['sara.rester'],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 0,
@@ -736,7 +732,7 @@ class participants_search_test extends advanced_testcase {
                         ],
                     ],
                     /*
-                    'ANY: Multiple filters' => (object) [
+                    'ANY: Multiple keywords' => (object) [
                         'keywords' => ['ant', 'rog'],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 2,
@@ -747,7 +743,7 @@ class participants_search_test extends advanced_testcase {
                     ],
                      */
 
-                    // Filter: ALL.
+                    // Tests for jointype: ALL.
                     'ALL: No filter' => (object) [
                         'keywords' => [],
                         'jointype' => filter::JOINTYPE_ALL,
@@ -785,7 +781,7 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
-                    'ALL: Username (not searched)' => (object) [
+                    'ALL: Username (no match)' => (object) [
                         'keywords' => ['sara.rester'],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 0,
@@ -799,7 +795,7 @@ class participants_search_test extends advanced_testcase {
                             'sarah.rester',
                         ],
                     ],
-                    'ALL: Multiple filters' => (object) [
+                    'ALL: Multiple keywords' => (object) [
                         'keywords' => ['ant', 'rog'],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 1,
@@ -814,7 +810,7 @@ class participants_search_test extends advanced_testcase {
         $finaltests = [];
         foreach ($tests as $testname => $testdata) {
             foreach ($testdata->expect as $expectname => $expectdata) {
-                $finaltests["$testname => {$expectname}"] = [
+                $finaltests["{$testname} => {$expectname}"] = [
                     'users' => $testdata->users,
                     'keywords' => $expectdata->keywords,
                     'jointype' => $expectdata->jointype,
