@@ -822,4 +822,383 @@ class participants_search_test extends advanced_testcase {
 
         return $finaltests;
     }
+
+   /**
+     * Ensure that the enrolment status filter works as expected with the provided test cases.
+     *
+     * @param array $usersdata The list of users to create
+     * @param array $statuses The list of statuses to filter by
+     * @param int $jointype The join type to use when combining filter values
+     * @param int $count The expected count
+     * @param array $expectedusers
+     * @dataProvider status_provider
+     */
+    public function test_status_filter(array $usersdata, array $statuses, int $jointype, int $count, array $expectedusers): void {
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = context_course::instance($course->id);
+        $users = [];
+
+        // Ensure sufficient capabilities to view all statuses.
+        $this->setAdminUser();
+
+        // Ensure all enrolment methods enabled.
+        $enrolinstances = enrol_get_instances($course->id, false);
+        foreach ($enrolinstances as $instance) {
+            $plugin = enrol_get_plugin($instance->enrol);
+            $plugin->update_status($instance, ENROL_INSTANCE_ENABLED);
+        }
+
+        foreach ($usersdata as $username => $userdata) {
+            $user = $this->getDataGenerator()->create_user(['username' => $username]);
+
+            if (array_key_exists('statuses', $userdata)) {
+                foreach ($userdata['statuses'] as $enrolmethod => $status) {
+                    $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student', $enrolmethod, 0, 0, $status);
+                }
+            }
+
+            $users[$username] = $user;
+        }
+
+        // Create a secondary course with users. We should not see these users.
+        $this->create_course_with_users(1, 1, 1, 1);
+
+        // Create the basic filter.
+        $filterset = new participants_filterset();
+        $filterset->add_filter(new integer_filter('courseid', null, [(int) $course->id]));
+
+        // Create the status filter.
+        $statusfilter = new integer_filter('status');
+        $filterset->add_filter($statusfilter);
+
+        // Configure the filter.
+        foreach ($statuses as $status) {
+            $statusfilter->add_filter_value($status);
+        }
+        $statusfilter->set_join_type($jointype);
+
+        // Run the search.
+        $search = new participants_search($course, $coursecontext, $filterset);
+        $rs = $search->get_participants();
+        $this->assertInstanceOf(moodle_recordset::class, $rs);
+        $records = $this->convert_recordset_to_array($rs);
+
+        $this->assertCount($count, $records);
+        $this->assertEquals($count, $search->get_total_participants_count());
+
+        foreach ($expectedusers as $expecteduser) {
+            $this->assertArrayHasKey($users[$expecteduser]->id, $records);
+        }
+    }
+
+    /**
+     * Data provider for status filter tests.
+     *
+     * @return array
+     */
+    public function status_provider(): array {
+        $tests = [
+            // Users with different statuses and enrolment methods (so multiple statuses are possible for the same user).
+            'Users with different enrolment statuses' => (object) [
+                'users' => [
+                    'a' => [
+                        'statuses' => [
+                            'manual' => ENROL_USER_ACTIVE,
+                        ]
+                    ],
+                    'b' => [
+                        'statuses' => [
+                            'self' => ENROL_USER_ACTIVE,
+                        ]
+                    ],
+                    'c' => [
+                        'statuses' => [
+                            'manual' => ENROL_USER_SUSPENDED,
+                        ]
+                    ],
+                    'd' => [
+                        'statuses' => [
+                            'self' => ENROL_USER_SUSPENDED,
+                        ]
+                    ],
+                ],
+                'expect' => [
+                    // Tests for jointype: ANY.
+                    'ANY: No filter' => (object) [
+                        'statuses' => [],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                            'd',
+                        ],
+                    ],
+                    'ANY: Active only' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                        ],
+                    ],
+                    'ANY: Suspended only' => (object) [
+                        'statuses' => [ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'c',
+                            'd',
+                        ],
+                    ],
+                    'ANY: Multiple statuses' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE, ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                            'd',
+                        ],
+                    ],
+
+                    // Tests for jointype: ALL.
+                    'ALL: No filter' => (object) [
+                       'statuses' => [],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                            'd',
+                        ],
+                    ],
+                    'ALL: Active only' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                        ],
+                    ],
+                    'ALL: Suspended only' => (object) [
+                        'statuses' => [ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'c',
+                            'd',
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $finaltests = [];
+        foreach ($tests as $testname => $testdata) {
+            foreach ($testdata->expect as $expectname => $expectdata) {
+                $finaltests["{$testname} => {$expectname}"] = [
+                    'users' => $testdata->users,
+                    'statuses' => $expectdata->statuses,
+                    'jointype' => $expectdata->jointype,
+                    'count' => $expectdata->count,
+                    'expectedusers' => $expectdata->expectedusers,
+                ];
+            }
+        }
+
+        return $finaltests;
+    }
+
+   /**
+     * Ensure that the enrolment methods filter works as expected with the provided test cases.
+     *
+     * @param array $usersdata The list of users to create
+     * @param array $enrolmethods The list of enrolment methods to filter by
+     * @param int $jointype The join type to use when combining filter values
+     * @param int $count The expected count
+     * @param array $expectedusers
+     * @dataProvider enrolments_provider
+     */
+    public function test_enrolments_filter(array $usersdata, array $enrolmethods, int $jointype, int $count,
+            array $expectedusers): void {
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = context_course::instance($course->id);
+        $users = [];
+
+        // Ensure all enrolment methods enabled and mapped for setting the filter later.
+        $enrolinstances = enrol_get_instances($course->id, false);
+        $enrolinstancesmap = [];
+        foreach ($enrolinstances as $instance) {
+            $plugin = enrol_get_plugin($instance->enrol);
+            $plugin->update_status($instance, ENROL_INSTANCE_ENABLED);
+
+            $enrolinstancesmap[$instance->enrol] = (int) $instance->id;
+        }
+
+        foreach ($usersdata as $username => $userdata) {
+            $user = $this->getDataGenerator()->create_user(['username' => $username]);
+
+            if (array_key_exists('enrolmethods', $userdata)) {
+                foreach ($userdata['enrolmethods'] as $enrolmethod) {
+                    $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student', $enrolmethod);
+                }
+            }
+
+            $users[$username] = $user;
+        }
+
+        // Create a secondary course with users. We should not see these users.
+        $this->create_course_with_users(1, 1, 1, 1);
+
+        // Create the basic filter.
+        $filterset = new participants_filterset();
+        $filterset->add_filter(new integer_filter('courseid', null, [(int) $course->id]));
+
+        // Create the enrolment methods filter.
+        $enrolmethodfilter = new integer_filter('enrolments');
+        $filterset->add_filter($enrolmethodfilter);
+
+        // Configure the filter.
+        foreach ($enrolmethods as $enrolmethod) {
+            $enrolmethodfilter->add_filter_value($enrolinstancesmap[$enrolmethod]);
+        }
+        $enrolmethodfilter->set_join_type($jointype);
+
+        // Run the search.
+        $search = new participants_search($course, $coursecontext, $filterset);
+        $rs = $search->get_participants();
+        $this->assertInstanceOf(moodle_recordset::class, $rs);
+        $records = $this->convert_recordset_to_array($rs);
+
+        $this->assertCount($count, $records);
+        $this->assertEquals($count, $search->get_total_participants_count());
+
+        foreach ($expectedusers as $expecteduser) {
+            $this->assertArrayHasKey($users[$expecteduser]->id, $records);
+        }
+    }
+
+    /**
+     * Data provider for enrolments filter tests.
+     *
+     * @return array
+     */
+    public function enrolments_provider(): array {
+        $tests = [
+            // Users with different enrolment methods.
+            'Users with different enrolment methods' => (object) [
+                'users' => [
+                    'a' => [
+                        'enrolmethods' => [
+                            'manual',
+                        ]
+                    ],
+                    'b' => [
+                        'enrolmethods' => [
+                            'self',
+                        ]
+                    ],
+                    'c' => [
+                        'enrolmethods' => [
+                            'manual',
+                            'self',
+                        ]
+                    ],
+                ],
+                'expect' => [
+                    // Tests for jointype: ANY.
+                    'ANY: No filter' => (object) [
+                        'enrolmethods' => [],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 3,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                        ],
+                    ],
+                    'ANY: Manual enrolments only' => (object) [
+                        'enrolmethods' => ['manual'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'a',
+                            'c',
+                        ],
+                    ],
+                    'ANY: Self enrolments only' => (object) [
+                        'enrolmethods' => ['self'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'b',
+                            'c',
+                        ],
+                    ],
+                    'ANY: Multiple enrolment methods' => (object) [
+                        'enrolmethods' => ['manual', 'self'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 3,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                        ],
+                    ],
+
+                    // Tests for jointype: ALL.
+                    'ALL: No filter' => (object) [
+                       'enrolmethods' => [],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 3,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                        ],
+                    ],
+                    'ALL: Manual enrolments only' => (object) [
+                        'enrolmethods' => ['manual'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'a',
+                            'c',
+                        ],
+                    ],
+                    /*
+                    'ALL: Multiple enrolment methods' => (object) [
+                        'enrolmethods' => ['manual', 'self'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'c',
+                        ],
+                    ],*/
+                ],
+            ],
+        ];
+
+        $finaltests = [];
+        foreach ($tests as $testname => $testdata) {
+            foreach ($testdata->expect as $expectname => $expectdata) {
+                $finaltests["{$testname} => {$expectname}"] = [
+                    'users' => $testdata->users,
+                    'enrolmethods' => $expectdata->enrolmethods,
+                    'jointype' => $expectdata->jointype,
+                    'count' => $expectdata->count,
+                    'expectedusers' => $expectdata->expectedusers,
+                ];
+            }
+        }
+
+        return $finaltests;
+    }
 }
