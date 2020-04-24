@@ -32,6 +32,10 @@ use moodle_recordset;
 use stdClass;
 use user_picture;
 
+defined('MOODLE_INTERNAL') || die;
+
+require_once($CFG->dirroot . '/user/lib.php');
+
 /**
  * Class used to fetch participants based on a filterset.
  *
