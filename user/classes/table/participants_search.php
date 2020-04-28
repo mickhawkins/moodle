@@ -726,4 +726,82 @@ class participants_search {
 
         return new \core\dml\sql_join($joins, $wheres, $params);
     }
+
+
+    /**
+     *
+     *
+     *     //TODO - SORT OUT THE RETURNS ON THIS, REMOVE UNNECESSARY VALUES ETC, CALL THIS FROM get_enrolled_join TO REPLACE ENROL METHOD CODE
+     *
+     * @param string $prefix The query prefix.
+     * @return TODO
+     */
+    protected function get_enrol_method_sql($prefix) {
+        global $DB;
+
+        $enrolids = [];
+
+        if ($this->filterset->has_filter('enrolments')) {
+            $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
+        }
+
+        //$prefix = 'ej1_'; // Replaced by imported value TODO - remove this line when confirmed it will be passed in
+        $joins  = [];
+        $wheres = [];
+        $params = [];
+        // Prevent broken where clauses later on.
+        $wheres[] = "1 = 1";
+
+        $baseenrolconditions = "{$prefix}e.id = {$prefix}ue.enrolid
+                      AND {$prefix}e.courseid = :{$prefix}courseid";
+
+        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
+        if (!empty($enrolids)) {
+            switch ($this->filterset->get_filter('enrolments')->get_join_type()) {
+                // Handle 'All' join type.
+                case $this->filterset->get_filter('enrolments')::JOINTYPE_ALL:
+                    foreach ($enrolids as $enrolid) {
+                        list($enrolidsql, $enrolidparam) = $DB->get_in_or_equal($enrolid, SQL_PARAMS_NAMED, $prefix);
+                        $idconditions = "{$baseenrolconditions} AND {$prefix}e.id {$enrolidsql}";
+                        $joins[] = "JOIN {enrol} {$prefix}e ON ({$idconditions})";
+                        $params = array_merge($params, $enrolidparam);
+                    }
+                    break;
+
+                case $this->filterset->get_filter('enrolments')::JOINTYPE_NONE:
+                    // Handle 'None' join type.
+
+                    // We need to join the enrol table twice, so require a second prefix.
+                    $prefix2 = "{$prefix}2";
+                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix2, false);
+
+                    // Need to match users who are in the course, but do not match any of the filtered enrolment methods.
+                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$baseenrolconditions})";
+                    $joins[] = "LEFT JOIN {enrol} {$prefix2}e
+                                       ON ({$prefix2}e.id = {$prefix}ue.enrolid
+                                          AND {$prefix2}e.courseid = :{$prefix2}courseid
+                                          AND {$prefix2}e.id {$enrolidssql})";
+                    $wheres[] = "{$prefix2}e.id IS NULL";
+                    $params = array_merge($params, $enrolidsparams);
+
+                    break;
+
+                default:
+                    // Handle the 'Any' join type.
+                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
+                    $enrolconditions = "{$baseenrolconditions} AND {$prefix}e.id {$enrolidssql}";
+                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$enrolconditions})"; //TODO - this WAS $ejoin xx
+                    $params = array_merge($params, $enrolidsparams);
+                    break;
+            }
+
+		$params["{$prefix}courseid"] = $this->context->instanceid;
+
+        }
+
+        return 'TODO'; //xx TODO
+
+    }
+
+
 }
