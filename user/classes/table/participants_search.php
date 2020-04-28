@@ -253,69 +253,24 @@ class participants_search {
      * @return array SQL query data in the format ['sql' => '', 'params' => []].
      */
     protected function get_enrolled_sql(): array {
-        // Default status filter settings.
-        // We only show active by default, especially if the user has no capability to review enrolments.
-        $onlyactive = true;
-        $onlysuspended = false;
-
-        $enrolids = [];
-        $groupids = [];
-
-        if ($this->filterset->has_filter('enrolments')) {
-            $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
-        }
-
-        if ($this->filterset->has_filter('groups')) {
-            $groupids = $this->filterset->get_filter('groups')->get_filter_values();
-        }
-
         $prefix = 'eu_';
         $uid = "{$prefix}u.id";
         $joins = [];
         $wheres = [];
 
-        // Set enrolment types.
-        if (has_capability('moodle/course:enrolreview', $this->context) &&
-                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
-            $statusids = [-1];
-
-            if ($this->filterset->has_filter('status')) {
-                $statusids = $this->filterset->get_filter('status')->get_filter_values();
-            }
-
-            // If both status IDs are selected, treat it as not filtering by status.
-            // Note: This is a temporary measure that supports the existing logic.
-            // It will be updated when support is added for all logical operators (all/none).
-            if (count($statusids) !== 1) {
-                $statusid = -1;
-            } else {
-                $statusid = $statusids[0];
-            }
-
-            switch ($statusid) {
-                case ENROL_USER_ACTIVE:
-                    // Nothing to do here.
-                    break;
-                case ENROL_USER_SUSPENDED:
-                    $onlyactive = false;
-                    $onlysuspended = true;
-                    break;
-                default:
-                    // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
-                    $onlyactive = false;
-                    break;
-            }
-        }
-
         // Prepare enrolment type filtering.
-        // This will need to use a custom method or new function when 'All'/'Not' cases are introduced,
-        // to avoid the separate passing in of status values ($onlyactive and $onlysuspended).
-        $enrolledjoin = get_enrolled_join($this->context, $uid, $onlyactive, $onlysuspended, $enrolids);
+        $enrolledjoin = $this->get_enrolled_join($uid);
         $joins[] = $enrolledjoin->joins;
         $wheres[] = $enrolledjoin->wheres;
         $params = $enrolledjoin->params;
 
         // Prepare any groups filtering.
+        $groupids = [];
+
+        if ($this->filterset->has_filter('groups')) {
+            $groupids = $this->filterset->get_filter('groups')->get_filter_values();
+        }
+
         if ($groupids) {
             $groupjoin = groups_get_members_join($groupids, $uid, $this->context, $this->get_groups_jointype());
             $joins[] = $groupjoin->joins;
@@ -643,5 +598,132 @@ class participants_search {
             'where' => $where,
             'params' => $params,
         ];
+    }
+
+    /**
+     * Returns array with sql joins and parameters returning all ids
+     * of users enrolled into course.
+     *
+     * This function is using 'ej[0-9]+_' prefix for table names and parameters.
+     *
+     * @throws coding_exception
+     *
+     * @param string $useridcolumn User id column used the calling query, e.g. u.id
+     * @return \core\dml\sql_join Contains joins, wheres, params
+     */
+    protected function get_enrolled_join(string $useridcolumn): \core\dml\sql_join {
+        global $DB;
+
+        $enrolids = [];
+
+        if ($this->filterset->has_filter('enrolments')) {
+            $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
+        }
+
+        // By default we filter by active status only, unless the user has additional capabilities.
+        $statusids = [ENROL_USER_ACTIVE];
+
+        //$onlyactive = true;
+        //$onlysuspended = false;
+
+        // Set enrolment types if the user has relevant capabilities.
+        if (has_capability('moodle/course:enrolreview', $this->context) &&
+                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
+            // Default to view users with all statuses.
+            $statusids = [-1];
+
+            if ($this->filterset->has_filter('status')) {
+                $statusfiltervalues = $this->filterset->get_filter('status')->get_filter_values();
+
+                // If values are set for the status filter, use them.
+                if (!empty($statusfiltervalues)) {
+                    $statusids = $statusfiltervalues;
+                }
+            }
+
+//            switch ($statusid) {
+//                case ENROL_USER_ACTIVE:
+//                    // Nothing to do here.
+//                    break;
+//                case ENROL_USER_SUSPENDED:
+//                    $onlyactive = false;
+//                    $onlysuspended = true;
+//                    break;
+//                default:
+//                    // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
+//                    $onlyactive = false;
+//                    break;
+//            }
+        }
+
+
+        $prefix = 'ej1_';
+        $joins  = [];
+        $wheres = [];
+        $params = [];
+        // Prevent broken where clauses later on.
+        $wheres[] = "1 = 1";
+
+        $where1 = "{$prefix}ue.status = :{$prefix}active AND {$prefix}e.status = :{$prefix}enabled";
+        $where2 = "{$prefix}ue.timestart < :{$prefix}now1 AND ({$prefix}ue.timeend = 0 OR {$prefix}ue.timeend > :{$prefix}now2)";
+
+        $enrolconditions = [
+            "{$prefix}e.id = {$prefix}ue.enrolid",
+            "{$prefix}e.courseid = :{$prefix}courseid",
+        ];
+
+        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
+        if (!empty($enrolids)) {
+            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
+            $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
+            $params = array_merge($params, $enrolidsparams);
+        }
+
+        $enrolconditionssql = implode(" AND ", $enrolconditions);
+        $ejoin = "JOIN {enrol} {$prefix}e ON ($enrolconditionssql)";
+
+        $params["{$prefix}courseid"] = $this->context->instanceid;
+
+        if (!$onlysuspended) {
+            $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = $useridcolumn";
+            $joins[] = $ejoin;
+            if ($onlyactive) {
+                $wheres[] = "$where1 AND $where2";
+            }
+        } else {
+            // Suspended only where there is enrolment but ALL are suspended.
+            // Consider multiple enrols where one is not suspended or plain role_assign.
+            $enrolselect = "SELECT DISTINCT {$prefix}ue.userid FROM {user_enrolments} {$prefix}ue $ejoin WHERE $where1 AND $where2";
+            $joins[] = "JOIN {user_enrolments} {$prefix}ue1 ON {$prefix}ue1.userid = $useridcolumn";
+            $enrolconditions = [
+                "{$prefix}e1.id = {$prefix}ue1.enrolid",
+                "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
+            ];
+
+            if (!empty($enrolids)) {
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
+                $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
+                $params = array_merge($params, $enrolidsparams);
+            }
+
+            $enrolconditionssql = implode(" AND ", $enrolconditions);
+            $joins[] = "JOIN {enrol} {$prefix}e1 ON ($enrolconditionssql)";
+            $params["{$prefix}_e1_courseid"] = $this->context->instanceid;
+            $wheres[] = "$useridcolumn NOT IN ($enrolselect)";
+        }
+
+        if ($onlyactive || $onlysuspended) {
+            $now = round(time(), -2); // Rounding helps caching in DB.
+            $params = array_merge($params, [
+                    $prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
+                    $prefix . 'active' => ENROL_USER_ACTIVE,
+                    $prefix . 'now1' => $now,
+                    $prefix . 'now2' => $now]);
+        }
+
+        $joins = implode("\n", $joins);
+        $wheres = implode(" AND ", $wheres);
+
+        return new \core\dml\sql_join($joins, $wheres, $params);
     }
 }
