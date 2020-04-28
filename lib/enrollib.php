@@ -1503,7 +1503,6 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             "{$prefix}e.courseid = :{$prefix}courseid",
         ];
 
-        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
         if (!empty($enrolids)) {
             list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
             $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
