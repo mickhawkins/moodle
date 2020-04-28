@@ -1234,7 +1234,35 @@ class participants_search_test extends advanced_testcase {
                     ],
 
                     // Tests for jointype: NONE.
-                    // TODO: These will be added as part of MDL-68543.
+                    'NONE: No filter' => (object) [
+                       'statuses' => [],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                            'd',
+                        ],
+                    ],
+                    'NONE: Filter on active only' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'c',
+                            'd',
+                        ],
+                    ],
+                    'NONE: Filter on suspended only' => (object) [
+                        'statuses' => [ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -1413,7 +1441,6 @@ class participants_search_test extends advanced_testcase {
                             'c',
                         ],
                     ],
-                    /*
                     'ALL: Filter by multiple enrolment methods' => (object) [
                         'enrolmethods' => ['manual', 'self'],
                         'jointype' => filter::JOINTYPE_ALL,
@@ -1421,10 +1448,33 @@ class participants_search_test extends advanced_testcase {
                         'expectedusers' => [
                             'c',
                         ],
-                    ],*/
+                    ],
 
                     // Tests for jointype: NONE.
-                    // TODO: These will be added as part of MDL-68543.
+                    'NONE: No filter' => (object) [
+                       'enrolmethods' => [],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 3,
+                        'expectedusers' => [
+                            'a',
+                            'b',
+                            'c',
+                        ],
+                    ],
+                    'NONE: Filter by manual enrolments only' => (object) [
+                        'enrolmethods' => ['manual'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'b',
+                        ],
+                    ],
+                    'NONE: Filter by multiple enrolment methods' => (object) [
+                        'enrolmethods' => ['manual', 'self'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 0,
+                        'expectedusers' => [],
+                    ],
                 ],
             ],
         ];
