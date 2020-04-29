@@ -1158,47 +1158,57 @@ class participants_search_test extends advanced_testcase {
                             'self' => ENROL_USER_SUSPENDED,
                         ]
                     ],
+                    'e' => [
+                        'statuses' => [
+                            'manual' => ENROL_USER_ACTIVE,
+                            'self' => ENROL_USER_SUSPENDED,
+                        ]
+                    ],
                 ],
                 'expect' => [
                     // Tests for jointype: ANY.
                     'ANY: No filter' => (object) [
                         'statuses' => [],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 4,
+                        'count' => 5,
                         'expectedusers' => [
                             'a',
                             'b',
                             'c',
                             'd',
+                            'e',
                         ],
                     ],
                     'ANY: Filter on active only' => (object) [
                         'statuses' => [ENROL_USER_ACTIVE],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'a',
                             'b',
+                            'e',
                         ],
                     ],
                     'ANY: Filter on suspended only' => (object) [
                         'statuses' => [ENROL_USER_SUSPENDED],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'c',
                             'd',
+                            'e',
                         ],
                     ],
                     'ANY: Filter on multiple statuses' => (object) [
                         'statuses' => [ENROL_USER_ACTIVE, ENROL_USER_SUSPENDED],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 4,
+                        'count' => 5,
                         'expectedusers' => [
                             'a',
                             'b',
                             'c',
                             'd',
+                            'e',
                         ],
                     ],
 
@@ -1206,30 +1216,41 @@ class participants_search_test extends advanced_testcase {
                     'ALL: No filter' => (object) [
                        'statuses' => [],
                         'jointype' => filter::JOINTYPE_ALL,
-                        'count' => 4,
+                        'count' => 5,
                         'expectedusers' => [
                             'a',
                             'b',
                             'c',
                             'd',
+                            'e',
                         ],
                     ],
                     'ALL: Filter on active only' => (object) [
                         'statuses' => [ENROL_USER_ACTIVE],
                         'jointype' => filter::JOINTYPE_ALL,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'a',
                             'b',
+                            'e',
                         ],
                     ],
                     'ALL: Filter on suspended only' => (object) [
                         'statuses' => [ENROL_USER_SUSPENDED],
                         'jointype' => filter::JOINTYPE_ALL,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'c',
                             'd',
+                            'e',
+                        ],
+                    ],
+                    'ALL: Filter on multiple statuses' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE, ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'e',
                         ],
                     ],
 
@@ -1237,31 +1258,40 @@ class participants_search_test extends advanced_testcase {
                     'NONE: No filter' => (object) [
                        'statuses' => [],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 4,
+                        'count' => 5,
                         'expectedusers' => [
                             'a',
                             'b',
                             'c',
                             'd',
+                            'e',
                         ],
                     ],
                     'NONE: Filter on active only' => (object) [
                         'statuses' => [ENROL_USER_ACTIVE],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'c',
                             'd',
+                            'e', //TODO: TBC if this is correct logic.
                         ],
                     ],
                     'NONE: Filter on suspended only' => (object) [
                         'statuses' => [ENROL_USER_SUSPENDED],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 2,
+                        'count' => 3,
                         'expectedusers' => [
                             'a',
                             'b',
+                            'e',
                         ],
+                    ],
+                    'NONE: Filter on multiple statuses' => (object) [
+                        'statuses' => [ENROL_USER_ACTIVE, ENROL_USER_SUSPENDED],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 0,
+                        'expectedusers' => [],
                     ],
                 ],
             ],
