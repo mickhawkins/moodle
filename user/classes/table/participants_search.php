@@ -270,9 +270,14 @@ class participants_search {
         // Prepare any status filtering.
         [
             'joins' => $statusjoins,
-            'where' => $wheres[],
+            'where' => $statuswhere,
             'params' => $statusparams,
+            'canviewsuspended' => $canviewsuspended,
         ] = $this->get_status_sql($uid);
+
+        if ($canviewsuspended) {
+            $wheres[] = $statuswhere;
+        }
 
         $joins = array_merge($joins, $methodjoins, $statusjoins);
 
@@ -321,6 +326,11 @@ class participants_search {
                   FROM {user} {$prefix}u
                        {$joinsql}
                  WHERE {$prefix}u.deleted = 0";
+
+        // Force filtering by active participants only if user does no have view suspended capability.
+        if (!$canviewsuspended) {
+            $sql .= " AND ({$statuswhere})";
+        }
 
         if (!empty($wheresql)) {
             $sql .= " AND ({$wheresql})";
@@ -675,31 +685,28 @@ class participants_search {
                         $joins[] = "JOIN {user_enrolments} {$thisprefix}ue ON {$thisprefix}ue.userid = {$useridcolumn}";
                         $joins[] = "JOIN {enrol} {$thisprefix}e ON ({$idconditions})";
 
-                        $params["{$thisprefix}courseid"] = $this->context->instanceid;
+                        $params["{$thisprefix}courseid"] = $this->course->id;
                         $params = array_merge($params, $enrolidparam);
                     }
                     break;
 
                 case $this->filterset->get_filter('enrolments')::JOINTYPE_NONE:
-                    // Handle 'None' join type.
+                    // Handle 'None' join type (course participants not matching any of the filtered enrolment methods).
 
                     // We need to join the enrol table twice, so require a second prefix.
                     $prefix2 = "{$prefix}2";
 
-                    // Need to match users who are in the course, but do not match any of the filtered enrolment methods.
-                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix2, false);
-
+                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix2);
                     $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
                     $joins[] = "JOIN {enrol} {$prefix}e ON ({$baseenrolconditions})";
                     $joins[] = "LEFT JOIN {enrol} {$prefix2}e
                                        ON ({$prefix2}e.id = {$prefix}ue.enrolid
-                                          AND {$prefix2}e.courseid = :{$prefix2}courseid
+                                          AND {$prefix2}e.courseid = {$prefix}e.courseid
                                           AND {$prefix2}e.id {$enrolidssql})";
 
                     $where = "{$prefix2}e.id IS NULL";
-                    $params["{$prefix}courseid"] = $this->context->instanceid;
+                    $params["{$prefix}courseid"] = $this->course->id;
                     $params = array_merge($params, $enrolidsparams);
-
                     break;
 
                 default:
@@ -710,7 +717,7 @@ class participants_search {
                     $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
                     $joins[] = "JOIN {enrol} {$prefix}e ON ({$enrolconditions})";
 
-                    $params["{$prefix}courseid"] = $this->context->instanceid;
+                    $params["{$prefix}courseid"] = $this->course->id;
                     $params = array_merge($params, $enrolidsparams);
                     break;
             }
@@ -725,15 +732,17 @@ class participants_search {
 
     /**
      * Prepare the status filter SQL content.
+     * Note: Users who cannot view suspended users will always have their results filtered to only show active participants.
      *
      * @param string $useridcolumn User ID column used in the calling query, e.g. u.id
-     * @return array SQL query data in the format ['joins' => [], 'where' => '', 'params' => []].
+     * @return array SQL query data in the format ['joins' => [], 'where' => '', 'params' => [], 'canviewsuspended' => true].
      */
     protected function get_status_sql($useridcolumn): array {
         $prefix = 'ejs_';
         $joins  = [];
         $where = '';
         $params = [];
+        $canviewsuspended = false;
 
         // By default we filter to show users with active status only.
         $statusids = [ENROL_USER_ACTIVE];
@@ -742,6 +751,8 @@ class participants_search {
         // Set additional status filtering if the user has relevant capabilities.
         if (has_capability('moodle/course:enrolreview', $this->context) &&
                 (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
+            $canviewsuspended = true;
+
             // Default to no filtering if capabilities allow for it.
             $statusids = [];
 
@@ -904,6 +915,7 @@ class participants_search {
             'joins' => $joins,
             'where' => $where,
             'params' => $params,
+            'canviewsuspended' => $canviewsuspended,
         ];
     }
 }
