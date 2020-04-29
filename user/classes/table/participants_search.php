@@ -258,11 +258,61 @@ class participants_search {
         $joins = [];
         $wheres = [];
 
+
+
+
+        //TODO START: REMOVE (OLD CODE)
+       /* $onlyactive = true;
+        $onlysuspended = false;
+
+        $enrolids = [];
+
+        if ($this->filterset->has_filter('enrolments')) {
+            $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
+        }
+
+        // Set enrolment types.
+        if (has_capability('moodle/course:enrolreview', $this->context) &&
+                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
+            $statusids = [-1];
+
+            if ($this->filterset->has_filter('status')) {
+                $statusids = $this->filterset->get_filter('status')->get_filter_values();
+            }
+
+            // If both status IDs are selected, treat it as not filtering by status.
+            // Note: This is a temporary measure that supports the existing logic.
+            // It will be updated when support is added for all logical operators (all/none).
+            if (count($statusids) !== 1) {
+                $statusid = -1;
+            } else {
+                $statusid = $statusids[0];
+            }
+
+            switch ($statusid) {
+                case ENROL_USER_ACTIVE:
+                    // Nothing to do here.
+                    break;
+               case ENROL_USER_SUSPENDED:
+                    $onlyactive = false;
+                    $onlysuspended = true;
+                    break;
+                default:
+                    // If the user has capability to review user enrolments, but statusid is set to -1, set $onlyactive to false.
+                    $onlyactive = false;
+                    break;
+            }
+        }
+
+        //$enrolledjoin = get_enrolled_join($this->context, $uid, $onlyactive, $onlysuspended, $enrolids); //TODO remove (OLD CODE)
+
+*/        //TODO END: REMOVE (OLD CODE)
+
         // Prepare enrolment type filtering.
-        $enrolledjoin = $this->get_enrolled_join($uid);
-        $joins[] = $enrolledjoin->joins;
-        $wheres[] = $enrolledjoin->wheres;
-        $params = $enrolledjoin->params;
+        $enrolledjoins = $this->get_enrolled_joins($uid);
+        $joins[] = $enrolledjoins->joins;
+        $wheres[] = $enrolledjoins->wheres;
+        $params = $enrolledjoins->params;
 
         // Prepare any groups filtering.
         $groupids = [];
@@ -601,19 +651,47 @@ class participants_search {
     }
 
     /**
-     * Returns array with sql joins and parameters returning all ids
-     * of users enrolled into course.
-     *
-     * This function is using 'ej[0-9]+_' prefix for table names and parameters.
-     *
-     * @throws coding_exception
+     * Returns SQL joins data for matching against enrolment filters (method and status). /////TODO: CAN THIS JUST BE MOVED UP INTO THE CALLING METHOD NOW?
      *
      * @param string $useridcolumn User id column used the calling query, e.g. u.id
      * @return \core\dml\sql_join Contains joins, wheres, params
      */
-    protected function get_enrolled_join(string $useridcolumn): \core\dml\sql_join {
+    protected function get_enrolled_joins(string $useridcolumn): \core\dml\sql_join {
         global $DB;
 
+        $joins = [];
+        $wheres = [];
+        $params = [];
+
+        //TODO START new code
+        [
+            'joins' => $methodjoins,
+            'methodwheres' => $methodwheres,
+            'params' => $methodparams,
+        ] = $this->get_enrol_method_sql();
+
+        [
+            'joins' => $statusjoins,
+            'methodwheres' => $statuswheres,
+            'params' => $statusparams,
+        ] = $this->get_status_sql($useridcolumn);
+
+        $joins = array_merge($joins, $methodjoins, $statusjoins);
+        $joins = implode("\n", $joins);
+
+        $wheres = array_merge($wheres, $methodwheres, $statuswheres);
+        $wheres = implode(" AND ", $wheres); //TODO - this depends on global join, also need to check how these are injected into the master query,
+                                             //       because for example they might already be wrapped in a NOT() and don't want to double negative it etc.
+                                             // Probably better to not have the whole lot being combined (but this is how it was before.
+
+        $params = array_merge($params, $methodparams, $statusparams);
+
+        return new \core\dml\sql_join($joins, $wheres, $params);
+        
+        //zz TODO
+
+
+        /*
         $enrolids = [];
 
         if ($this->filterset->has_filter('enrolments')) {
@@ -725,45 +803,50 @@ class participants_search {
         $wheres = implode(" AND ", $wheres);
 
         return new \core\dml\sql_join($joins, $wheres, $params);
+         * */
+         */
     }
 
 
     /**
-     *
+     * Prepare the enrolment methods filter SQL content.
      *
      *     //TODO - SORT OUT THE RETURNS ON THIS, REMOVE UNNECESSARY VALUES ETC, CALL THIS FROM get_enrolled_join TO REPLACE ENROL METHOD CODE
      *
-     * @param string $prefix The query prefix.
-     * @return TODO
+     * @return array
      */
-    protected function get_enrol_method_sql($prefix) {
+    protected function get_enrol_method_sql(): array {
         global $DB;
 
+        $prefix = 'ejm_';
         $enrolids = [];
 
         if ($this->filterset->has_filter('enrolments')) {
             $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
         }
 
-        //$prefix = 'ej1_'; // Replaced by imported value TODO - remove this line when confirmed it will be passed in
         $joins  = [];
         $wheres = [];
         $params = [];
-        // Prevent broken where clauses later on.
+        // Prevent broken where clauses.
         $wheres[] = "1 = 1";
 
         $baseenrolconditions = "{$prefix}e.id = {$prefix}ue.enrolid
                       AND {$prefix}e.courseid = :{$prefix}courseid";
 
-        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
         if (!empty($enrolids)) {
             switch ($this->filterset->get_filter('enrolments')->get_join_type()) {
                 // Handle 'All' join type.
                 case $this->filterset->get_filter('enrolments')::JOINTYPE_ALL:
-                    foreach ($enrolids as $enrolid) {
-                        list($enrolidsql, $enrolidparam) = $DB->get_in_or_equal($enrolid, SQL_PARAMS_NAMED, $prefix);
-                        $idconditions = "{$baseenrolconditions} AND {$prefix}e.id {$enrolidsql}";
-                        $joins[] = "JOIN {enrol} {$prefix}e ON ({$idconditions})";
+                    foreach ($enrolids as $i => $enrolid) {
+                        $thisprefix = "{$prefix}{$i}";
+                        $baseenrolconditions = "{$thisprefix}e.id = {$thisprefix}ue.enrolid
+                                      AND {$thisprefix}e.courseid = :{$thisprefix}courseid";
+
+                        list($enrolidsql, $enrolidparam) = $DB->get_in_or_equal($enrolid, SQL_PARAMS_NAMED, $thisprefix);
+                        $idconditions = "{$baseenrolconditions} AND {$thisprefix}e.id {$enrolidsql}";
+                        $joins[] = "JOIN {enrol} {$thisprefix}e ON ({$idconditions})";
+                        $params["{$thisprefix}courseid"] = $this->context->instanceid;
                         $params = array_merge($params, $enrolidparam);
                     }
                     break;
@@ -782,6 +865,7 @@ class participants_search {
                                           AND {$prefix2}e.courseid = :{$prefix2}courseid
                                           AND {$prefix2}e.id {$enrolidssql})";
                     $wheres[] = "{$prefix2}e.id IS NULL";
+                    $params["{$prefix}courseid"] = $this->context->instanceid;
                     $params = array_merge($params, $enrolidsparams);
 
                     break;
@@ -790,18 +874,168 @@ class participants_search {
                     // Handle the 'Any' join type.
                     list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
                     $enrolconditions = "{$baseenrolconditions} AND {$prefix}e.id {$enrolidssql}";
-                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$enrolconditions})"; //TODO - this WAS $ejoin xx
+                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$enrolconditions})";
+                    $params["{$prefix}courseid"] = $this->context->instanceid;
                     $params = array_merge($params, $enrolidsparams);
                     break;
             }
-
-		$params["{$prefix}courseid"] = $this->context->instanceid;
-
         }
 
-        return 'TODO'; //xx TODO
+        return [
+            'joins' => $joins,
+            'wheres' => $wheres,
+            'params' => $params,
+        ];
 
     }
 
+    /**
+     * Prepare the status filter SQL content.
+     *
+     * @param string $useridcolumn User id column used the calling query, e.g. u.id
+     * @return array
+     */
+    protected function get_status_sql($useridcolumn): array {
+        global $DB;
 
+        $prefix = 'ejs_';
+        $joins  = [];
+        $wheres = [];
+        $params = [];
+
+        // Prevent broken where clauses.
+        $wheres[] = "1 = 1";
+
+        // By default we filter to show users with active status only.
+        $statusids = [ENROL_USER_ACTIVE];
+
+        // Set additional status filtering if the user has relevant capabilities.
+        if (has_capability('moodle/course:enrolreview', $this->context) &&
+                (has_capability('moodle/course:viewsuspendedusers', $this->context))) {
+            // Default to view users with any status (since they have the capability to do so).
+            $statusids = [-1];
+
+            if ($this->filterset->has_filter('status')) {
+                $statusfiltervalues = $this->filterset->get_filter('status')->get_filter_values();
+
+                // If values are set for the status filter, use them.
+                if (!empty($statusfiltervalues)) {
+                    $statusids = $statusfiltervalues;
+                }
+            }
+        }
+
+        $whereactive = '(%1$sue.status = :%1$sactive
+                      AND %1$se.status = :%1$senabled
+                  AND %1$sue.timestart < :%1$snow1
+                   AND (%1$sue.timeend = 0
+                     OR %1$sue.timeend > :%1$snow2))';
+
+        $wheresuspended = '(%1$sue.status = :%1$ssuspended
+                         OR %1$se.status != :%1$senabled
+                     OR %1$sue.timestart >= :%1$snow1
+                       OR (%1$sue.timeend > 0
+                      AND %1$sue.timeend <= :%1$snow2))';
+
+        // Round 'now' time to help DB caching.
+        $now = round(time(), -2);
+        $activeparams = [
+            "{$prefix}active" => ENROL_USER_ACTIVE,
+            "{$prefix}enabled" => ENROL_INSTANCE_ENABLED,
+            "{$prefix}now1"   => $now,
+            "{$prefix}now2"   => $now,
+        ];
+        $suspendedparams = [
+            "{$prefix}suspended" => ENROL_USER_SUSPENDED,
+            "{$prefix}enabled" => ENROL_INSTANCE_ENABLED,
+            "{$prefix}now1"   => $now,
+            "{$prefix}now2"   => $now,
+        ];
+
+        switch ($this->filterset->get_filter('status')->get_join_type()) {
+            case $this->filterset->get_filter('status')::JOINTYPE_ALL:
+                $joinwheres = [];
+
+                foreach ($statusids as $i => $statusid) {
+                    $thisprefix = "{$prefix}{$i}";
+                    $joins[] = "JOIN {user_enrolments} {$thisprefix}ue ON {$thisprefix}ue.userid = {$useridcolumn}";
+
+                    if ($statusid === ENROL_USER_ACTIVE) {
+                        // Conditions to be met if user filtering by active.
+                        $joinwheres[] = sprintf($whereactive, $thisprefix);
+
+                        $thisparams = [
+                            "{$thisprefix}active" => $activeparams["{$prefix}active"],
+                            "{$thisprefix}enabled" => $activeparams["{$prefix}enabled"],
+                            "{$thisprefix}now1"   => $activeparams["{$prefix}now1"],
+                            "{$thisprefix}now2"   => $activeparams["{$prefix}now2"],
+                        ];
+
+                        $params = array_merge($params, $activeparams);
+                    } else {
+                        // Conditions to be met if filtering by suspended (currently the only other status).
+                        $joinwheres[] = sprintf("NOT {$wheresuspended}", $prefix);
+
+                        $thisparams = [
+                            "{$thisprefix}suspended" => $suspendedparams["{$prefix}suspended"],
+                            "{$thisprefix}enabled" => $suspendedparams["{$prefix}enabled"],
+                            "{$thisprefix}now1"   => $suspendedparams["{$prefix}now1"],
+                            "{$thisprefix}now2"   => $suspendedparams["{$prefix}now2"],
+                        ];
+                    }
+
+                    $params = array_merge($params, $thisparams);
+                }
+
+                $wheres[] = '(' . implode(' AND ', $joinwheres) . ')';
+                break;
+
+            case $this->filterset->get_filter('status')::JOINTYPE_NONE:
+                // Should always be enrolled, just not in any of the filtered statuses.
+                $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
+                $joinwheres = [];
+
+                foreach ($statusids as $statusid) {
+                    if ($statusid === ENROL_USER_ACTIVE) {
+                        // Conditions to be met if user filtering by active.
+                        $joinwheres[] = sprintf("NOT {$whereactive}", $prefix);
+                        $params = array_merge($params, $activeparams);
+                    } else {
+                        // Conditions to be met if filtering by suspended (currently the only other status).
+                        $joinwheres[] = sprintf("NOT {$wheresuspended}", $prefix);
+                        $params = array_merge($params, $suspendedparams);
+                    }
+                }
+
+                $wheres[] = '(' . implode(' AND ', $joinwheres) . ')';
+                break;
+
+            default:
+                // Handle the 'Any' join type.
+
+                $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
+                $joinwheres = [];
+
+                foreach ($statusids as $statusid) {
+                    if ($statusid === ENROL_USER_ACTIVE) {
+                        // Conditions to be met if user filtering by active.
+                        $joinwheres[] = $whereactive;
+                        $params = array_merge($params, $activedparams);
+                    } else {
+                        // Conditions to be met if filtering by suspended (currently the only other status).
+                        $joinwheres[] = $wheresuspended;
+                        $params = array_merge($params, $suspendedparams);
+                    }
+                }
+
+                $wheres[] = '(' . implode(' OR ', $joinwheres) . ')';
+                break;
+        }
+
+        return [
+            'joins' => $joins,
+            'wheres' => $wheres,
+            'params' => $params,
+        ];
+    }
 }
