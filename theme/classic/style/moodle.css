@@ -11525,6 +11525,9 @@ body.h5p-embed .h5pmessages {
 .word-break-all {
   word-break: break-all; }
 
+.border-radius {
+  border-radius: 0.25rem; }
+
 .emoji-picker {
   width: 350px;
   height: 400px; }

@@ -2359,6 +2359,12 @@ body.h5p-embed {
     word-break: break-all;
 }
 
+.border-radius {
+    @if $enable-rounded {
+        @include border-radius($card-border-radius);
+    }
+}
+
 // Emoji picker.
 $picker-width: 350px !default;
 $picker-width-xs: 320px !default;
