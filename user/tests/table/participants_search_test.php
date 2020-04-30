@@ -1274,7 +1274,7 @@ class participants_search_test extends advanced_testcase {
                         'expectedusers' => [
                             'c',
                             'd',
-                            'e', //TODO: TBC if this is correct logic.
+                            'e',
                         ],
                     ],
                     'NONE: Filter on suspended only' => (object) [
@@ -1494,10 +1494,9 @@ class participants_search_test extends advanced_testcase {
                     'NONE: Filter by manual enrolments only' => (object) [
                         'enrolmethods' => ['manual'],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 2,
+                        'count' => 1,
                         'expectedusers' => [
                             'b',
-                            'c', //TODO: Not sure why this is being returned. The logic seems to suggest it wouldn't be matched.
                         ],
                     ],
                     'NONE: Filter by multiple enrolment methods' => (object) [
@@ -2198,8 +2197,8 @@ class participants_search_test extends advanced_testcase {
             $user = $this->getDataGenerator()->create_user($userdata);
 
             foreach ($userdata['enrolments'] as $details) {
-                $this->getDataGenerator()->enrol_user($user->id, $course->id, null, $details['method'], 0, 0, $details['status']);
-                $this->getDataGenerator()->role_assign($roles[$details['role']], $user->id, $coursecontext->id);
+                $this->getDataGenerator()->enrol_user($user->id, $course->id, $roles[$details['role']],
+                        $details['method'], 0, 0, $details['status']);
             }
 
             foreach($userdata['groups'] as $groupname) {
@@ -2248,14 +2247,14 @@ class participants_search_test extends advanced_testcase {
         }
 
         // Apply roles filter if required.
-        if (array_key_exists('roles', $filterdata)) {
+        if (array_key_exists('courseroles', $filterdata)) {
             $rolefilter = new integer_filter('roles');
             $filterset->add_filter($rolefilter);
 
-            foreach ($filterdata['roles']['values'] as $rolename) {
+            foreach ($filterdata['courseroles']['values'] as $rolename) {
                 $rolefilter->add_filter_value((int) $roles[$rolename]);
             }
-            $rolefilter->set_join_type($filterdata['roles']['jointype']);
+            $rolefilter->set_join_type($filterdata['courseroles']['jointype']);
         }
 
         // Apply status filter if required.
@@ -2426,7 +2425,7 @@ class participants_search_test extends advanced_testcase {
                 ],
                 'expect' => [
                     // Tests for jointype: ANY.
-/*                    'ANY: No filters in filterset' => (object) [
+                    'ANY: No filters in filterset' => (object) [
                         'filterdata' => [],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 7,
@@ -2454,7 +2453,7 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                             'sarah.rester',
                         ],
-                    ],*/
+                    ],
                     'ANY: Filterset matching all filter types on different users' => (object) [
                         'filterdata' => [
                             // Match Adam only.
@@ -2462,7 +2461,7 @@ class participants_search_test extends advanced_testcase {
                                 'values' => ['adam'],
                                 'jointype' => filter::JOINTYPE_ALL,
                             ],
-                            // Match Tony only.
+                            // Match Sarah only.
                             'enrolmethods' => [
                                 'values' => ['manual', 'self'],
                                 'jointype' => filter::JOINTYPE_ALL,
@@ -2489,18 +2488,17 @@ class participants_search_test extends advanced_testcase {
                                 ],
                         ],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 6,
-                        // Morgan is not matched, to confirm filtering is not just returning all users.
+                        'count' => 5,
+                        // Morgan and Tony are not matched, to confirm filtering is not just returning all users.
                         'expectedusers' => [
                             'adam.ant',
                             'barbara.bennett',
                             'colin.carnforth',
-                            'tony.rogers',
                             'sarah.rester',
                             'jonathan.bravo',
                         ],
                     ],
-/*
+
                     // Tests for jointype: ALL.
                     'ALL: No filters in filterset' => (object) [
                         'filterdata' => [],
@@ -2594,55 +2592,53 @@ class participants_search_test extends advanced_testcase {
                             ],
                         ],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 3,
+                        'count' => 4,
                         'expectedusers' => [
                             'adam.ant',
                             'barbara.bennett',
-                            'sarah.rester', //TODO: As per original enrolmethods test - this may be erroneously returned
                             'morgan.crikeyson',
                             'jonathan.bravo',
                         ],
                     ],
                     'NONE: Filterset combining all filter types' => (object) [
                         'filterdata' => [
+                            // Excludes Adam.
                             'keywords' => [
-                                'values' => ['ar', 'to'],
+                                'values' => ['adam'],
                                 'jointype' => filter::JOINTYPE_ANY,
                             ],
+                            // Excludes Colin, Tony and Sarah.
                             'enrolmethods' => [
-                                'values' => ['manual'],
+                                'values' => ['self'],
                                 'jointype' => filter::JOINTYPE_ANY,
                             ],
+                            // Excludes Jonathan.
                             'courseroles' => [
                                 'values' => ['student'],
                                 'jointype' => filter::JOINTYPE_NONE,
                             ],
+                            // Excludes Colin, Tony and Sarah.
                             'statuses' => [
-                                'values' => ['active'],
+                                'values' => ['suspended'],
                                 'jointype' => filter::JOINTYPE_ALL,
                             ],
+                            // Excludes // Excludes Adam, Colin, Tony, Sarah, Morgan and Jonathan.
                             'groups' => [
                                 'values' => ['groupa', 'nogroups'],
                                 'jointype' => filter::JOINTYPE_ANY,
                             ],
+                            // Excludes Tony and Sarh.
                             'accesssince' => [
                                 'values' => ['-6 months'],
                                 'jointype' => filter::JOINTYPE_ALL,
                                 ],
                         ],
                         'jointype' => filter::JOINTYPE_NONE,
-                        'count' => 6,
-                        // This is the inverse of the ALL filterset result.
+                        'count' => 1,
                         'expectedusers' => [
-                            'adam.ant',
                             'barbara.bennett',
-                            'colin.carnforth',
-                            'tony.rogers',
-                            'sarah.rester',
-                            'morgan.crikeyson',
-                            'jonathan.bravo',
                         ],
-                    ],*/
+                    ],
                 ],
             ],
         ];
