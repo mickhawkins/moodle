@@ -99,9 +99,10 @@ class participants_search {
             'from' => $from,
             'where' => $where,
             'params' => $params,
+            'groupby' => $groupby,
         ] = $this->get_participants_sql($additionalwhere, $additionalparams);
 
-        return $DB->get_recordset_sql("{$select} {$from} {$where} {$sort}", $params, $limitfrom, $limitnum);
+        return $DB->get_recordset_sql("{$select} {$from} {$where} {$groupby} {$sort}", $params, $limitfrom, $limitnum);
     }
 
     /**
@@ -120,7 +121,7 @@ class participants_search {
             'params' => $params,
         ] = $this->get_participants_sql($additionalwhere, $additionalparams);
 
-        return $DB->count_records_sql("SELECT COUNT(u.id) {$from} {$where}", $params);
+        return $DB->count_records_sql("SELECT COUNT(DISTINCT(u.id)) {$from} {$where}", $params);
     }
 
     /**
@@ -131,7 +132,7 @@ class participants_search {
      * @return array
      */
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
-        //TODO - does frontpage need to be handled? If not, can remove some stuff, if so, need to add for some enrolment filtering stuff.
+        //TODO - does frontpage need to be handled? If not, can remove relevant parts here, if so, need to implement in enrolment filtering.
         $isfrontpage = ($this->course->id == SITEID);
         $accesssince = 0;
         // Whether to match on users who HAVE accessed since the given time (ie false is 'inactive for more than x').
@@ -159,8 +160,11 @@ class participants_search {
 
         // Make sure we only ever fetch users in the course (regardless of enrolment filters).
         $joins[] = 'JOIN {user_enrolments} ue ON ue.userid = u.id';
-        $joins[] = 'JOIN {enrol} e ON e.id = ue.enrolid AND e.courseid = :courseid1';
+        $joins[] = 'JOIN {enrol} e ON e.id = ue.enrolid
+                                  AND e.courseid = :courseid1
+                                  AND e.status = :eienabled';
         $params['courseid1'] = $this->course->id;
+        $params['eienabled'] = ENROL_INSTANCE_ENABLED;
 
         if ($isfrontpage) {
             $select = "SELECT {$userfieldssql}, u.lastaccess";
@@ -252,6 +256,7 @@ class participants_search {
             'from' => $from,
             'where' => $where,
             'params' => $params,
+            'groupby' => ' GROUP BY u.id',
         ];
     }
 
@@ -293,9 +298,11 @@ class participants_search {
             $enrolprefix = 'epre_';
             $joins[] = "JOIN {user_enrolments} {$enrolprefix}ue ON {$enrolprefix}ue.userid = {$uid}";
             $joins[] = "JOIN {enrol} {$enrolprefix}e ON {$enrolprefix}e.id = {$enrolprefix}ue.enrolid
-                                                     AND {$enrolprefix}e.courseid = :{$enrolprefix}courseid";
+                                                     AND {$enrolprefix}e.courseid = :{$enrolprefix}courseid
+                                                     AND {$enrolprefix}e.status = :{$enrolprefix}enabled";
             $params = [
                 "{$enrolprefix}courseid" => $this->course->id,
+                "{$enrolprefix}enabled" => ENROL_INSTANCE_ENABLED,
             ];
         }
 
@@ -321,14 +328,6 @@ class participants_search {
         $params = array_merge($params, $methodparams, $statusparams, $groupsparams);
         $wheres = array_filter($wheres);
 
-        if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_NONE) {
-            $wheresql = 'NOT (' . implode(') AND NOT (', $wheres) . ')';
-        } else if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_ALL) {
-            $wheresql = '(' . implode(') AND (', $wheres) . ')';
-        } else {
-            $wheresql = '(' . implode(') OR (', $wheres) . ')';
-        }
-
         $sql = "SELECT DISTINCT {$prefix}u.id
                   FROM {user} {$prefix}u
                        {$joinsql}
@@ -339,7 +338,15 @@ class participants_search {
             $sql .= " AND ({$statuswhere})";
         }
 
-        if (!empty($wheresql)) {
+        if (!empty($wheres)) {
+            if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_NONE) {
+                $wheresql = 'NOT (' . implode(') AND NOT (', $wheres) . ')';
+            } else if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_ALL) {
+                $wheresql = '(' . implode(') AND (', $wheres) . ')';
+            } else {
+                $wheresql = '(' . implode(') OR (', $wheres) . ')';
+            }
+
             $sql .= " AND ({$wheresql})";
         }
 
@@ -678,7 +685,8 @@ class participants_search {
             $jointype = $this->filterset->get_filter('enrolments')->get_join_type();
 
             // Handle 'All' join type.
-            if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_ALL) {
+            if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_ALL ||
+                    $jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_NONE) {
                 $allwheres = [];
 
                 foreach ($enrolids as $i => $enrolid) {
@@ -692,7 +700,12 @@ class participants_search {
                                        ON {$thisprefix}ue.userid = {$useridcolumn}
                                       AND {$thisprefix}ue.enrolid = {$thisprefix}e.id";
 
-                    $allwheres[] = "{$thisprefix}e.id IS NOT NULL";
+                    if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_ALL) {
+                        $allwheres[] = "{$thisprefix}ue.id IS NOT NULL";
+                    } else {
+                        // Ensure participants do not match any of the filtered methods when joining by 'None'.
+                        $allwheres[] = "{$thisprefix}ue.id IS NULL";
+                    }
 
                     $params["{$thisprefix}courseid"] = $this->course->id;
                     $params = array_merge($params, $enrolidparam);
@@ -702,7 +715,7 @@ class participants_search {
                     $where = implode(' AND ', $allwheres);
                 }
             } else {
-                // Handle the 'Any' and 'None' join types.
+                // Handle the 'Any'join type.
 
                 list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
 
@@ -711,12 +724,7 @@ class participants_search {
                                   AND {$prefix}e.courseid = :{$prefix}courseid)";
                 $joins[] = "LEFT JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}
                                                               AND {$prefix}ue.enrolid = {$prefix}e.id";
-
-                if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_NONE) {
-                    $where = "{$prefix}e.id IS NULL";
-                } else {
-                    $where = "{$prefix}e.id IS NOT NULL";
-                }
+                $where = "{$prefix}ue.id IS NOT NULL";
 
                 $params["{$prefix}courseid"] = $this->course->id;
                 $params = array_merge($params, $enrolidsparams);
