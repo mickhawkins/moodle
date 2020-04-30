@@ -157,18 +157,25 @@ class participants_search {
 
         $userfieldssql = user_picture::fields('u', $this->userfields);
 
+        // Make sure we only ever fetch users in the course (regardless of enrolment filters).
+        $joins[] = 'JOIN {user_enrolments} ue ON ue.userid = u.id';
+        $joins[] = 'JOIN {enrol} e ON e.id = ue.enrolid AND e.courseid = :courseid1';
+        $params['courseid1'] = $this->course->id;
+
         if ($isfrontpage) {
-            $select = "SELECT $userfieldssql, u.lastaccess";
-            $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Everybody on the frontpage usually.
+            $select = "SELECT {$userfieldssql}, u.lastaccess";
+            $joins[] = "LEFT JOIN ({$esql}) ef ON ef.id = u.id"; // Everybody on the frontpage usually.
+            $wheres[] = 'ef.id IS NOT NULL';
             if ($accesssince) {
                 $wheres[] = user_get_user_lastaccess_sql($accesssince, 'u', $matchaccesssince);
             }
         } else {
-            $select = "SELECT $userfieldssql, COALESCE(ul.timeaccess, 0) AS lastaccess";
-            $joins[] = "JOIN ($esql) e ON e.id = u.id"; // Course enrolled users only.
+            $select = "SELECT {$userfieldssql}, COALESCE(ul.timeaccess, 0) AS lastaccess";
+            $joins[] = "LEFT JOIN ({$esql}) ef ON ef.id = u.id"; // Course enrolled users only.
             // Not everybody has accessed the course yet.
-            $joins[] = 'LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = :courseid)';
-            $params['courseid'] = $this->course->id;
+            $joins[] = 'LEFT JOIN {user_lastaccess} ul ON (ul.userid = u.id AND ul.courseid = :courseid2)';
+            $wheres[] = 'ef.id IS NOT NULL';
+            $params['courseid2'] = $this->course->id;
             if ($accesssince) {
                 $wheres[] = user_get_course_lastaccess_sql($accesssince, 'ul', $matchaccesssince);
             }
@@ -315,11 +322,11 @@ class participants_search {
         $wheres = array_filter($wheres);
 
         if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_NONE) {
-            $wheresql = 'NOT ' . implode(") AND (", $wheres) . ')';
+            $wheresql = 'NOT (' . implode(') AND NOT (', $wheres) . ')';
         } else if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_ALL) {
-            $wheresql = implode(" AND ", $wheres);
+            $wheresql = '(' . implode(') AND (', $wheres) . ')';
         } else {
-            $wheresql = implode(" OR ", $wheres);
+            $wheresql = '(' . implode(') OR (', $wheres) . ')';
         }
 
         $sql = "SELECT DISTINCT {$prefix}u.id
@@ -667,59 +674,52 @@ class participants_search {
             $enrolids = $this->filterset->get_filter('enrolments')->get_filter_values();
         }
 
-        $baseenrolconditions = "{$prefix}e.id = {$prefix}ue.enrolid
-                      AND {$prefix}e.courseid = :{$prefix}courseid";
-
         if (!empty($enrolids)) {
-            switch ($this->filterset->get_filter('enrolments')->get_join_type()) {
-                // Handle 'All' join type.
-                case $this->filterset->get_filter('enrolments')::JOINTYPE_ALL:
-                    foreach ($enrolids as $i => $enrolid) {
-                        $thisprefix = "{$prefix}{$i}";
-                        $baseenrolconditions = "{$thisprefix}e.id = {$thisprefix}ue.enrolid
-                                      AND {$thisprefix}e.courseid = :{$thisprefix}courseid";
+            $jointype = $this->filterset->get_filter('enrolments')->get_join_type();
 
-                        list($enrolidsql, $enrolidparam) = $DB->get_in_or_equal($enrolid, SQL_PARAMS_NAMED, $thisprefix);
-                        $idconditions = "{$baseenrolconditions} AND {$thisprefix}e.id {$enrolidsql}";
+            // Handle 'All' join type.
+            if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_ALL) {
+                $allwheres = [];
 
-                        $joins[] = "JOIN {user_enrolments} {$thisprefix}ue ON {$thisprefix}ue.userid = {$useridcolumn}";
-                        $joins[] = "JOIN {enrol} {$thisprefix}e ON ({$idconditions})";
+                foreach ($enrolids as $i => $enrolid) {
+                    $thisprefix = "{$prefix}{$i}";
+                    list($enrolidsql, $enrolidparam) = $DB->get_in_or_equal($enrolid, SQL_PARAMS_NAMED, $thisprefix);
 
-                        $params["{$thisprefix}courseid"] = $this->course->id;
-                        $params = array_merge($params, $enrolidparam);
-                    }
-                    break;
+                    $joins[] = "LEFT JOIN {enrol} {$thisprefix}e
+                                       ON ({$thisprefix}e.id {$enrolidsql}
+                                      AND {$thisprefix}e.courseid = :{$thisprefix}courseid)";
+                    $joins[] = "LEFT JOIN {user_enrolments} {$thisprefix}ue
+                                       ON {$thisprefix}ue.userid = {$useridcolumn}
+                                      AND {$thisprefix}ue.enrolid = {$thisprefix}e.id";
 
-                case $this->filterset->get_filter('enrolments')::JOINTYPE_NONE:
-                    // Handle 'None' join type (course participants not matching any of the filtered enrolment methods).
+                    $allwheres[] = "{$thisprefix}e.id IS NOT NULL";
 
-                    // We need to join the enrol table twice, so require a second prefix.
-                    $prefix2 = "{$prefix}2";
+                    $params["{$thisprefix}courseid"] = $this->course->id;
+                    $params = array_merge($params, $enrolidparam);
+                }
 
-                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix2);
-                    $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
-                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$baseenrolconditions})";
-                    $joins[] = "LEFT JOIN {enrol} {$prefix2}e
-                                       ON ({$prefix2}e.id = {$prefix}ue.enrolid
-                                          AND {$prefix2}e.courseid = {$prefix}e.courseid
-                                          AND {$prefix2}e.id {$enrolidssql})";
+                if (!empty($allwheres)) {
+                    $where = implode(' AND ', $allwheres);
+                }
+            } else {
+                // Handle the 'Any' and 'None' join types.
 
-                    $where = "{$prefix2}e.id IS NULL";
-                    $params["{$prefix}courseid"] = $this->course->id;
-                    $params = array_merge($params, $enrolidsparams);
-                    break;
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
 
-                default:
-                    // Handle the 'Any' join type.
-                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
-                    $enrolconditions = "{$baseenrolconditions} AND {$prefix}e.id {$enrolidssql}";
+                $joins[] = "LEFT JOIN {enrol} {$prefix}e
+                                   ON ({$prefix}e.id {$enrolidssql}
+                                  AND {$prefix}e.courseid = :{$prefix}courseid)";
+                $joins[] = "LEFT JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}
+                                                              AND {$prefix}ue.enrolid = {$prefix}e.id";
 
-                    $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = {$useridcolumn}";
-                    $joins[] = "JOIN {enrol} {$prefix}e ON ({$enrolconditions})";
+                if ($jointype === $this->filterset->get_filter('enrolments')::JOINTYPE_NONE) {
+                    $where = "{$prefix}e.id IS NULL";
+                } else {
+                    $where = "{$prefix}e.id IS NOT NULL";
+                }
 
-                    $params["{$prefix}courseid"] = $this->course->id;
-                    $params = array_merge($params, $enrolidsparams);
-                    break;
+                $params["{$prefix}courseid"] = $this->course->id;
+                $params = array_merge($params, $enrolidsparams);
             }
         }
 
@@ -768,7 +768,7 @@ class participants_search {
         }
 
         if (!empty($statusids)) {
-            $enroljoin = 'LEFT JOIN {enrol} %1$se ON %1$se.id = %1$sue.enrolid
+            $enroljoin = 'JOIN {enrol} %1$se ON %1$se.id = %1$sue.enrolid
                                                   AND %1$se.courseid = :%1$scourseid';
 
             $whereactive = '(%1$sue.status = :%2$sactive
@@ -825,7 +825,7 @@ class participants_search {
                         $joins[] = sprintf($enroljoin, $joinprefix);
                     }
 
-                    $where = '(' . implode(' AND ', $joinwheres) . ')';
+                    $where = implode(' AND ', $joinwheres);
                     break;
 
                 case $this->filterset::JOINTYPE_NONE:
