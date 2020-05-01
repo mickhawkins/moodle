@@ -132,7 +132,6 @@ class participants_search {
      * @return array
      */
     protected function get_participants_sql(string $additionalwhere, array $additionalparams): array {
-        //TODO - does frontpage need to be handled? If not, can remove relevant parts here, if so, need to implement in enrolment filtering.
         $isfrontpage = ($this->course->id == SITEID);
         $accesssince = 0;
         // Whether to match on users who HAVE accessed since the given time (ie false is 'inactive for more than x').
@@ -158,14 +157,6 @@ class participants_search {
 
         $userfieldssql = user_picture::fields('u', $this->userfields);
 
-        // Make sure we only ever fetch users in the course (regardless of enrolment filters).
-        $joins[] = 'JOIN {user_enrolments} ue ON ue.userid = u.id';
-        $joins[] = 'JOIN {enrol} e ON e.id = ue.enrolid
-                                  AND e.courseid = :courseid1
-                                  AND e.status = :eienabled';
-        $params['courseid1'] = $this->course->id;
-        $params['eienabled'] = ENROL_INSTANCE_ENABLED;
-
         if ($isfrontpage) {
             $select = "SELECT {$userfieldssql}, u.lastaccess";
             $joins[] = "LEFT JOIN ({$esql}) ef ON ef.id = u.id"; // Everybody on the frontpage usually.
@@ -183,6 +174,14 @@ class participants_search {
             if ($accesssince) {
                 $wheres[] = user_get_course_lastaccess_sql($accesssince, 'ul', $matchaccesssince);
             }
+
+            // Make sure we only ever fetch users in the course (regardless of enrolment filters).
+            $joins[] = 'JOIN {user_enrolments} ue ON ue.userid = u.id';
+            $joins[] = 'JOIN {enrol} e ON e.id = ue.enrolid
+                                      AND e.courseid = :courseid1
+                                      AND e.status = :eienabled';
+            $params['courseid1'] = $this->course->id;
+            $params['eienabled'] = ENROL_INSTANCE_ENABLED;
         }
 
         // Performance hacks - we preload user contexts together with accounts.
@@ -266,49 +265,57 @@ class participants_search {
      * @return array SQL query data in the format ['sql' => '', 'params' => []].
      */
     protected function get_enrolled_sql(): array {
+        $isfrontpage = ($this->context->instanceid == SITEID);
         $prefix = 'eu_';
         $uid = "{$prefix}u.id";
         $joins = [];
         $wheres = [];
         $params = [];
+        // Set where statement(s) that must always be included (outside of filter wheres).
+        $forcedwhere = "{$prefix}u.deleted = 0";
 
-        // Prepare any enrolment method filtering.
-        [
-            'joins' => $methodjoins,
-            'where' => $wheres[],
-            'params' => $methodparams,
-        ] = $this->get_enrol_method_sql($uid);
+        if (!$isfrontpage) {
+            // Prepare any enrolment method filtering.
+            [
+                'joins' => $methodjoins,
+                'where' => $wheres[],
+                'params' => $methodparams,
+            ] = $this->get_enrol_method_sql($uid);
 
-        // Prepare any status filtering.
-        [
-            'joins' => $statusjoins,
-            'where' => $statuswhere,
-            'params' => $statusparams,
-            'canviewsuspended' => $canviewsuspended,
-        ] = $this->get_status_sql($uid);
+            // Prepare any status filtering.
+            [
+                'joins' => $statusjoins,
+                'where' => $statuswhere,
+                'params' => $statusparams,
+                'canviewsuspended' => $canviewsuspended,
+            ] = $this->get_status_sql($uid);
 
-        if ($canviewsuspended) {
-            $wheres[] = $statuswhere;
-        }
+            if ($canviewsuspended) {
+                $wheres[] = $statuswhere;
+            } else {
+                // Force filtering by active participants if user does no have view suspended capability.
+                $forcedwhere .=  " AND ({$statuswhere})";
+            }
 
-        $joins = array_merge($joins, $methodjoins, $statusjoins);
+            $joins = array_merge($joins, $methodjoins, $statusjoins);
+            $params = array_merge($params, $methodparams, $statusparams);
 
-        // If no enrolment method / status filtering is taking place, still limit the participants to those enrolled in the course.
-        if (empty($joins)) {
-            $enrolprefix = 'epre_';
-            $joins[] = "JOIN {user_enrolments} {$enrolprefix}ue ON {$enrolprefix}ue.userid = {$uid}";
-            $joins[] = "JOIN {enrol} {$enrolprefix}e ON {$enrolprefix}e.id = {$enrolprefix}ue.enrolid
-                                                     AND {$enrolprefix}e.courseid = :{$enrolprefix}courseid
-                                                     AND {$enrolprefix}e.status = :{$enrolprefix}enabled";
-            $params = [
-                "{$enrolprefix}courseid" => $this->course->id,
-                "{$enrolprefix}enabled" => ENROL_INSTANCE_ENABLED,
-            ];
+            // If no enrolment method/status filtering taking place, still limit the participants to those enrolled in the course.
+            if (empty($joins)) {
+                $enrolprefix = 'epre_';
+                $joins[] = "JOIN {user_enrolments} {$enrolprefix}ue ON {$enrolprefix}ue.userid = {$uid}";
+                $joins[] = "JOIN {enrol} {$enrolprefix}e ON {$enrolprefix}e.id = {$enrolprefix}ue.enrolid
+                                                         AND {$enrolprefix}e.courseid = :{$enrolprefix}courseid
+                                                         AND {$enrolprefix}e.status = :{$enrolprefix}enabled";
+                $params = [
+                    "{$enrolprefix}courseid" => $this->course->id,
+                    "{$enrolprefix}enabled" => ENROL_INSTANCE_ENABLED,
+                ];
+            }
         }
 
         // Prepare any groups filtering.
         $groupids = [];
-        $groupsparams = [];
 
         if ($this->filterset->has_filter('groups')) {
             $groupids = $this->filterset->get_filter('groups')->get_filter_values();
@@ -317,7 +324,7 @@ class participants_search {
         if ($groupids) {
             $groupjoin = groups_get_members_join($groupids, $uid, $this->context, $this->get_groups_jointype());
             $joins[] = $groupjoin->joins;
-            $groupsparams = $groupjoin->params;
+            $params = array_merge($params, $groupjoin->params);
             if (!empty($groupjoin->wheres)) {
                 $wheres[] = $groupjoin->wheres;
             }
@@ -325,18 +332,12 @@ class participants_search {
 
         // Combine the relevant filters and prepare the query.
         $joinsql = implode("\n", $joins);
-        $params = array_merge($params, $methodparams, $statusparams, $groupsparams);
         $wheres = array_filter($wheres);
 
         $sql = "SELECT DISTINCT {$prefix}u.id
                   FROM {user} {$prefix}u
                        {$joinsql}
-                 WHERE {$prefix}u.deleted = 0";
-
-        // Force filtering by active participants only if user does no have view suspended capability.
-        if (!$canviewsuspended) {
-            $sql .= " AND ({$statuswhere})";
-        }
+                 WHERE {$forcedwhere}";
 
         if (!empty($wheres)) {
             if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_NONE) {
