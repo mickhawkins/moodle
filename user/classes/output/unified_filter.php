@@ -17,6 +17,7 @@
 /**
  * Class containing the filter options data for rendering the unified filter autocomplete element for the course participants page.
  *
+ * @deprecated since Moodle 3.9 MDL-68612 - Please use \core_user\table\participants_search along with table filtersets instead.
  * @package    core_user
  * @copyright  2017 Jun Pataleta
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -34,8 +35,10 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Class containing the filter options data for rendering the unified filter autocomplete element for the course participants page.
  *
+ * @deprecated since Moodle 3.9 MDL-68612 - Please use \core_user\table\participants_search along with table filtersets instead.
  * @copyright  2017 Jun Pataleta
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ *
  */
 class unified_filter implements renderable, templatable {
 
@@ -56,6 +59,10 @@ class unified_filter implements renderable, templatable {
      * @param string|moodle_url $baseurl The url with params needed to call up this page.
      */
     public function __construct($filteroptions, $selectedoptions, $baseurl = null) {
+        $deprecatedtext = 'unified_filter() is deprecated. ' .
+                          'Please use \core\table\participants_search with table filtersets instead.';
+        debugging($deprecatedtext, DEBUG_DEVELOPER);
+
         $this->filteroptions = $filteroptions;
         $this->selectedoptions = $selectedoptions;
         if (!empty($baseurl)) {
