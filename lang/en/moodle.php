@@ -2167,7 +2167,6 @@ $string['userdescription'] = 'Description';
 $string['userdescription_help'] = 'This box enables you to enter some text about yourself which will then be displayed on your profile page for others to view.';
 $string['userdetails'] = 'User details';
 $string['userfiles'] = 'User files';
-$string['userfilterplaceholder'] = 'Search keyword or select filter';
 $string['userlist'] = 'User list';
 $string['usermenu'] = 'User menu';
 $string['username'] = 'Username';
@@ -2290,3 +2289,6 @@ $string['messagedselectedcountusersfailed'] = 'A problem occurred and {$a} messa
 $string['messagedselecteduserfailed'] = 'The message was not sent to user {$a->fullname}.';
 $string['previewhtml'] = 'HTML format preview';
 $string['sitemessage'] = 'Message users';
+
+// Deprecated since Moodle 3.9.
+$string['userfilterplaceholder'] = 'Search keyword or select filter';
