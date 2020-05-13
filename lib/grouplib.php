@@ -979,15 +979,19 @@ function groups_group_visible($groupid, $course, $cm = null, $userid = null) {
 }
 
 /**
- * Get sql and parameters that will return user ids for a group
+ * Get sql and parameters that will return user ids for a group or groups
  *
- * @param int $groupid
+ * @param int|array $groupids Where this is an array of multiple groups, it will match on members of any of the groups
  * @param context $context Course context or a context within a course. Mandatory when $groupid = USERSWITHOUTGROUP
  * @return array($sql, $params)
  * @throws coding_exception if empty or invalid context submitted when $groupid = USERSWITHOUTGROUP
  */
-function groups_get_members_ids_sql($groupid, context $context = null) {
-    $groupjoin = groups_get_members_join($groupid, 'u.id', $context);
+function groups_get_members_ids_sql($groupids, context $context = null) {
+    if (!is_array($groupids)) {
+        $groupids = [$groupids];
+    }
+
+    $groupjoin = groups_get_members_join($groupids, 'u.id', $context);
 
     $sql = "SELECT DISTINCT u.id
               FROM {user} u
