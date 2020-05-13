@@ -281,7 +281,7 @@ class participants_search {
         // Prepare enrolment type filtering.
         // This will need to use a custom method or new function when 'All'/'Not' cases are introduced,
         // to avoid the separate passing in of status values ($onlyactive and $onlysuspended).
-        $enrolledjoin = get_enrolled_join($this->context, $uid, $onlyactive, $onlysuspended, $enrolids);
+        $enrolledjoin = $this->get_enrolled_join($this->context, $uid, $onlyactive, $onlysuspended, $enrolids);
         $joins[] = $enrolledjoin->joins;
         $wheres[] = $enrolledjoin->wheres;
         $params = $enrolledjoin->params;
@@ -308,6 +308,125 @@ class participants_search {
             'sql' => $sql,
             'params' => $params,
         ];
+    }
+
+    /**
+     * Returns array with SQL joins and parameters returning all IDs of users enrolled into course.
+     *
+     * Note: This is a temporary method (based on get_enrolled_join from enrollib), supporting multiple enrolment IDs
+     * matched using logical OR. A more complete implementation of other logical operators and supporting more
+     * flexible enrolment statuses will be implemented in MDL-68348.
+     *
+     * This method is using 'ej[0-9]+_' prefix for table names and parameters.
+     *
+     * @throws coding_exception
+     *
+     * @param \context $context
+     * @param string $useridcolumn User id column used the calling query, e.g. u.id
+     * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
+     * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
+     * @param array $enrolids The enrolment IDs. If not [], only users enrolled using these enrolment methods will be returned.
+     * @return \core\dml\sql_join Contains joins, wheres, params
+     */
+    protected function get_enrolled_join(\context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false,
+            $enrolids = []) {
+
+        global $DB;
+
+        // Use unique prefix just in case somebody makes some SQL magic with the result.
+        static $i = 0;
+        $i++;
+        $prefix = 'ej' . $i . '_';
+
+        if (!is_array($enrolids)) {
+            $enrolids = $enrolids ? [$enrolids] : [];
+        }
+
+        // First find the course context.
+        $coursecontext = $context->get_course_context();
+
+        $isfrontpage = ($coursecontext->instanceid == SITEID);
+
+        if ($onlyactive && $onlysuspended) {
+            throw new \coding_exception("Both onlyactive and onlysuspended are set, this is probably not what you want!");
+        }
+        if ($isfrontpage && $onlysuspended) {
+            throw new \coding_exception("onlysuspended is not supported on frontpage; please add your own early-exit!");
+        }
+
+        $joins  = [];
+        $wheres = [];
+        $params = [];
+
+        $wheres[] = "1 = 1"; // Prevent broken where clauses later on.
+
+        // Note all users are "enrolled" on the frontpage, but for others...
+        if (!$isfrontpage) {
+            $where1 = "{$prefix}ue.status = :{$prefix}active AND {$prefix}e.status = :{$prefix}enabled";
+            $where2 = "{$prefix}ue.timestart < :{$prefix}now1 AND ({$prefix}ue.timeend = 0
+                       OR {$prefix}ue.timeend > :{$prefix}now2)";
+
+            $enrolconditions = [
+                "{$prefix}e.id = {$prefix}ue.enrolid",
+                "{$prefix}e.courseid = :{$prefix}courseid",
+            ];
+
+            // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
+            if (!empty($enrolids)) {
+                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
+                $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
+                $params = array_merge($params, $enrolidsparams);
+            }
+
+            $enrolconditionssql = implode(" AND ", $enrolconditions);
+            $ejoin = "JOIN {enrol} {$prefix}e ON ($enrolconditionssql)";
+
+            $params[$prefix.'courseid'] = $coursecontext->instanceid;
+
+            if (!$onlysuspended) {
+                $joins[] = "JOIN {user_enrolments} {$prefix}ue ON {$prefix}ue.userid = $useridcolumn";
+                $joins[] = $ejoin;
+                if ($onlyactive) {
+                    $wheres[] = "$where1 AND $where2";
+                }
+            } else {
+                // Suspended only where there is enrolment but ALL are suspended.
+                // Consider multiple enrols where one is not suspended or plain role_assign.
+                $enrolselect = "SELECT DISTINCT {$prefix}ue.userid
+                                           FROM {user_enrolments} {$prefix}ue $ejoin
+                                          WHERE $where1 AND $where2";
+                $joins[] = "JOIN {user_enrolments} {$prefix}ue1 ON {$prefix}ue1.userid = $useridcolumn";
+                $enrolconditions = [
+                    "{$prefix}e1.id = {$prefix}ue1.enrolid",
+                    "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
+                ];
+
+                if (!empty($enrolids)) {
+                    list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
+                    $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
+                    $params = array_merge($params, $enrolidsparams);
+                }
+
+                $enrolconditionssql = implode(" AND ", $enrolconditions);
+                $joins[] = "JOIN {enrol} {$prefix}e1 ON ($enrolconditionssql)";
+                $params["{$prefix}_e1_courseid"] = $coursecontext->instanceid;
+                $wheres[] = "$useridcolumn NOT IN ($enrolselect)";
+            }
+
+            if ($onlyactive || $onlysuspended) {
+                $now = round(time(), -2); // Rounding helps caching in DB.
+                $params = array_merge($params, [
+                        $prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
+                        $prefix . 'active' => ENROL_USER_ACTIVE,
+                        $prefix . 'now1' => $now,
+                        $prefix . 'now2' => $now]);
+            }
+        }
+
+        $joins = implode("\n", $joins);
+        $wheres = implode(" AND ", $wheres);
+
+        return new \core\dml\sql_join($joins, $wheres, $params);
     }
 
     /**
