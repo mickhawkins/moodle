@@ -1460,20 +1460,14 @@ function get_enrolled_sql(context $context, $withcapability = '', $groupid = 0, 
  * @param string $useridcolumn User id column used the calling query, e.g. u.id
  * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
  * @param bool $onlysuspended inverse of onlyactive, consider only suspended enrolments
- * @param int|array $enrolids The enrolment IDs. If not 0 or [], only users enrolled using these enrolment methods will be returned.
+ * @param int $enrolid The enrolment ID. If not 0, only users enrolled using this enrolment method will be returned.
  * @return \core\dml\sql_join Contains joins, wheres, params
  */
-function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolids = []) {
-    global $DB;
-
+function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false, $onlysuspended = false, $enrolid = 0) {
     // Use unique prefix just in case somebody makes some SQL magic with the result.
     static $i = 0;
     $i++;
     $prefix = 'ej' . $i . '_';
-
-    if (!is_array($enrolids)) {
-        $enrolids = $enrolids ? [$enrolids] : [];
-    }
 
     // First find the course context.
     $coursecontext = $context->get_course_context();
@@ -1487,9 +1481,9 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         throw new coding_exception("onlysuspended is not supported on frontpage; please add your own early-exit!");
     }
 
-    $joins  = [];
-    $wheres = [];
-    $params = [];
+    $joins  = array();
+    $wheres = array();
+    $params = array();
 
     $wheres[] = "1 = 1"; // Prevent broken where clauses later on.
 
@@ -1498,16 +1492,14 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
         $where1 = "{$prefix}ue.status = :{$prefix}active AND {$prefix}e.status = :{$prefix}enabled";
         $where2 = "{$prefix}ue.timestart < :{$prefix}now1 AND ({$prefix}ue.timeend = 0 OR {$prefix}ue.timeend > :{$prefix}now2)";
 
-        $enrolconditions = [
+        $enrolconditions = array(
             "{$prefix}e.id = {$prefix}ue.enrolid",
             "{$prefix}e.courseid = :{$prefix}courseid",
-        ];
+        );
 
-        // TODO: This only handles 'Any' (logical OR) of the provided enrol IDs. MDL-68348 will add 'All' and 'None' support.
-        if (!empty($enrolids)) {
-            list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
-            $enrolconditions[] = "{$prefix}e.id {$enrolidssql}";
-            $params = array_merge($params, $enrolidsparams);
+        if ($enrolid) {
+            $enrolconditions[] = "{$prefix}e.id = :{$prefix}enrolid";
+            $params[$prefix . 'enrolid'] = $enrolid;
         }
 
         $enrolconditionssql = implode(" AND ", $enrolconditions);
@@ -1526,15 +1518,14 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
             // Consider multiple enrols where one is not suspended or plain role_assign.
             $enrolselect = "SELECT DISTINCT {$prefix}ue.userid FROM {user_enrolments} {$prefix}ue $ejoin WHERE $where1 AND $where2";
             $joins[] = "JOIN {user_enrolments} {$prefix}ue1 ON {$prefix}ue1.userid = $useridcolumn";
-            $enrolconditions = [
+            $enrolconditions = array(
                 "{$prefix}e1.id = {$prefix}ue1.enrolid",
                 "{$prefix}e1.courseid = :{$prefix}_e1_courseid",
-            ];
+            );
 
-            if (!empty($enrolids)) {
-                list($enrolidssql, $enrolidsparams) = $DB->get_in_or_equal($enrolids, SQL_PARAMS_NAMED, $prefix);
-                $enrolconditions[] = "{$prefix}e1.id {$enrolidssql}";
-                $params = array_merge($params, $enrolidsparams);
+            if ($enrolid) {
+                $enrolconditions[] = "{$prefix}e1.id = :{$prefix}e1_enrolid";
+                $params[$prefix . 'e1_enrolid'] = $enrolid;
             }
 
             $enrolconditionssql = implode(" AND ", $enrolconditions);
@@ -1545,11 +1536,10 @@ function get_enrolled_join(context $context, $useridcolumn, $onlyactive = false,
 
         if ($onlyactive || $onlysuspended) {
             $now = round(time(), -2); // Rounding helps caching in DB.
-            $params = array_merge($params, [
+            $params = array_merge($params, array(
                     $prefix . 'enabled' => ENROL_INSTANCE_ENABLED,
                     $prefix . 'active' => ENROL_USER_ACTIVE,
-                    $prefix . 'now1' => $now,
-                    $prefix . 'now2' => $now]);
+                    $prefix . 'now1' => $now, $prefix . 'now2' => $now));
         }
     }
 
