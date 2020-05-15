@@ -46,17 +46,17 @@ define('USERSWITHOUTGROUP', -1);
 /**
  * 'None' join type, used when filtering by groups (logical NOT)
  */
-define('GROUPSJOINNONE', 0);
+define('GROUPS_JOIN_NONE', 0);
 
 /**
  * 'Any' join type, used when filtering by groups (logical OR)
  */
-define('GROUPSJOINANY', 1);
+define('GROUPS_JOIN_ANY', 1);
 
 /**
  * 'All' join type, used when filtering by groups (logical AND)
  */
-define('GROUPSJOINALL', 2);
+define('GROUPS_JOIN_ALL', 2);
 
 /**
  * Determines if a group with a given groupid exists.
@@ -1028,7 +1028,7 @@ function groups_get_members_ids_sql($groupids, context $context = null) {
  * @return \core\dml\sql_join Contains joins, wheres, params
  * @throws coding_exception if empty or invalid context submitted when $groupid = USERSWITHOUTGROUP
  */
-function groups_get_members_join($groupids, $useridcolumn, context $context = null, int $jointype = GROUPSJOINANY) {
+function groups_get_members_join($groupids, $useridcolumn, context $context = null, int $jointype = GROUPS_JOIN_ANY) {
     global $DB;
 
     // Use unique prefix just in case somebody makes some SQL magic with the result.
@@ -1060,7 +1060,7 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
                   ) {$prefix}gm ON ({$prefix}gm.userid = {$useridcolumn} AND {$prefix}gm.courseid = :{$prefix}gcourseid)";
 
         // Join type 'None' when filtering by 'no groups' means match users in at least one group.
-        if ($jointype == GROUPSJOINNONE) {
+        if ($jointype == GROUPS_JOIN_NONE) {
             $where = "{$prefix}gm.userid IS NOT NULL";
         } else {
             // All other cases need to match users not in any group.
@@ -1074,7 +1074,7 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
     // Handle any specified groups that need to be included.
     if (!empty($groupids)) {
         switch ($jointype) {
-            case GROUPSJOINALL:
+            case GROUPS_JOIN_ALL:
                 // Handle matching all of the provided groups (logical AND).
                 $joinallwheres = [];
                 $aliaskey = 0;
@@ -1098,7 +1098,7 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
 
                 break;
 
-            case GROUPSJOINANY:
+            case GROUPS_JOIN_ANY:
                 // Handle matching any of the provided groups (logical OR).
                 list($groupssql, $groupsparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, $prefix);
 
@@ -1116,7 +1116,7 @@ function groups_get_members_join($groupids, $useridcolumn, context $context = nu
 
                 break;
 
-            case GROUPSJOINNONE:
+            case GROUPS_JOIN_NONE:
                 // Handle matching none of the provided groups (logical NOT).
                 list($groupssql, $groupsparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, $prefix);
 
