@@ -655,14 +655,14 @@ class participants_search {
 
         switch ($groupsfilter->get_join_type()) {
             case $groupsfilter::JOINTYPE_NONE:
-                $groupsjoin = GROUPSJOINNONE;
+                $groupsjoin = GROUPS_JOIN_NONE;
                 break;
             case $groupsfilter::JOINTYPE_ALL:
-                $groupsjoin = GROUPSJOINALL;
+                $groupsjoin = GROUPS_JOIN_ALL;
                 break;
             default:
                 // Default to ANY jointype.
-                $groupsjoin = GROUPSJOINANY;
+                $groupsjoin = GROUPS_JOIN_ANY;
                 break;
         }
 
