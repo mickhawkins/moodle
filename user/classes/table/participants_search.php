@@ -148,7 +148,9 @@ class participants_search {
         }
 
         [
+            // SQL that forms part of the filter.
             'sql' => $esql,
+            // SQL for enrolment filtering that must always be applied (eg due to capability restrictions).
             'forcedsql' => $esqlforced,
             'params' => $params,
         ] = $this->get_enrolled_sql();
