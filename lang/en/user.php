@@ -29,6 +29,7 @@ $string['adverbfor_or'] = 'or';
 $string['applyfilters'] = 'Apply filters';
 $string['clearfilterrow'] = 'Remove filter row';
 $string['clearfilters'] = 'Clear filters';
+$string['filterrowlegend'] = 'Filter {$a}';
 $string['match'] = 'Match';
 $string['placeholdertypeorselect'] = 'Type or select...';
 $string['placeholdertype'] = 'Type...';
