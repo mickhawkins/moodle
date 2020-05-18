@@ -1,4 +1,4 @@
-@core @core_user
+@core @core_user @mick2
 Feature: Edit user roles
   In order to administer users in course
   As a teacher

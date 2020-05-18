@@ -1,4 +1,4 @@
-@core @core_user
+@core @core_user @mick1
 Feature: View course participants
   In order to know who is on a course
   As a teacher

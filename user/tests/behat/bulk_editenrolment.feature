@@ -1,4 +1,4 @@
-@core @core_user
+@core @core_user @mick2
 Feature: Bulk enrolments
   In order to manage a course site
   As a teacher

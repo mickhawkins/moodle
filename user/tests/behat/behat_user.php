@@ -84,4 +84,33 @@ class behat_user extends behat_base {
             throw new ExpectationException('The "' . $field . '" field does have purpose "' . $purpose . '"', $this->getSession());
         }
     }
+
+    /**
+     * Add a new filter condition row to the participants filter.
+     *
+     * @Then /^I add a new participants filter condition as follows:$/
+     */
+    public function i_add_a_new_participants_filter_condition_as_follows() {
+        //TODO
+        //Format:
+        //| match | filter | values |
+        //
+        //
+        //1-press add condition button
+        //2-set match type
+        //3-set dropdown for filter type
+        //4-set enhanced dropdown
+    }
+
+    /**
+     * Set the match (join) type of the participants filterset. Valid values are Any/All/None.
+     *
+     * @Then /^I set the participants filterset to match "(?P<matchtype_string>(?:[^"]|\\")*)"$/
+     * @param type $field
+     * @param type $purpose
+     */
+    public function i_set_the_participants_filterset_to_match($matchtype) {
+        //TODO - see if this is possible with existing dropdown setting.
+        //Set value of <div data-filterregion="filtermatch">
+    }
 }

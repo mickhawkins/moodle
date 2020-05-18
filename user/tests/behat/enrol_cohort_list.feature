@@ -1,4 +1,4 @@
-@core @core_user
+@core @core_user @mick2
 Feature: Viewing the list of cohorts to enrol in a course
   In order to ensure we only display the cohorts when applicable
   As a teacher

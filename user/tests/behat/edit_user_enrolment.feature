@@ -1,4 +1,4 @@
-@core @core_user
+@core @core_user @mick2
 Feature: Edit user enrolment
   In order to manage students' enrolments
   As a teacher

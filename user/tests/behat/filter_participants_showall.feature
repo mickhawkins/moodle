@@ -77,16 +77,18 @@ Feature: Course participants can be filtered to display all the users
       | student2 | G2    |
       | student3 | G2    |
 
-  @javascript
+  @javascript @mick
   Scenario: Show all filtered users for a course
     Given I log in as "teacher1"
     And I am on "Course 1" course homepage
+    And I click on "add" "button"
+    And I set the field "filtermatch" to "All"
     And I navigate to course participants
-    When I open the autocomplete suggestions list
-    And I click on "Role: Student" item in the autocomplete list
-    And I click on "Show all 24" "link"
-    Then I should see "Role: Student"
-    And I should see "Number of participants: 24" in the "//div[@class='userlist']" "xpath_element"
+    And I set the field "type" to "Roles"
+    And I open the autocomplete suggestions list
+    And I click on "Student" item in the autocomplete list
+    When I click on "Apply filters" "button"
+    Then I should see "Number of participants: 24" in the "//div[@class='userlist']" "xpath_element"
     And I should see "Show 20 per page"
 
   @javascript

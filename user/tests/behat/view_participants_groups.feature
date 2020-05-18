@@ -44,7 +44,7 @@ Feature: View course participants groups
     And I should not see "Student 3x"
     And I should not see "Student 4x"
 
-  @javascript
+  @javascript @mick1
   Scenario: User should be able to see other groups in visible group mode
     Given I log in as "admin"
     And I am on "Course 1" course homepage
