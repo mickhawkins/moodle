@@ -260,7 +260,7 @@ class participants_search {
                     break;
             }
 
-            $where = "WHERE ({$forcedwhere}) AND " . implode($wheresjoin, $wheres);
+            $where = "WHERE ({$forcedwhere}) {$firstjoin}" . implode($wheresjoin, $wheres);
         } else {
             $where = '';
         }
