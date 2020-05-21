@@ -153,7 +153,6 @@ $rolefilter = new integer_filter('roles');
 $statusfilter = new integer_filter('status');
 
 $participanttable = new \core_user\table\participants("user-index-participants-{$course->id}");
-$participanttable->set_selectall($selectall);
 
 foreach ($filtersapplied as $filter) {
     $filtervalue = explode(':', $filter, 2);
