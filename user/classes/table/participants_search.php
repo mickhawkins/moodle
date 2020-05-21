@@ -246,13 +246,16 @@ class participants_search {
         if ($wheres) {
             switch ($this->filterset->get_join_type()) {
                 case $this->filterset::JOINTYPE_ALL:
+                    $firstjoin = ' AND ';
                     $wheresjoin = ' AND ';
                     break;
                 case $this->filterset::JOINTYPE_NONE:
+                    $firstjoin = ' AND NOT ';
                     $wheresjoin = ' AND NOT ';
                     break;
                 default:
                     // Default to 'Any' jointype.
+                    $firstjoin = ' AND ';
                     $wheresjoin = ' OR ';
                     break;
             }
