@@ -352,9 +352,7 @@ class participants_search {
 
         $wheres = array_filter($wheres);
         if (!empty($wheres)) {
-            if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_NONE) {
-                $wheresql = 'NOT (' . implode(') AND NOT (', $wheres) . ')';
-            } else if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_ALL) {
+            if ($this->filterset->get_join_type() === $this->filterset::JOINTYPE_ALL) {
                 $wheresql = '(' . implode(') AND (', $wheres) . ')';
             } else {
                 $wheresql = '(' . implode(') OR (', $wheres) . ')';
