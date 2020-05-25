@@ -822,7 +822,7 @@ class participants_search_test extends advanced_testcase {
      */
     public function keywords_provider(): array {
         $tests = [
-            // Users where the keyword matches firstname, lastname, or username.
+            // Users where the keyword matches basic user fields such as names and email.
             'Users with basic names' => (object) [
                 'users' => [
                     'adam.ant' => [
@@ -832,19 +832,25 @@ class participants_search_test extends advanced_testcase {
                     'barbara.bennett' => [
                         'firstname' => 'Barbara',
                         'lastname' => 'Bennett',
+                        'alternatename' => 'Babs',
+                        'firstnamephonetic' => 'Barbra',
+                        'lastnamephonetic' => 'Benit',
                     ],
                     'colin.carnforth' => [
                         'firstname' => 'Colin',
                         'lastname' => 'Carnforth',
+                        'middlename' => 'Jeffery',
                     ],
                     'tony.rogers' => [
                         'firstname' => 'Anthony',
                         'lastname' => 'Rogers',
+                        'lastnamephonetic' => 'Rowjours',
                     ],
                     'sarah.rester' => [
                         'firstname' => 'Sarah',
                         'lastname' => 'Rester',
                         'email' => 'zazu@example.com',
+                        'firstnamephonetic' => 'Sera',
                     ],
                 ],
                 'expect' => [
@@ -886,13 +892,21 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
+                    'ANY: Filter on middlename only' => (object) [
+                        'keywords' => ['Jeff'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'colin.carnforth',
+                        ],
+                    ],
                     'ANY: Filter on username (no match)' => (object) [
                         'keywords' => ['sara.rester'],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 0,
                         'expectedusers' => [],
                     ],
-                    'ANY: Filter on email' => (object) [
+                    'ANY: Filter on email only' => (object) [
                         'keywords' => ['zazu'],
                         'jointype' => filter::JOINTYPE_ANY,
                         'count' => 1,
@@ -900,12 +914,47 @@ class participants_search_test extends advanced_testcase {
                             'sarah.rester',
                         ],
                     ],
-                    'ANY: Filter on multiple keywords' => (object) [
-                        'keywords' => ['ant', 'rog'],
+                    'ANY: Filter on first name phonetic only' => (object) [
+                        'keywords' => ['Sera'],
                         'jointype' => filter::JOINTYPE_ANY,
-                        'count' => 2,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'sarah.rester',
+                        ],
+                    ],
+                    'ANY: Filter on last name phonetic only' => (object) [
+                        'keywords' => ['jour'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'tony.rogers',
+                        ],
+                    ],
+                    'ANY: Filter on alternate name only' => (object) [
+                        'keywords' => ['Babs'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'barbara.bennett',
+                        ],
+                    ],
+                    'ANY: Filter on multiple keywords (first/middle/last name)' => (object) [
+                        'keywords' => ['ant', 'Jeff', 'rog'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 3,
                         'expectedusers' => [
                             'adam.ant',
+                            'colin.carnforth',
+                            'tony.rogers',
+                        ],
+                    ],
+                    'ANY: Filter on multiple keywords (phonetic/alternate names)' => (object) [
+                        'keywords' => ['era', 'Bab', 'ours'],
+                        'jointype' => filter::JOINTYPE_ANY,
+                        'count' => 3,
+                        'expectedusers' => [
+                            'barbara.bennett',
+                            'sarah.rester',
                             'tony.rogers',
                         ],
                     ],
@@ -948,13 +997,21 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
+                    'ALL: Filter on middlename only' => (object) [
+                        'keywords' => ['Jeff'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'colin.carnforth',
+                        ],
+                    ],
                     'ALL: Filter on username (no match)' => (object) [
                         'keywords' => ['sara.rester'],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 0,
                         'expectedusers' => [],
                     ],
-                    'ALL: Filter on email' => (object) [
+                    'ALL: Filter on email only' => (object) [
                         'keywords' => ['zazu'],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 1,
@@ -962,12 +1019,50 @@ class participants_search_test extends advanced_testcase {
                             'sarah.rester',
                         ],
                     ],
-                    'ALL: Multiple keywords' => (object) [
+                    'ALL: Filter on first name phonetic only' => (object) [
+                        'keywords' => ['Sera'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'sarah.rester',
+                        ],
+                    ],
+                    'ALL: Filter on last name phonetic only' => (object) [
+                        'keywords' => ['jour'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'tony.rogers',
+                        ],
+                    ],
+                    'ALL: Filter on alternate name only' => (object) [
+                        'keywords' => ['Babs'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'barbara.bennett',
+                        ],
+                    ],
+                    'ALL: Filter on multiple keywords (first/last name)' => (object) [
                         'keywords' => ['ant', 'rog'],
                         'jointype' => filter::JOINTYPE_ALL,
                         'count' => 1,
                         'expectedusers' => [
                             'tony.rogers',
+                        ],
+                    ],
+                    'ALL: Filter on multiple keywords (first/middle/last name)' => (object) [
+                        'keywords' => ['ant', 'Jeff', 'rog'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 0,
+                        'expectedusers' => [],
+                    ],
+                    'ALL: Filter on multiple keywords (phonetic/alternate names)' => (object) [
+                        'keywords' => ['Bab', 'bra', 'nit'],
+                        'jointype' => filter::JOINTYPE_ALL,
+                        'count' => 1,
+                        'expectedusers' => [
+                            'barbara.bennett',
                         ],
                     ],
 
@@ -1014,6 +1109,17 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
+                    'NONE: Filter on middlename only' => (object) [
+                        'keywords' => ['Jeff'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'adam.ant',
+                            'barbara.bennett',
+                            'tony.rogers',
+                            'sarah.rester',
+                        ],
+                    ],
                     'NONE: Filter on username (no match)' => (object) [
                         'keywords' => ['sara.rester'],
                         'jointype' => filter::JOINTYPE_NONE,
@@ -1037,13 +1143,66 @@ class participants_search_test extends advanced_testcase {
                             'tony.rogers',
                         ],
                     ],
-                    'NONE: Filter on multiple keywords' => (object) [
+                    'NONE: Filter on first name phonetic only' => (object) [
+                        'keywords' => ['Sera'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'adam.ant',
+                            'barbara.bennett',
+                            'colin.carnforth',
+                            'tony.rogers',
+                        ],
+                    ],
+                    'NONE: Filter on last name phonetic only' => (object) [
+                        'keywords' => ['jour'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'adam.ant',
+                            'barbara.bennett',
+                            'colin.carnforth',
+                            'sarah.rester',
+                        ],
+                    ],
+                    'NONE: Filter on alternate name only' => (object) [
+                        'keywords' => ['Babs'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'adam.ant',
+                            'colin.carnforth',
+                            'tony.rogers',
+                            'sarah.rester',
+                        ],
+                    ],
+                    'NONE: Filter on multiple keywords (first/last name)' => (object) [
                         'keywords' => ['ara', 'rog'],
                         'jointype' => filter::JOINTYPE_NONE,
                         'count' => 2,
                         'expectedusers' => [
                             'adam.ant',
                             'colin.carnforth',
+                        ],
+                    ],
+                    'NONE: Filter on multiple keywords (first/middle/last name)' => (object) [
+                        'keywords' => ['ant', 'Jeff', 'rog'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 2,
+                        'expectedusers' => [
+                            'barbara.bennett',
+                            'sarah.rester',
+                        ],
+                    ],
+                    'NONE: Filter on multiple keywords (phonetic/alternate names)' => (object) [
+                        'keywords' => ['Bab', 'bra', 'nit'],
+                        'jointype' => filter::JOINTYPE_NONE,
+                        'count' => 4,
+                        'expectedusers' => [
+                            'adam.ant',
+                            'colin.carnforth',
+                            'tony.rogers',
+                            'sarah.rester',
                         ],
                     ],
                 ],
