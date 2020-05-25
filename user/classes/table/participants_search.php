@@ -907,7 +907,7 @@ class participants_search {
             $alternatename = $DB->sql_like('alternatename', ':' . $searchkey5, false, false);
 
             if ($notjoin) {
-                $alternatename = "(middlename IS NOT NULL AND {$alternatename})";
+                $alternatename = "(alternatename IS NOT NULL AND {$alternatename})";
             }
 
             $conditions[] = $alternatename;
@@ -916,7 +916,7 @@ class participants_search {
             $firstnamephonetic = $DB->sql_like('firstnamephonetic', ':' . $searchkey6, false, false);
 
             if ($notjoin) {
-                $firstnamephonetic = "(middlename IS NOT NULL AND {$firstnamephonetic})";
+                $firstnamephonetic = "(firstnamephonetic IS NOT NULL AND {$firstnamephonetic})";
             }
 
             $conditions[] = $firstnamephonetic;
@@ -925,7 +925,7 @@ class participants_search {
             $lastnamephonetic = $DB->sql_like('lastnamephonetic', ':' . $searchkey7, false, false);
 
             if ($notjoin) {
-                $lastnamephonetic = "(middlename IS NOT NULL AND {$lastnamephonetic})";
+                $lastnamephonetic = "(lastnamephonetic IS NOT NULL AND {$lastnamephonetic})";
             }
 
             $conditions[] = $lastnamephonetic;
