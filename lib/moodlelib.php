@@ -142,6 +142,26 @@ define('PARAM_FILE',   'file');
 define('PARAM_FLOAT',  'float');
 
 /**
+ * PARAM_LANGALPHA - contains only the alphabet defined by the current language.
+ */
+define('PARAM_LANGALPHA', 'langalpha');
+
+/**
+ * PARAM_LANGALPHAEXT the same contents as PARAM_LANGALPHA plus the chars in quotes: "_-" allowed
+ */
+define('PARAM_LANGALPHAEXT', 'langalphaext');
+
+/**
+ * PARAM_LANGALPHANUM - contains only the alphabet defined by the current language, or numbers "0-9".
+ */
+define('PARAM_LANGALPHANUM', 'langalphanum');
+
+/**
+ * PARAM_ALPHANUMEXT - contains only the alphabet defined by the current language, numbers "0-9" or "_-".
+ */
+define('PARAM_LANGALPHANUMEXT', 'langalphanumext');
+
+/**
  * PARAM_LOCALISEDFLOAT - a localised real/floating point number.
  * This is preferred over PARAM_FLOAT for numbers typed in by the user.
  * Cleans localised numbers to computer readable numbers; false for invalid numbers.
@@ -858,6 +878,26 @@ function clean_param($param, $type) {
         case PARAM_ALPHANUMEXT:
             // Remove everything not `a-zA-Z0-9_-`.
             return preg_replace('/[^A-Za-z0-9_-]/i', '', $param);
+
+        case PARAM_LANGALPHA:
+            // Remove everything not in the current language's alphabet.
+            $alphabet = str_replace(',', '', get_string('alphabet', 'langconfig'));
+            return preg_replace("/[^{$alphabet}]/i", '', $param);
+
+        case PARAM_LANGALPHAEXT:
+            // Remove everything not in the current language's alphabet or `_-`.
+            $alphabet = str_replace(',', '', get_string('alphabet', 'langconfig'));
+            return preg_replace("/[^{$alphabet}_-]/i", '', $param);
+
+        case PARAM_LANGALPHANUM:
+            // Remove everything not in the current language's alphabet or `0-9`.
+            $alphabet = str_replace(',', '', get_string('alphabet', 'langconfig'));
+            return preg_replace("/[^{$alphabet}0-9]/i", '', $param);
+
+        case PARAM_LANGALPHANUMEXT:
+            // Remove everything not in the current language's alphabet or `0-9_-`.
+            $alphabet = str_replace(',', '', get_string('alphabet', 'langconfig'));
+            return preg_replace("/[^{$alphabet}0-9_-]/i", '', $param);
 
         case PARAM_SEQUENCE:
             // Remove everything not `0-9,`.
