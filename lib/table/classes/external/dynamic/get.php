@@ -98,13 +98,13 @@ class get extends external_api {
             ),
             'jointype' => new external_value(PARAM_INT, 'Type of join to join all filters together', VALUE_REQUIRED),
             'firstinitial' => new external_value(
-                PARAM_ALPHANUMEXT,
+                PARAM_LANGALPHANUMEXT,
                 'The first initial to sort filter on',
                 VALUE_REQUIRED,
                 null
             ),
             'lastinitial' => new external_value(
-                PARAM_ALPHANUMEXT,
+                PARAM_LANGALPHANUMEXT,
                 'The last initial to sort filter on',
                 VALUE_REQUIRED,
                 null
