@@ -211,13 +211,11 @@ abstract class qtype_multichoice_renderer_base extends qtype_with_combined_feedb
     protected function correct_choices(array $right) {
         // Return appropriate string for single/multiple correct answer(s).
         if (count($right) == 1) {
-                return get_string('correctansweris', 'qtype_multichoice',
-                        implode(', ', $right));
+            return get_string('correctansweris', 'qtype_multichoice', array_pop($right));
         } else if (count($right) > 1) {
-                return get_string('correctanswersare', 'qtype_multichoice',
-                        implode(', ', $right));
+            return get_string('correctanswersare', 'qtype_multichoice', implode('', $right));
         } else {
-                return "";
+            return "";
         }
     }
 }
@@ -263,8 +261,7 @@ class qtype_multichoice_single_renderer extends qtype_multichoice_renderer_base 
         foreach ($question->answers as $ansid => $ans) {
             if (question_state::graded_state_for_fraction($ans->fraction) ==
                     question_state::$gradedright) {
-                $right[] = $question->make_html_inline($question->format_text($ans->answer, $ans->answerformat,
-                        $qa, 'question', 'answer', $ansid));
+                $right[] = $question->format_text($ans->answer, $ans->answerformat, $qa, 'question', 'answer', $ansid);
             }
         }
         return $this->correct_choices($right);
@@ -355,8 +352,7 @@ class qtype_multichoice_multi_renderer extends qtype_multichoice_renderer_base {
         $right = array();
         foreach ($question->answers as $ansid => $ans) {
             if ($ans->fraction > 0) {
-                $right[] = $question->make_html_inline($question->format_text($ans->answer, $ans->answerformat,
-                        $qa, 'question', 'answer', $ansid));
+                $right[] = $question->format_text($ans->answer, $ans->answerformat, $qa, 'question', 'answer', $ansid);
             }
         }
         return $this->correct_choices($right);

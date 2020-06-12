@@ -68,3 +68,9 @@ body#page-question-type-multichoice div[id^=fitem_id_][id*=feedback_] {
     border: 1px solid #bbb;
     border-top: 0;
 }
+
+.feedback .rightanswer p {
+    display: list-item;
+    list-style-type: disc;
+    list-style-position: inside;
+}
