@@ -391,9 +391,16 @@ abstract class question_definition {
     }
 
     /**
+     *
      * Take some HTML that should probably already be a single line, like a
      * multiple choice choice, or the corresponding feedback, and make it so that
      * it is suitable to go in a place where the HTML must be inline, like inside a <p> tag.
+     *
+     * Note: This method does not handle <p> tags that contain any attributes, such as those defining text direction (which are
+     * included by default on quiz answers from 3.9 onwards), so provides limited functionality.
+     * Correct answers are formatted inline using CSS from MDL-69012, therefore MDL-69452 has been created for the deprecation of
+     * this method in Moodle 3.10.
+     *
      * @param string $html to HTML to fix up.
      * @return string the fixed HTML.
      */
