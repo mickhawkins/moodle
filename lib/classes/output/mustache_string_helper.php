@@ -48,6 +48,8 @@ class mustache_string_helper {
      *
      * The args are comma separated and only the first is required.
      * The last is a $a argument for get string. For complex data here, use JSON.
+     * Note: Nested variables will only be rendered if passed in as the value of a JSON variable & wrapped by quote helper tags. Eg:
+     * {{#str}}namedate, core, {"name":{{# quote }}{{fullname}}{{/ quote }}, "date": {{# quote }}{{date}}{{/ quote }}}{{/str}}
      *
      * @param string $text The text to parse for arguments.
      * @param Mustache_LambdaHelper $helper Used to render nested mustache variables.
@@ -63,16 +65,27 @@ class mustache_string_helper {
             $component = '';
         }
 
-        $a = new stdClass();
+        $a = trim(strtok(''));
 
-        $next = strtok('');
-        $next = trim($next);
-        if ((strpos($next, '{') === 0) && (strpos($next, '{{') !== 0)) {
-            $rawjson = $helper->render($next);
-            $a = json_decode($rawjson);
-        } else {
-            $a = $helper->render($next);
+        // If there are JSON encoded variables, render any content wrapped in quote helpers, then JSON decode the variables.
+        // Note: This allows the quoted values to be rendered, while preventing other values being rendered (eg from user input).
+        if ((strpos($a, '{') === 0) && (strpos($a, '{{') !== 0)) {
+            $quotevalueregex = '/"[a-zA-Z0-9]+":\s*{{#\s*quote\s*}}.*?{{\/\s*quote\s*}}/';
+
+            // Find all values wrapped in quote helpers.
+            preg_match_all($quotevalueregex, $a, $quotedvalues);
+
+            // Render each of the quoted values, then substitute them back into the JSON string.
+            foreach ($quotedvalues[0] as $quotetorender) {
+                $quoteposition = strpos($a, $quotetorender);
+                $renderedquote = $helper->render($quotetorender);
+                $a = substr_replace($a, $renderedquote, $quoteposition, strlen($quotetorender));
+            }
+
+            // Decode the JSON string.
+            $a = json_decode($a);
         }
+
         return get_string($key, $component, $a);
     }
 }
