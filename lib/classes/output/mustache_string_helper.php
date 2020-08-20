@@ -50,7 +50,7 @@ class mustache_string_helper {
      * The last is a $a argument for get string. For complex data here, use JSON.
      *
      * @param string $text The text to parse for arguments.
-     * @param Mustache_LambdaHelper $helper Used to render nested mustache variables.
+     * @param Mustache_LambdaHelper $helper Unused, nested mustache variables do not need to be rendered.
      * @return string
      */
     public function str($text, Mustache_LambdaHelper $helper) {
@@ -63,16 +63,12 @@ class mustache_string_helper {
             $component = '';
         }
 
-        $a = new stdClass();
+        $a = trim(strtok(''));
 
-        $next = strtok('');
-        $next = trim($next);
-        if ((strpos($next, '{') === 0) && (strpos($next, '{{') !== 0)) {
-            $rawjson = $helper->render($next);
-            $a = json_decode($rawjson);
-        } else {
-            $a = $helper->render($next);
+        if ((strpos($a, '{') === 0) && (strpos($a, '{{') !== 0)) {
+            $a = json_decode($a);
         }
+
         return get_string($key, $component, $a);
     }
 }
