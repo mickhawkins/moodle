@@ -31,7 +31,7 @@
     Example context (json):
     {
         "numpolicy": 1,
-        "totalpolicies": 2,
+        "policycountstring": "Policy 1 of 2",
         "policy": {
             "name": "Terms &amp; conditions",
             "summary": "Policy <u>summary</u>",
@@ -50,9 +50,7 @@
     </div>
     {{# numpolicy }}
         <div class="float-right">
-            {{# str }} steppolicies, tool_policy,
-                { "numpolicy": {{# quote }}{{numpolicy}}{{/quote }}, "totalpolicies": {{# quote }}{{totalpolicies}}{{/ quote }} }
-            {{/ str }}
+            {{policycountstring}}
         </div>
     {{/ numpolicy }}
 </div>

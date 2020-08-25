@@ -153,11 +153,21 @@ class page_viewdoc implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         global $USER;
 
+        if ($this->numpolicy) {
+            $countvars = [
+                'numpolicy' => $this->numpolicy,
+                'totalpolicies' => $this->totalpolicies,
+            ];
+            $policycountstring = get_string('steppolicies', 'tool_policy', $countvars);
+        } else {
+            $policycountstring = null;
+        }
+
         $data = (object) [
             'pluginbaseurl' => (new moodle_url('/admin/tool/policy'))->out(false),
             'returnurl' => $this->returnurl ? (new moodle_url($this->returnurl))->out(false) : null,
             'numpolicy' => $this->numpolicy ? : null,
-            'totalpolicies' => $this->totalpolicies ? : null,
+            'policycountstring' => $policycountstring,
         ];
         if ($this->manage && $this->policy->status != policy_version::STATUS_ARCHIVED) {
             $paramsurl = ['policyid' => $this->policy->policyid, 'versionid' => $this->policy->id];
