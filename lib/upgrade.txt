@@ -45,6 +45,7 @@ information provided here is intended especially for developers.
 * Constant \core_h5p\file_storage::EDITOR_FILEAREA has been deprecated
   because it's not required any more.
 * The ZipStream-PHP library has been added to Moodle core in /lib/zipstream.
+* The polyfill-mbstring library has been added to Moodle core in /lib/polyfill-mbstring.
 
 === 3.9 ===
 * Following function has been deprecated, please use \core\task\manager::run_from_cli().
