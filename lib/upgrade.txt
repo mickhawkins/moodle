@@ -45,6 +45,7 @@ information provided here is intended especially for developers.
 * The ZipStream-PHP library has been added to Moodle core in /lib/zipstream.
 * The polyfill-mbstring library has been added to Moodle core in /lib/polyfill-mbstring.
 * The php-enum library has been added to Moodle core in /lib/php-enum.
+* The http-message library has been added to Moodle core in /lib/http-message.
 
 === 3.9 ===
 * Following function has been deprecated, please use \core\task\manager::run_from_cli().
