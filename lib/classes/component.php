@@ -107,6 +107,7 @@ class core_component {
         'ZipStream' => 'lib/zipstream/src/',
         'Symfony\\Polyfill\\Mbstring' => 'lib/polyfill-mbstring/src',
         'MyCLabs\\Enum' => 'lib/php-enum/src',
+        'Psr\\Http\\Message' => 'lib/http-message/src',
     );
 
     /**
