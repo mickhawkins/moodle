@@ -105,6 +105,7 @@ class core_component {
         'MongoDB' => 'cache/stores/mongodb/MongoDB',
         'Firebase\\JWT' => 'lib/php-jwt/src',
         'ZipStream' => 'lib/zipstream/src/',
+        'Symfony\\Polyfill\\Mbstring' => 'lib/polyfill-mbstring/src',
     );
 
     /**

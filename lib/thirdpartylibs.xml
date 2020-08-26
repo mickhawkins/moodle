@@ -345,4 +345,10 @@
     <license>MIT</license>
     <version>2.1.0</version>
   </library>
+  <library>
+    <location>polyfill-mbstring</location>
+    <name>Symfony polyfill-mbstring</name>
+    <license>MIT</license>
+    <version>1.18.1</version>
+  </library>
 </libraries>
