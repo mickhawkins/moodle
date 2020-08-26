@@ -44,6 +44,7 @@ information provided here is intended especially for developers.
 * New library function rename_to_unused_name() to rename a file within its current location.
 * The ZipStream-PHP library has been added to Moodle core in /lib/zipstream.
 * The polyfill-mbstring library has been added to Moodle core in /lib/polyfill-mbstring.
+* The php-enum library has been added to Moodle core in /lib/php-enum.
 
 === 3.9 ===
 * Following function has been deprecated, please use \core\task\manager::run_from_cli().

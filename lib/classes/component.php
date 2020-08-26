@@ -106,6 +106,7 @@ class core_component {
         'Firebase\\JWT' => 'lib/php-jwt/src',
         'ZipStream' => 'lib/zipstream/src/',
         'Symfony\\Polyfill\\Mbstring' => 'lib/polyfill-mbstring/src',
+        'MyCLabs\\Enum' => 'lib/php-enum/src',
     );
 
     /**
