@@ -22,6 +22,8 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use core_admin\local\settings\filesize;
+
 $capabilities = array(
     'moodle/backup:backupcourse',
     'moodle/category:manage',
@@ -158,6 +160,19 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
     $choices[VISIBLEGROUPS] = new lang_string('groupsvisible', 'group');
     $temp->add(new admin_setting_configselect('moodlecourse/groupmode', new lang_string('groupmode'), '', key($choices),$choices));
     $temp->add(new admin_setting_configselect('moodlecourse/groupmodeforce', new lang_string('force'), new lang_string('coursehelpforce'), 0,array(0 => new lang_string('no'), 1 => new lang_string('yes'))));
+
+    $ADMIN->add('courses', $temp);
+
+    // Course download.
+    $temp = new admin_settingpage('coursedownload', new lang_string('coursedownload', 'course'));
+    $temp->add(new admin_setting_configcheckbox('enablecoursedownload',
+            new lang_string('enablecoursedownload', 'admin'),
+            new lang_string('configenablecoursedownload', 'admin'), 0));
+
+    // 50MB default maximum size per file in course downloads.
+    $defaultmaxdownloadsize = 50 * filesize::UNIT_MB;
+    $temp->add(new filesize('maxsizepercoursedownloadfile', new lang_string('maxsizepercoursedownloadfile', 'admin'),
+            new lang_string('configmaxsizepercoursedownloadfile', 'admin'), $defaultmaxdownloadsize, filesize::UNIT_MB));
 
     $ADMIN->add('courses', $temp);
 
