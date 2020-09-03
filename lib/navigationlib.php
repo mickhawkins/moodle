@@ -4558,6 +4558,14 @@ class settings_navigation extends navigation_node {
             $coursenode->add(get_string('copycourse'), $url, self::TYPE_SETTING, null, 'copy', new pix_icon('t/copy', ''));
         }
 
+        // Course content download.
+        if (\core_course\coursecontentexport\manager::can_export_content($coursecontext)) {
+            //$url = new \moodle_url('/course/view.php', array('id' => $course->id, 'download' => 1));
+            $url = new \moodle_url('/course/downloadcontent.php', array('courseid' => $course->id));
+            $downloadstring = get_string('downloadcoursecontent', 'course');
+            $coursenode->add($downloadstring, $url, self::TYPE_SETTING, null, 'download', new pix_icon('t/download', ''));
+        }
+
         // Reset this course
         if ($adminoptions->reset) {
             $url = new moodle_url('/course/reset.php', array('id'=>$course->id));
