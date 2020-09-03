@@ -43,6 +43,7 @@ $string['aria:favouritestab'] = 'Starred activities';
 $string['aria:recommendedtab'] = 'Recommended activities';
 $string['aria:modulefavourite'] = 'Star {$a} activity';
 $string['coursealreadyfinished'] = 'Course already finished';
+$string['coursedownloadconfirmation'] = 'You are about to download a zip file, which will contain all {$a->modules} content from this course (excluding any files larger than {$a->maxfilesize}).';
 $string['coursenotyetstarted'] = 'The course has not yet started';
 $string['coursenotyetfinished'] = 'The course has not yet finished';
 $string['coursetoolong'] = 'The course is too long';
