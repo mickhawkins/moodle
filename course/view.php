@@ -223,12 +223,25 @@
         $PAGE->requires->js_init_call('M.core_completion.init');
     }
 
+    // Determine whether the user has permission to perform course content downloads.
+    $candownloadcourse = \core_course\coursecontentexport\manager::can_export_content($context);
+
     // We are currently keeping the button here from 1.x to help new teachers figure out
     // what to do, even though the link also appears in the course admin block.  It also
     // means you can back out of a situation where you removed the admin block. :)
     if ($PAGE->user_allowed_editing()) {
         $buttons = $OUTPUT->edit_button($PAGE->url);
         $PAGE->set_button($buttons);
+    } else if ($candownloadcourse) {
+        // Only display the course content download button if allowed to access it and some compatible modules exist in the course.
+        // Also only show this if user doesn't have edit rights, since those who do will access it via the actions menu.
+        $modulenames = \core_course\coursecontentexport\manager::get_supported_modules($context);
+
+        if ($modulenames) {
+            $buttonattr = \core_course\output\content_export_link::get_attributes($context, $modulenames);
+            $button = new single_button($buttonattr->url, $buttonattr->displaystring, 'post', false, $buttonattr->elementattributes);
+            $PAGE->set_button($OUTPUT->render($button));
+        }
     }
 
     // If viewing a section, make the title more specific
@@ -299,5 +312,10 @@
 
     // Include course AJAX
     include_course_ajax($course, $modnamesused);
+
+    // If available, include the JS to prepare the course content download modal.
+    if ($candownloadcourse) {
+        $PAGE->requires->js_call_amd('core_course/contentdownload', 'prepareContentDownloadModal');
+    }
 
     echo $OUTPUT->footer();
