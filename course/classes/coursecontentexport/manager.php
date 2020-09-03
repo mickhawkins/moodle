@@ -43,6 +43,10 @@ class manager {
     public static function export_all_content_for_course(context_course $context, zipwriter $archive) {
         global $USER;
 
+        if (!self::can_export_content($context)) {
+            return;
+        }
+
         $user = $USER;
         $modinfo = get_fast_modinfo($context->instanceid, $user->id);
 
@@ -65,5 +69,47 @@ class manager {
         }
 
         $archive->finish();
+    }
+
+    /**
+     * Prepares an array of which modules within a can be exported.
+     *
+     * @param context_course $context
+     * @return array The names of modules supporting course content export.
+     */
+    public static function get_supported_modules(context_course $context): array {
+        global $CFG, $USER;
+
+        $supportedmodules = [];
+
+        if (self::can_export_content($context)) {
+            $modinfo = get_fast_modinfo($context->instanceid, $USER->id);
+            $modnames = array_keys($modinfo->instances);
+
+            foreach ($modnames as $modname) {
+                $classname = "\\mod_{$modname}\\coursecontentexport\\exporter";
+
+                if (class_exists($classname)) {
+                    $supportedmodules[] = $modname;
+                }
+            }
+        }
+
+        return $supportedmodules;
+    }
+
+    /**
+     * Determine whether course content export is enabled, and if so, whether the current user has permission to do so.
+     *
+     * @param context_course $context The course context being checked.
+     * @return bool
+     */
+    public static function can_export_content(context_course $context): bool {
+        global $CFG;
+
+        // Treat course download as disabled unless explicitly enabled.
+        // (MDL-69561 will introduce the functionality to allow course download to be enabled at the course context level).
+        return (!empty($CFG->enablecoursedownload) && $CFG->enablecoursedownload == COURSEDOWNLOADENABLED &&
+                has_capability('moodle/course:downloadcontentexport', $context));
     }
 }
