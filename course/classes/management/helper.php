@@ -383,6 +383,16 @@ class helper {
                 'attributes' => array('class' => 'action-copy')
             );
         }
+        //TODO - what/where is this used? Is it needed?
+        // Course content download.
+//        if (self::can_download_course_content($course->id)) {
+//            $downloadcousetitle = \get_string('downloadcoursecontent', 'course');
+//            $actions[] = array(
+//                'url' => new \moodle_url('/course/view.php', array('id' => $course->id, 'download' => 1)),
+//                'icon' => new \pix_icon('t/download', $downloadcousetitle),
+//                'attributes' => array('class' => 'action-download', 'data-download-course-title' => $downloadcousetitle)
+//            );
+//        }
         // Delete.
         if ($course->can_delete()) {
             $actions[] = array(
@@ -1024,4 +1034,19 @@ class helper {
         $coursecontext = \context_course::instance($courseid);
         return has_all_capabilities(self::get_course_copy_capabilities(), $coursecontext);
     }
+
+    /**
+     * Returns true if the current user can use download the content of this course.
+     *
+     *
+     * @param int $courseid
+     * @return bool
+     */
+//    public static function can_download_course_content(int $courseid): bool {
+//        global $CFG;
+//
+//        // Ensure course download is enabled for the site and user has the capability to use it.
+//        $coursecontext = \context_course::instance($courseid);
+//        return (!empty($CFG->enablecoursedownload) && has_capability('moodle/course:downloadcontentexport', $coursecontext));
+//    }
 }

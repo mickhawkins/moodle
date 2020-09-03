@@ -18,6 +18,7 @@
     $marker      = optional_param('marker',-1 , PARAM_INT);
     $switchrole  = optional_param('switchrole',-1, PARAM_INT); // Deprecated, use course/switchrole.php instead.
     $return      = optional_param('return', 0, PARAM_LOCALURL);
+    $download    = optional_param('download', 0, PARAM_BOOL);
 
     $params = array();
     if (!empty($name)) {
@@ -299,5 +300,17 @@
 
     // Include course AJAX
     include_course_ajax($course, $modnamesused);
+
+    // Set up course download modal if required.
+    if ($download && \core_course\management\helper::can_download_course_content($id)) {
+        $downloadAttributes = [
+            'class' => 'course-download',
+            'data-download-title' => 'TODO title',
+            'data-download-body' => 'TODO modal body',
+            'data-download-button-text' => 'TODO dl button text',
+        ];
+
+        echo html_writer::tag('div', '', $downloadAttributes);
+    }
 
     echo $OUTPUT->footer();

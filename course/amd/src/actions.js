@@ -38,7 +38,8 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
             TOGGLE: '.toggle-display,.dropdown-toggle',
             SECTIONLI: 'li.section',
             SECTIONACTIONMENU: '.section_action_menu',
-            ADDSECTIONS: '#changenumsections [data-add-sections]'
+            ADDSECTIONS: '#changenumsections [data-add-sections]',
+            COURSEDOWNLOAD: '.course-download',
         };
 
         Y.use('moodle-course-coursebase', function() {
@@ -601,6 +602,36 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                         });
                     });
                 });
+
+                const downloadTrigger = $(SELECTOR.COURSEDOWNLOAD);
+                const downloadModalTitle = downloadTrigger.attr('data-download-title');
+                const downloadModalBody = $(downloadTrigger.attr('data-download-body'));
+                const downloadModalSubmitText = downloadTrigger.attr('data-download-button-text');
+
+                ModalFactory.create({
+                    title: downloadModalTitle,
+                    type: ModalFactory.types.SAVE_CANCEL,
+                    body: downloadModalBody.html()
+                }, downloadTrigger)
+                .done(function(modal) {
+//                    const downloadCourseContent = () => {
+//                        // TODO: Trigger the course content download.
+//                        alert("TODO");
+//                    };
+
+                    modal.setSaveButtonText(downloadModalSubmitText);
+
+                    modal.getRoot().on(ModalEvents.save, function(e) {
+                        // When modal "Download" button is pressed.
+                        e.preventDefault();
+//                        downloadCourseContent();
+                        alert("TODO - do the download");
+                    });
+                });
+
+
+
+
             },
 
             /**
