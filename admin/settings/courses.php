@@ -165,9 +165,13 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
 
     // Course download.
     $temp = new admin_settingpage('coursedownload', new lang_string('coursedownload', 'course'));
-    $temp->add(new admin_setting_configcheckbox('enablecoursedownload',
-            new lang_string('enablecoursedownload', 'admin'),
-            new lang_string('configenablecoursedownload', 'admin'), 0));
+    $coursedlchoices = [
+        COURSEDOWNLOADDISABLED => get_string('disabled', 'admin'),
+        COURSEDOWNLOADAVAILABLE => get_string('disabledavailable', 'admin'),
+        COURSEDOWNLOADENABLED => get_string('enabled', 'admin'),
+    ];
+    $temp->add(new admin_setting_configselect('enablecoursedownload', new lang_string('enablecoursedownload', 'admin'),
+            new lang_string('configenablecoursedownload', 'admin'), COURSEDOWNLOADDISABLED, $coursedlchoices));
 
     // 50MB default maximum size per file in course downloads.
     $defaultmaxdownloadsize = 50 * filesize::UNIT_MB;
