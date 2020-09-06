@@ -50,7 +50,9 @@
     </div>
     {{# numpolicy }}
         <div class="float-right">
-            {{policycountstring}}
+            {{# str }} steppolicies, tool_policy,
+                { "numpolicy": {{# quote }}{{numpolicy}}{{/quote }}, "totalpolicies": {{# quote }}{{totalpolicies}}{{/ quote }} }
+            {{/ str }}
         </div>
     {{/ numpolicy }}
 </div>
