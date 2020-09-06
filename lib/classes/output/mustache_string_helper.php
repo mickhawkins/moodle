@@ -65,7 +65,44 @@ class mustache_string_helper {
 
         $a = trim(strtok(''));
 
+        // If there are JSON encoded variables, render any content wrapped in quote helpers, then JSON decode the variables.
+        // Note: This allows quoted values to be rendered, while preventing other values being rendered (eg from user input).
         if ((strpos($a, '{') === 0) && (strpos($a, '{{') !== 0)) {
+//            $quotevalueregex = '/"[a-zA-Z0-9]+":\s*\{\{#\s*quote\s*\}\}\{\{[a-zA-Z0-9\-_]+\}\}\{\{\/\s*quote\s*\}\}/';
+
+//            preg_match_all($quotevalueregex, $a, $quotedvalues);
+
+//            foreach ($quotedvalues[0] as $quotetorender) {
+//                $quoteposition = strpos($a, $quotetorender);
+//                $renderedquote = $helper->render($quotetorender);
+//                $a = substr_replace($a, $renderedquote, $quoteposition, strlen($quotetorender));
+//            }
+
+            // Make the format/spacing of any quote helpers consistent, so they can be used in strpos.
+            $a = preg_replace('%{{(#|/)\s*quote\s*}}%', '{{\1 quote }}', $a);
+
+            // Find any values wrapped in quote helpers, and render them.
+           $quoteoffset = 0;
+            while ($openpos = strpos($a, '{{# quote }}', $quoteoffset)) {
+                $closepos = strpos($a, '{{/ quote }}', $openpos);
+
+                // If there's a closing quote tag, render the quoted content.
+                if ($closepos !== false) {
+                    // Calculate the length from the start of the opening quote tag, to the end of the close tag.
+                    $quotelength = ($closepos + 12) - $openpos;
+                    $unrendered = substr($a, $openpos, $quotelength);
+
+                    // Render the contents of the quote helper.
+                    $rendered = $helper->render($unrendered);
+
+                    // Insert the rendered content into the string.
+                    $a = str_replace($unrendered, $rendered, $a);
+
+                    // Move the offset to after the quote we've just rendered, to prevent recursive rendering (eg from user input).
+                    $quoteoffset = $openpos + strlen($rendered);
+                }
+            }
+
             $a = json_decode($a);
         }
 
