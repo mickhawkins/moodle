@@ -44,6 +44,7 @@ $string['aria:recommendedtab'] = 'Recommended activities';
 $string['aria:modulefavourite'] = 'Star {$a} activity';
 $string['coursealreadyfinished'] = 'Course already finished';
 $string['coursedownload'] = 'Course content download';
+$string['coursedownloadconfirmation'] = 'You are about to download a zip file, which will contain all activity/resource content compatible with course content downloads.';
 $string['coursenotyetstarted'] = 'The course has not yet started';
 $string['coursenotyetfinished'] = 'The course has not yet finished';
 $string['coursetoolong'] = 'The course is too long';

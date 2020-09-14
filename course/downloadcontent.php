@@ -58,18 +58,10 @@ if ($isdownload) {
     // Prepare download confirmation information and display it.
     $modulenames = manager::get_supported_modules($coursecontext);
 
-    //TODO: lang string(s)
-    $text = "You are about to download a zip file of course content ({$filename}), which may include the following activities:";
-    $text .= '<br><ul>';
-
-    foreach ($modulenames as $modname) {
-        $text .= '<li>' . ucfirst($modname) . '</li><br>';
-    }
-
-    echo $OUTPUT->header('sdfsdf'); // format_string($courseinfo->fullname)
+    echo $OUTPUT->header(format_string($courseinfo->fullname));
     echo $OUTPUT->heading(get_string('downloadcoursecontent', 'course'));
 
-    echo $OUTPUT->confirm($text,
+    echo $OUTPUT->confirm(get_string('coursedownloadconfirmation', 'course'),
         "/course/downloadcontent.php?courseid={$courseid}&download=1",
         "/course/view.php?id={$courseid}");
 
