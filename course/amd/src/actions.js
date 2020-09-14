@@ -38,7 +38,8 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
             TOGGLE: '.toggle-display,.dropdown-toggle',
             SECTIONLI: 'li.section',
             SECTIONACTIONMENU: '.section_action_menu',
-            ADDSECTIONS: '#changenumsections [data-add-sections]'
+            ADDSECTIONS: '#changenumsections [data-add-sections]',
+            COURSEDOWNLOAD: '.course-download',
         };
 
         Y.use('moodle-course-coursebase', function() {
@@ -599,6 +600,42 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                             e.preventDefault();
                             addSections();
                         });
+                    });
+                });
+
+                const downloadTrigger = $(SELECTOR.COURSEDOWNLOAD);
+                const downloadLink = downloadTrigger.attr('data-download-link');
+                const downloadModalTitle = downloadTrigger.attr('data-download-title');
+                const downloadModalBody = $(downloadTrigger.attr('data-download-body'));
+                const downloadModalSubmitText = downloadTrigger.attr('data-download-button-text');
+
+                ModalFactory.create({
+                    title: downloadModalTitle,
+                    type: ModalFactory.types.SAVE_CANCEL,
+                    body: downloadModalBody.html()
+                }, downloadTrigger)
+                .done(function(modal) {
+                    modal.setSaveButtonText(downloadModalSubmitText);
+
+                    modal.getRoot().on(ModalEvents.save, function(e) {
+                        // When modal "Download" button is pressed.
+                        e.preventDefault();
+
+                        // Create a form to submit the file download request, so we can avoid sending sesskey over GET.
+                        var downloadForm = document.createElement('form');
+                        downloadForm.action = downloadLink;
+                        downloadForm.method = 'POST';
+                        // Open download in a new window, so user can continue with the course in the original window.
+                        downloadForm.target = '_blank';
+                        var downloadSesskey = document.createElement('input');
+                        downloadSesskey.name = 'sesskey';
+                        downloadSesskey.value = M.cfg.sesskey;
+                        downloadForm.appendChild(downloadSesskey);
+                        downloadForm.style.display = 'none';
+
+                        document.body.appendChild(downloadForm);
+                        downloadForm.submit();
+                        document.body.removeChild(downloadForm);
                     });
                 });
             },
