@@ -55,14 +55,22 @@ if ($isdownload) {
 
     redirect("/course/view.php?id={$courseid}");
 } else {
-    // Prepare download confirmation information and display it.
-    $modulenames = manager::get_supported_modules($coursecontext);
+    $PAGE->set_title(get_string('downloadcoursecontent', 'course'));
+    $PAGE->set_heading(format_string($courseinfo->fullname));
 
-    echo $OUTPUT->header(format_string($courseinfo->fullname));
+    echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('downloadcoursecontent', 'course'));
 
-    echo $OUTPUT->confirm(get_string('coursedownloadconfirmation', 'course'),
+    // Prepare download confirmation information and display it.
+    $modulenames = manager::get_supported_modules($coursecontext);
+    $confirmationvalues = [
+        'modules' => '<strong>' . join(', ', $modulenames) . '</strong>',
+        // Calculate file size in MB.
+        'maxfilesize' => $CFG->maxsizepercoursedownloadfile / 1048576,
+        'filesizeunit' => get_string('sizemb'),
+    ];
+
+    echo $OUTPUT->confirm(get_string('coursedownloadconfirmation', 'course', $confirmationvalues),
         "/course/downloadcontent.php?courseid={$courseid}&download=1",
         "/course/view.php?id={$courseid}");
-
 }
