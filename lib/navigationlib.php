@@ -4558,12 +4558,27 @@ class settings_navigation extends navigation_node {
             $coursenode->add(get_string('copycourse'), $url, self::TYPE_SETTING, null, 'copy', new pix_icon('t/copy', ''));
         }
 
-        // Course content download.
+        // Prepare data for course content download functionality.
         if (\core_course\coursecontentexport\manager::can_export_content($coursecontext)) {
-            //$url = new \moodle_url('/course/view.php', array('id' => $course->id, 'download' => 1));
-            $url = new \moodle_url('/course/downloadcontent.php', array('courseid' => $course->id));
+            $url = new \moodle_url('/course/downloadcontent.php', ['courseid' => $course->id]);
             $downloadstring = get_string('downloadcoursecontent', 'course');
-            $coursenode->add($downloadstring, $url, self::TYPE_SETTING, null, 'download', new pix_icon('t/download', ''));
+            $modulenames = \core_course\coursecontentexport\manager::get_supported_modules($coursecontext);
+            $confirmationvalues = [
+                'modules' => '<strong>' . join(', ', $modulenames) . '</strong>',
+                // Calculate file size in MB.
+                'maxfilesize' => $CFG->maxsizepercoursedownloadfile / 1048576,
+                'filesizeunit' => get_string('sizemb'),
+            ];
+            $downloadattr = [
+                'data-coursedownload' => 1,
+                'data-course-id' => $course->id,
+                'data-download-body' => '<p>' . get_string('coursedownloadconfirmation', 'course', $confirmationvalues) . '<p>',
+                'data-download-button-text' => get_string('download'),
+                'data-download-link' => "{$CFG->wwwroot}/course/downloadcontent.php?courseid={$course->id}&download=1",
+                'data-download-title' => get_string('downloadcoursecontent', 'course'),
+            ];
+            $actionlink = new action_link($url, $downloadstring, null, $downloadattr);
+            $coursenode->add($downloadstring, $actionlink, self::TYPE_SETTING, null, 'download', new pix_icon('t/download', ''));
         }
 
         // Reset this course
