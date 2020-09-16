@@ -39,7 +39,7 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
             SECTIONLI: 'li.section',
             SECTIONACTIONMENU: '.section_action_menu',
             ADDSECTIONS: '#changenumsections [data-add-sections]',
-            COURSEDOWNLOAD: '.course-download',
+            COURSEDOWNLOAD: 'a[data-coursedownload=1]'
         };
 
         Y.use('moodle-course-coursebase', function() {
@@ -603,6 +603,9 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                     });
                 });
 
+//TODO: This is in the wrong place, it will only be called if the course page is in edit mode
+// ("Turn editing mode on" as a teacher etc)
+                // Set up the course content download modal.
                 const downloadTrigger = $(SELECTOR.COURSEDOWNLOAD);
                 const downloadLink = downloadTrigger.attr('data-download-link');
                 const downloadModalTitle = downloadTrigger.attr('data-download-title');
@@ -625,7 +628,7 @@ define(['jquery', 'core/ajax', 'core/templates', 'core/notification', 'core/str'
                         var downloadForm = document.createElement('form');
                         downloadForm.action = downloadLink;
                         downloadForm.method = 'POST';
-                        // Open download in a new window, so user can continue with the course in the original window.
+                        // Open download in a new tab, so current course view is not disrupted.
                         downloadForm.target = '_blank';
                         var downloadSesskey = document.createElement('input');
                         downloadSesskey.name = 'sesskey';
