@@ -301,26 +301,4 @@
     // Include course AJAX
     include_course_ajax($course, $modnamesused);
 
-    // Set up course download modal if required.
-    if ($download && \core_course\coursecontentexport\manager::can_export_content($context)) {
-        $modulenames = \core_course\coursecontentexport\manager::get_supported_modules($context);
-        $confirmationvalues = [
-            'modules' => '<strong>' . join(', ', $modulenames) . '</strong>',
-            // Calculate file size in MB.
-            'maxfilesize' => $CFG->maxsizepercoursedownloadfile / 1048576,
-            'filesizeunit' => get_string('sizemb'),
-        ];
-
-        $downloadAttributes = [
-            'data-course-id' => $course->id,
-            'class' => 'course-download',
-            'data-download-body' => '<p>' . get_string('coursedownloadconfirmation', 'course', $confirmationvalues) . '<p>',
-            'data-download-button-text' => get_string('download'),
-            'data-download-link' => "{$CFG->wwwroot}/course/downloadcontent.php?courseid={$course->id}&download=1",
-            'data-download-title' => get_string('downloadcoursecontent', 'course'),
-        ];
-
-        echo html_writer::tag('div', 'TEST', $downloadAttributes);
-    }
-
     echo $OUTPUT->footer();
