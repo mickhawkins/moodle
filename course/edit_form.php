@@ -120,6 +120,39 @@ class course_edit_form extends moodleform {
                 $mform->setConstant('visible', $courseconfig->visible);
             }
         }
+
+        // Course content download.
+        $coursedownloadsiteconfig = $CFG->enablecoursedownload ?? COURSEDOWNLOADDISABLED;
+
+        if ($coursedownloadsiteconfig != COURSEDOWNLOADDISABLED) {
+            $coursedownloadchoices = [
+                0 => get_string('disabled', 'course'),
+                1 => get_string('enabled', 'course'),
+            ];
+
+            // Determine default value.
+            $coursedownloadsitedefault = ($coursedownloadsiteconfig == COURSEDOWNLOADAVAILABLE) ? 0 : 1;
+
+            $mform->addElement('select', 'contentdownload', get_string('coursedownload', 'course'), $coursedownloadchoices);
+            $mform->addHelpButton('contentdownload', 'coursedownload', 'course');
+
+            if ($coursedownloadsiteconfig == COURSEDOWNLOADDISABLED) {
+                // Course content download disabled for this site.
+                $mform->setDefault('contentdownload', $coursedownloadsitedefault);
+                $mform->hardFreeze('contentdownload');
+                $mform->setConstant('contentdownload', 0);
+            } else {
+                // Set appropriate default, freeze if user does not have capability to edit.
+                $coursedownloadvalue = $courseconfig->contentdownload ?? $coursedownloadsitedefault;
+                $mform->setDefault('contentdownload', $coursedownloadvalue);
+
+                if (!has_capability('moodle/course:configurecontentexport', $coursecontext)) {
+                    $mform->hardFreeze('contentdownload');
+                    $mform->setConstant('contentdownload', $coursedownloadvalue);
+                }
+            }
+        }
+
         $mform->addElement('date_time_selector', 'startdate', get_string('startdate'));
         $mform->addHelpButton('startdate', 'startdate');
         $date = (new DateTime())->setTimestamp(usergetmidnight(time()));
