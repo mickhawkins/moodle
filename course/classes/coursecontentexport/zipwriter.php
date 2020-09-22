@@ -171,7 +171,7 @@ class zipwriter {
         if ($file->get_filesize() > $this->maxfilesize) {
             // Add a placeholder which links back to the tokenpluginfile instead.
             // TODO: Look at whether an HTML Placeholder file is required here too.
-            return $this->get_tokenurl(array_slice(func_get_args(), 3));
+            return $this->get_tokenurl($contextid, $component, $area, $itemid, $pathname, $filename);
         } else {
             $filehandle = $file->get_content_file_handle();
             $this->archive->addFileFromStream($fullfilepathinzip, $filehandle);
@@ -241,7 +241,7 @@ class zipwriter {
         string $pathname,
         string $filename
     ): string {
-        return moodle_url::make_pluginfile_url($contextid, $component, $area, $itemid, $pathname, $filename, true, true)->out(false);
+        return \moodle_url::make_pluginfile_url($contextid, $component, $area, $itemid, $pathname, $filename, true, true)->out(false);
     }
 
     /**
