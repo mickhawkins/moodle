@@ -277,6 +277,11 @@ $string['confirmcheckfull'] = 'Are you absolutely sure you want to confirm {$a} 
 $string['confirmcoursemove'] = 'Are you sure you want to move this course ({$a->course}) into this category ({$a->category})?';
 $string['considereddigitalminor'] = 'You are too young to create an account on this site.';
 $string['content'] = 'Content';
+$string['contentexport_viewfilename'] = 'View the file {$a}';
+$string['contentexport_footersummary'] = 'This file is part of a content export downloaded from <a href="{$a->exportlocationlink}">{$a->exportlocationname}</a> by {$a->userfullname} on {$a->date}';
+$string['contentexport_vieworiginalactivity'] = 'View the full content of the "{$a}" activity';
+$string['contentexport_vieworiginalcoursefullmessage'] = 'This download is a snapshot of a course. Course content may have been updated since it was created. For the most up-to-date information you should <a href="{$a}" target="new">view the live course</a>.';
+$string['contentexport_vieworiginalactivityfullmessage'] = 'This page is a summary of an activity. Activity content may have changed, and may contain additional content which could not be downloaded. For the most up-to-date content you should <a href="{$a}">view the activity</a> in it\'s original location.';
 $string['contentbank'] = 'Content bank';
 $string['continue'] = 'Continue';
 $string['continuetocourse'] = 'Click here to enter your course';

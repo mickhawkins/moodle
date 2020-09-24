@@ -1,0 +1,101 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core/content/export/module_index
+
+    Renders content for a course index.
+    This template is not for use within moodle.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * global
+
+    Example context (json):
+    {
+        "global": {
+            "language": "en",
+            "righttoleft": 0,
+            "sitename": "Kevin's Emporium of fine course material",
+            "coursename": "Marketting 101",
+            "pathtotop": "./",
+            "siteurl": "https://kevin.example.com",
+            "courseshortname": "MKT101",
+            "contentexportsummary": "Brought to you by the letters 'M', 'O', 'D', 'L', and 'E'."
+        },
+        "name": "Data Structures - Discussion",
+        "link": "https://kevin.example.com/mod/forum/view.php?id=53",
+        "intro": "<p>This forum provides a place for you to discuss the concepts of data structures.</p>",
+        "sections": [
+            {
+                "title": "The title set in an exportable_item",
+                "content": "<p>Some text area included in an exportable_item.</p>",
+                "files": [
+                    {
+                        "filename": "Example file which was not included in the text field above",
+                        "filepath": "./sections/0/_files"
+                    }
+                ]
+            }
+        ]
+    }
+}}
+{{<core/content/export/external_page}}
+{{$pagecontent}}
+    <h2>
+        {{{name}}}
+    </h2>
+
+    <div class="alert alert-info alert-block">
+        {{#str}}contentexport_vieworiginalactivityfullmessage, core, {{{link}}} {{/str}}
+    </div>
+
+    {{#intro}}
+    <h3>{{#str}}moduleintro, core{{/str}}</h3>
+    <div>
+        {{{intro}}}
+    </div>
+    <hr>
+    {{/intro}}
+
+    {{#sections}}
+    <div>
+        <h3>{{{title}}}</h3>
+        <div>
+            {{#content}}
+            <div>
+                {{{content}}}
+            </div>
+            {{/content}}
+
+            {{#files.0}}
+            <ul>
+            {{#files}}
+                <li><a href="{{filepath}}" title="{{#str}}contentexport_viewfilename, core, {{filename}}{{/str}}">{{filename}}</a></li>
+            {{/files}}
+            </ul>
+            {{/files.0}}
+        </div>
+    </div>
+    <hr>
+    {{/sections}}
+{{/pagecontent}}
+{{/core/content/export/external_page}}
