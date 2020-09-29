@@ -2709,9 +2709,9 @@ function xmldb_main_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021052500.18) {
-        // Define field contentdownload to be added to course.
+        // Define field downloadcontent to be added to course.
         $table = new xmldb_table('course');
-        $field = new xmldb_field('contentdownload', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'visibleold');
+        $field = new xmldb_field('downloadcontent', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'visibleold');
 
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);

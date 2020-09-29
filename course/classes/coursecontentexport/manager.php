@@ -113,9 +113,14 @@ class manager {
         global $CFG;
 
         $hascap = has_capability('moodle/course:downloadcoursecontent', $context);
+        $courseinfo = get_fast_modinfo($context->instanceid)->get_course();
 
-        // Use site course default for course-level check until course specific setting implemented.
-        $isenabledoncourse = get_config('moodlecourse')->downloadcontentsitedefault;
+        // If enabled/disabled explicitly set on course, use that as the course setting, otherwise use site default.
+        if (isset($courseinfo->downloadcontent) && $courseinfo->downloadcontent != DOWNLOAD_COURSE_CONTENT_SITE_DEFAULT) {
+            $isenabledoncourse = $courseinfo->downloadcontent;
+        } else {
+            $isenabledoncourse = get_config('moodlecourse')->downloadcontentsitedefault;
+        }
 
         return ($CFG->downloadcoursecontentallowed && $isenabledoncourse && $hascap);
     }
