@@ -2590,7 +2590,7 @@ $capabilities = array(
     ],
 
     // Allow users to configure download course content functionality within a course, if the feature is available.
-    'moodle/course:configurecontentexport' => [
+    'moodle/course:configuredownloadcontent' => [
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(
