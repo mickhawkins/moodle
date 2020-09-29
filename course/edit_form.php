@@ -121,35 +121,23 @@ class course_edit_form extends moodleform {
             }
         }
 
-        // Course content download.
-        $coursedownloadsiteconfig = $CFG->enablecoursedownload ?? COURSEDOWNLOADDISABLED;
-
-        if ($coursedownloadsiteconfig != COURSEDOWNLOADDISABLED) {
-            $coursedownloadchoices = [
-                0 => get_string('disabled', 'course'),
-                1 => get_string('enabled', 'course'),
+        // Download course content.
+        if ($CFG->downloadcoursecontentallowed) {
+            $downloadchoices = [
+                DOWNLOAD_COURSE_CONTENT_DISABLED => get_string('no'),
+                DOWNLOAD_COURSE_CONTENT_ENABLED => get_string('yes'),
             ];
+            $sitedefaultstring = $downloadchoices[$courseconfig->downloadcontentsitedefault];
+            $downloadchoices[DOWNLOAD_COURSE_CONTENT_SITE_DEFAULT] = get_string('sitedefaultspecified', '', $sitedefaultstring);
+            $downloadselectdefault = $courseconfig->downloadcontent ?? DOWNLOAD_COURSE_CONTENT_SITE_DEFAULT;
 
-            // Determine default value.
-            $coursedownloadsitedefault = ($coursedownloadsiteconfig == COURSEDOWNLOADAVAILABLE) ? 0 : 1;
+            $mform->addElement('select', 'downloadcontent', get_string('enabledownloadcoursecontent', 'course'), $downloadchoices);
+            $mform->addHelpButton('downloadcontent', 'downloadcoursecontent', 'course');
+            $mform->setDefault('downloadcontent', $downloadselectdefault);
 
-            $mform->addElement('select', 'contentdownload', get_string('coursedownload', 'course'), $coursedownloadchoices);
-            $mform->addHelpButton('contentdownload', 'coursedownload', 'course');
-
-            if ($coursedownloadsiteconfig == COURSEDOWNLOADDISABLED) {
-                // Course content download disabled for this site.
-                $mform->setDefault('contentdownload', $coursedownloadsitedefault);
-                $mform->hardFreeze('contentdownload');
-                $mform->setConstant('contentdownload', 0);
-            } else {
-                // Set appropriate default, freeze if user does not have capability to edit.
-                $coursedownloadvalue = $courseconfig->contentdownload ?? $coursedownloadsitedefault;
-                $mform->setDefault('contentdownload', $coursedownloadvalue);
-
-                if (!has_capability('moodle/course:configurecontentexport', $coursecontext)) {
-                    $mform->hardFreeze('contentdownload');
-                    $mform->setConstant('contentdownload', $coursedownloadvalue);
-                }
+            if (!has_capability('moodle/course:configuredownloadcontent', $coursecontext)) {
+                $mform->hardFreeze('downloadcontent');
+                $mform->setConstant('downloadcontent', $downloadselectdefault);
             }
         }
 
