@@ -34,24 +34,20 @@ namespace core_course\output;
 class content_export_link {
 
     /**
-     * Prepare and return the various attributes required for a link/button to populate/trigger the course content download modal.
+     * Prepare and return the various attributes required for a link/button to populate/trigger the download course content modal.
      *
      * @param \context $context The context of the content being exported.
-     * @param array $modulenames An array of module names to be listed in the download prompt.
      * @return stdClass
      */
-    public static function get_attributes(\context $context, array $modulenames): \stdClass {
+    public static function get_attributes(\context $context): \stdClass {
         global $CFG;
         $downloadattr = new \stdClass();
         $downloadattr->url = new \moodle_url('/course/downloadcontent.php', ['contextid' => $context->id]);
         $downloadattr->displaystring = get_string('downloadcoursecontent', 'course');
-        $confirmationvalues = [
-            'modules' => '<strong>' . join(', ', $modulenames) . '</strong>',
-            'maxfilesize' => display_size($CFG->maxsizepercoursedownloadfile),
-        ];
+        $maxfilesize = display_size($CFG->maxsizeperdownloadcoursefile);
         $downloadattr->elementattributes = [
-            'data-coursedownload' => 1,
-            'data-download-body' => '<p>' . get_string('coursedownloadconfirmation', 'course', $confirmationvalues) . '<p>',
+            'data-downloadcourse' => 1,
+            'data-download-body' => get_string('downloadcourseconfirmation', 'course', $maxfilesize),
             'data-download-button-text' => get_string('download'),
             'data-download-link' => "{$CFG->wwwroot}/course/downloadcontent.php?contextid={$context->id}&download=1",
             'data-download-title' => get_string('downloadcoursecontent', 'course'),

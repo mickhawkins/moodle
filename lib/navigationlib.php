@@ -4610,9 +4610,9 @@ class settings_navigation extends navigation_node {
         if (\core_course\coursecontentexport\manager::can_export_content($coursecontext) &&
                 !empty($coursenode->get_children_key_list())) {
             $modulenames = \core_course\coursecontentexport\manager::get_supported_modules($coursecontext);
-
+            //TODO: Find another way to check any modules exist, since we don't need the actual names of them anymore for the string
             if ($modulenames) {
-                $linkattr = \core_course\output\content_export_link::get_attributes($coursecontext, $modulenames);
+                $linkattr = \core_course\output\content_export_link::get_attributes($coursecontext);
                 $actionlink = new action_link($linkattr->url, $linkattr->displaystring, null, $linkattr->elementattributes);
                 $coursenode->add($linkattr->displaystring, $actionlink, self::TYPE_SETTING, null, 'download',
                         new pix_icon('t/download', ''));
