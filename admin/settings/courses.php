@@ -77,6 +77,17 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
     $temp->add(new admin_setting_configselect('moodlecourse/visible', new lang_string('visible'), new lang_string('visible_help'),
         1, $choices));
 
+    // Enable/disable download course content.
+    if ($CFG->downloadcoursecontentallowed) {
+        $choices = [
+            DOWNLOAD_COURSE_CONTENT_DISABLED => new lang_string('no'),
+            DOWNLOAD_COURSE_CONTENT_ENABLED => new lang_string('yes'),
+        ];
+        $temp->add(new admin_setting_configselect('moodlecourse/downloadcontentsitedefault',
+                new lang_string('enabledownloadcoursecontent', 'course'),
+                new lang_string('downloadcoursecontent_help', 'course'), 0, $choices));
+    }
+
     // Course format.
     $temp->add(new admin_setting_heading('courseformathdr', new lang_string('type_format', 'plugin'), ''));
 
@@ -163,21 +174,18 @@ if ($hassiteconfig or has_any_capability($capabilities, $systemcontext)) {
 
     $ADMIN->add('courses', $temp);
 
-    // Course download.
-    $temp = new admin_settingpage('coursedownload', new lang_string('coursedownload', 'course'));
-    $coursedlchoices = [
-        COURSEDOWNLOADDISABLED => get_string('disabled', 'admin'),
-        COURSEDOWNLOADAVAILABLE => get_string('disabledavailable', 'admin'),
-        COURSEDOWNLOADENABLED => get_string('enabled', 'admin'),
-    ];
-    $temp->add(new admin_setting_configselect('enablecoursedownload', new lang_string('enablecoursedownload', 'admin'),
-            new lang_string('configenablecoursedownload', 'admin'), COURSEDOWNLOADDISABLED, $coursedlchoices));
+    // Download course content.
+    $downloadcoursedefaulturl = new moodle_url('/admin/settings.php?section=coursesettings');
+    $temp = new admin_settingpage('downloadcoursecontent', new lang_string('downloadcoursecontent', 'course'));
+    $temp->add(new admin_setting_configcheckbox('downloadcoursecontentallowed',
+            new lang_string('downloadcoursecontentallowed', 'admin'),
+            new lang_string('downloadcoursecontentallowed_desc', 'admin', $downloadcoursedefaulturl->out()), 0));
 
-    // 50MB default maximum size per file in course downloads.
+    // 50MB default maximum size per file when downloading course content.
     $defaultmaxdownloadsize = 50 * filesize::UNIT_MB;
-    $temp->add(new filesize('maxsizepercoursedownloadfile', new lang_string('maxsizepercoursedownloadfile', 'admin'),
-            new lang_string('configmaxsizepercoursedownloadfile', 'admin'), $defaultmaxdownloadsize, filesize::UNIT_MB));
-    $temp->hide_if('maxsizepercoursedownloadfile', 'enablecoursedownload', 'eq', COURSEDOWNLOADDISABLED);
+    $temp->add(new filesize('maxsizeperdownloadcoursefile', new lang_string('maxsizeperdownloadcoursefile', 'admin'),
+            new lang_string('maxsizeperdownloadcoursefile_desc', 'admin'), $defaultmaxdownloadsize, filesize::UNIT_MB));
+    $temp->hide_if('maxsizeperdownloadcoursefile', 'downloadcoursecontentallowed');
 
     $ADMIN->add('courses', $temp);
 
