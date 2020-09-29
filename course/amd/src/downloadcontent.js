@@ -14,9 +14,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Functions related to course content download.
+ * Functions related to downloading course content.
  *
- * @module     core_course/contentdownload
+ * @module     core_course/downloadcontent
  * @package    core_course
  * @copyright  2020 Michael Hawkins <michaelh@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -27,24 +27,26 @@ import * as ModalEvents from 'core/modal_events';
 import $ from 'jquery';
 
 /**
+ * Prepare the content and behaviour of the course download content modal.
  *
+ * @return {void}
  */
-export const prepareContentDownloadModal = () => {
-    const downloadTrigger = $('[data-coursedownload=1]');
+export const prepareDownloadContentModal = () => {
+    const downloadTrigger = $('[data-downloadcourse=1]');
     const downloadLink = downloadTrigger.attr('data-download-link');
     const downloadModalTitle = downloadTrigger.attr('data-download-title');
-    const downloadModalBody = $(downloadTrigger.attr('data-download-body'));
+    const downloadModalBody = '<p>' + downloadTrigger.attr('data-download-body') + '</p>';
     const downloadModalSubmitText = downloadTrigger.attr('data-download-button-text');
 
     ModalFactory.create({
         title: downloadModalTitle,
         type: ModalFactory.types.SAVE_CANCEL,
-        body: downloadModalBody.html()
+        body: downloadModalBody
     }, downloadTrigger)
     .done(function(modal) {
         modal.setSaveButtonText(downloadModalSubmitText);
 
-        // Trigger the course content download when the "Download" button is pressed.
+        // Trigger the download when the "Download" button is pressed.
         modal.getRoot().on(ModalEvents.save, function() {
             // Create a form to submit the file download request, so we can avoid sending sesskey over GET.
             var downloadForm = document.createElement('form');

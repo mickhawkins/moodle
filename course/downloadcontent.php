@@ -25,21 +25,20 @@
 
 require_once('../config.php');
 
-use core_course\coursecontentexport\manager;
-use core_course\coursecontentexport\zipwriter;
+use core\content;
+use core\content\export\zipwriter;
 
 $contextid = required_param('contextid', PARAM_INT);
 $isdownload = optional_param('download', 0, PARAM_BOOL);
 $coursecontext = context::instance_by_id($contextid);
+$courseid = $coursecontext->instanceid;
+$courselink = new moodle_url('/course/view.php', ['id' => $courseid]);
 
-// Currently only support course content downloads on a per-course basis.
-if (!($coursecontext instanceof context_course)) {
-    redirect(new moodle_url('/'));
+if (!\core\content::can_export_content_for_context($coursecontext, $USER)) {
+    redirect($courselink);
 }
 
 $PAGE->set_url('/course/downloadcontent.php', ['contextid' => $contextid]);
-
-$courseid = $coursecontext->instanceid;
 require_login($courseid);
 
 $courseinfo = get_fast_modinfo($courseid)->get_course();
@@ -51,16 +50,16 @@ if ($isdownload) {
 
     $exportoptions = null;
 
-    if (!empty($CFG->maxsizepercoursedownloadfile)) {
+    if (!empty($CFG->maxsizeperdownloadcoursefile)) {
         $exportoptions = new stdClass();
-        $exportoptions->maxfilesize = $CFG->maxsizepercoursedownloadfile;
+        $exportoptions->maxfilesize = $CFG->maxsizeperdownloadcoursefile;
     }
 
     $streamwriter = zipwriter::get_stream_writer($filename, $exportoptions);
 
-    manager::export_all_content_for_course($coursecontext, $streamwriter);
+    content::export_content_for_context($coursecontext, $USER, $streamwriter);
 
-    redirect(new moodle_url("/course/view.php?id={$courseid}"));
+    redirect($courselink);
 } else {
     $PAGE->set_title(get_string('downloadcoursecontent', 'course'));
     $PAGE->set_heading(format_string($courseinfo->fullname));
@@ -69,13 +68,8 @@ if ($isdownload) {
     echo $OUTPUT->heading(get_string('downloadcoursecontent', 'course'));
 
     // Prepare download confirmation information and display it.
-    $modulenames = manager::get_supported_modules($coursecontext);
-    $confirmationvalues = [
-        'modules' => '<strong>' . join(', ', $modulenames) . '</strong>',
-        'maxfilesize' => display_size($CFG->maxsizepercoursedownloadfile),
-    ];
+    $maxfilesize = display_size($CFG->maxsizeperdownloadcoursefile);
+    $downloadlink = new moodle_url('/course/downloadcontent.php', ['contextid' => $contextid, 'download' => 1]);
 
-    echo $OUTPUT->confirm(get_string('coursedownloadconfirmation', 'course', $confirmationvalues),
-        "/course/downloadcontent.php?contextid={$contextid}&download=1",
-        "/course/view.php?id={$courseid}");
+    echo $OUTPUT->confirm(get_string('downloadcourseconfirmation', 'course', $maxfilesize), $downloadlink, $courselink);
 }
