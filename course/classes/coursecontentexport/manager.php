@@ -99,7 +99,12 @@ class manager {
     }
 
     /**
-     * Determine whether course content export is enabled, and if so, whether the current user has permission to do so.
+     * Determine whether downloading course content is available to the current user in the provided context.
+     *
+     * Course downloads are considered available if all of the following are true:
+     * -Download course content is allowed on the site (feature is not disabled).
+     * -Download course content is enabled in the course.
+     * -User has the appropriate capability to perform the download.
      *
      * @param context_course $context The course context being checked.
      * @return bool
@@ -107,9 +112,11 @@ class manager {
     public static function can_export_content(context_course $context): bool {
         global $CFG;
 
-        // Treat course download as disabled unless explicitly enabled.
-        // (MDL-69561 will introduce the functionality to allow course download to be enabled at the course context level).
-        return (!empty($CFG->enablecoursedownload) && $CFG->enablecoursedownload == COURSEDOWNLOADENABLED &&
-                has_capability('moodle/course:downloadcontentexport', $context));
+        $hascap = has_capability('moodle/course:downloadcoursecontent', $context);
+
+        // Use site course default for course-level check until course specific setting implemented.
+        $isenabledoncourse = get_config('moodlecourse')->downloadcontentsitedefault;
+
+        return ($CFG->downloadcoursecontentallowed && $isenabledoncourse && $hascap);
     }
 }

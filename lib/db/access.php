@@ -2578,7 +2578,7 @@ $capabilities = array(
     ],
 
     // Allow users to download course content.
-    'moodle/course:downloadcontentexport' => [
+    'moodle/course:downloadcoursecontent' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => array(
