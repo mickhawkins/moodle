@@ -27,8 +27,6 @@ use context;
 use core\content\controllers\export_controller;
 use core\content\controllers\component_export_controller;
 use core\content\controllers\plugintype_export_controller;
-use core\content\controllers\component_file_controller;
-use core\content\controllers\plugintype_file_controller;
 use core\content\servable_item;
 use core\content\zipwriter;
 use core_component;
@@ -47,6 +45,17 @@ use stored_file;
 class content {
 
     /**
+     * Check whether the specified user can export content for the specified context.
+     *
+     * @param   context $currentcontext
+     * @param   stdClass $user
+     * @return  bool
+     */
+    public static function can_export_content_for_context(context $currentcontext, stdClass $user): bool {
+        return true;
+    }
+
+    /**
      * Export content for the specified context.
      *
      * @param   context $requestedcontext The context to be exported
@@ -59,6 +68,10 @@ class content {
             [$requestedcontext->id => $requestedcontext],
             $requestedcontext->get_child_contexts()
         );
+
+        $contextlist = array_filter($contextlist, function($context) use ($user): bool {
+            return self::can_export_content_for_context($context, $user);
+        });
 
         $exportcontrollers = self::get_export_controller_instances($user, $requestedcontext, $archive);
         foreach ($exportcontrollers as $controller) {
@@ -91,18 +104,18 @@ class content {
      * @param   stdClass $user The user being exported
      * @param   context $context The context requested for export
      * @param   zipwriter $archive The instance of the zipwriter to be used for export
-     * @return  array
+     * @return  export_controller[]
      */
     protected static function get_export_controller_instances(stdClass $user, context $context, zipwriter $archive): array {
         $instances = [];
         foreach (self::get_component_list() as $component) {
             $classname = component_export_controller::get_export_classname_for_component($component);
-            if (class_exists($classname) && is_a($classname, export_controller::class, true)) {
+            if (class_exists($classname) && is_a($classname, component_export_controller::class, true)) {
                 $instances[] = new $classname($component, $user, $context, $archive);
             }
 
             $classname = plugintype_export_controller::get_export_classname_for_component($component);
-            if (class_exists($classname) && is_a($classname, export_controller::class, true)) {
+            if (class_exists($classname) && is_a($classname, plugintype_export_controller::class, true)) {
                 $instances[] = new $classname($component, $user, $context, $archive);
             }
 

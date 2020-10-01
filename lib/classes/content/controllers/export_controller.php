@@ -26,6 +26,7 @@ namespace core\content\controllers;
 use coding_exception;
 use context;
 use core\content\zipwriter;
+use core_component;
 use course_modinfo;
 use cm_info;
 use stdClass;
@@ -82,7 +83,12 @@ abstract class export_controller extends abstract_controller {
      * @return  string
      */
     public function get_component(): string {
-        return $this->component;
+        [$type, $component] = core_component::normalize_component($this->component);
+        if ($type === 'core') {
+            return $component;
+        }
+
+        return core_component::normalize_componentname($this->component);
     }
 
     /**

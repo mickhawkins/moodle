@@ -125,8 +125,11 @@ class exportable_textarea extends exportable_item {
         }
 
         // Export all of the files for this text area.
-        $content = $this->export_files($controller, $record->{$this->textfield});
-
+        $text = $record->{$this->textfield};
+        if (empty($text)) {
+            $text = '';
+        }
+        $content = $this->export_files($controller, $text);
         $content = $this->rewrite_other_pluginfile_urls($content);
 
         // Export the content to [contextpath]/[filepath]
