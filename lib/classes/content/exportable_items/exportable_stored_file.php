@@ -28,7 +28,7 @@ namespace core\content\exportable_items;
 
 use context;
 use core\content\exportable_item;
-use core\content\controllers\export_controller;
+use core\content\controllers\export\controller as export_controller;
 use stdClass;
 use stored_file;
 

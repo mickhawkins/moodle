@@ -21,42 +21,27 @@
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace mod_folder\content;
+namespace core\content\controllers\export;
 
-use context;
-use core\content\exportable_items\exportable_stored_file;
-use core\content\controllers\export\plugintypes\mod_controller;
+use core_component;
 
 /**
- * A class which assists a component to export content.
+ * A class which assists a plugintype to export content.
  *
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class export_controller extends mod_controller {
+abstract class plugintype_controller extends controller {
 
     /**
-     * Get the exportable items for the user in the specified context.
+     * Get the contentarea classname for the component.
      *
-     * Note: This context must be a child of the root context defined in the instance.
-     *
-     * @param   context $currentcontext The current context being exported
-     * @return  exportable_item[]
+     * @param   string $component
+     * @return  string The classname
      */
-    public function get_exportable_items_for_user(context $currentcontext): array {
-        if ($currentcontext->contextlevel != CONTEXT_MODULE) {
-            return [];
-        }
+    public static function get_classname_for_component(string $component): string {
+        [$plugintype] = core_component::normalize_component($component);
 
-        $contentitems = [];
-
-        $cm = self::get_cm_from_context($currentcontext);
-
-        if ($this->component !== "mod_{$cm->modname}") {
-            // Incrrect module.
-            return [];
-        }
-
-        return exportable_stored_file::create_from_area_params($currentcontext, $this->component, 'content', 0);
+        return "\\core\\content\\controllers\\export\\plugintypes\\{$plugintype}_core_controller";
     }
 }

@@ -21,29 +21,17 @@
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core\content\controllers;
+namespace core\content\controllers\export;
+
+use core\content\controllers\export\controller as export_controller;
 
 use core_component;
-use context;
-use stdClass;
 
 /**
- * A class which assists a component to export content.
+ * A export controller which is not directly called by core.
  *
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class component_export_controller extends export_controller {
-
-    /**
-     * Get the export controller classname for the component.
-     *
-     * @param   string $component
-     * @return  string The classname
-     */
-    public static function get_export_classname_for_component(string $component): string {
-        $component = core_component::normalize_componentname($component);
-
-        return "\\{$component}\\content\\export_controller";
-    }
+abstract class indirect_controller extends export_controller {
 }

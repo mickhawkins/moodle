@@ -15,33 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Content export definition.
+ * Course format export controller for individual course formats to extend.
  *
  * @package     core
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core\content\controllers;
+namespace core\content\controllers\export\plugintypes;
 
-use core_component;
+use context;
+use core\content\controllers\indirect_export_controller;
 
 /**
- * A class which assists a plugintype to export content.
+ * The definition of an export_controller for a course format.
+ *
+ * Note: This controller will not be called directly by the content API, but by other controllers.
+ * In this instance it is expected to be called by the course.
  *
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class plugintype_export_controller extends export_controller {
-
-    /**
-     * Get the contentarea classname for the component.
-     *
-     * @param   string $component
-     * @return  string The classname
-     */
-    public static function get_export_classname_for_component(string $component): string {
-        [$plugintype] = core_component::normalize_component($component);
-
-        return "\\core\\content\\plugintypes\\{$plugintype}\\export_controller";
-    }
+abstract class format_controller extends indirect_export_controller {
 }

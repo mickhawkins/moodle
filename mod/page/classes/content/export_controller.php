@@ -25,8 +25,7 @@ namespace mod_page\content;
 
 use context;
 use core\content\exportable_items\exportable_textarea;
-use core\content\controllers\component_export_controller;
-use stdClass;
+use core\content\controllers\export\plugintypes\mod_controller;
 
 /**
  * A class which assists a component to export content.
@@ -34,7 +33,7 @@ use stdClass;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class export_controller extends component_export_controller {
+class export_controller extends mod_controller {
 
     /**
      * Get the exportable items for the user in the specified context.

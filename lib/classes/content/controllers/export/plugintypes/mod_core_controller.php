@@ -21,10 +21,10 @@
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core\content\plugintypes\mod;
+namespace core\content\controllers\export\plugintypes;
 
 use context;
-use core\content\controllers\plugintype_export_controller;
+use core\content\controllers\export\plugintype_controller;
 use core\content\exportable_items\exportable_textarea;
 use core\content\servable_item;
 use stdClass;
@@ -38,7 +38,7 @@ use stdClass;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class export_controller extends plugintype_export_controller {
+final class mod_core_controller extends plugintype_controller {
 
     /**
      * Get the exportable items for the user in the specified context.

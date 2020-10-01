@@ -21,10 +21,11 @@
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace core\content\controllers;
+namespace core\content\controllers\export;
 
 use coding_exception;
 use context;
+use core\content\controllers\abstract_controller;
 use core\content\zipwriter;
 use core_component;
 use course_modinfo;
@@ -37,7 +38,7 @@ use stdClass;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class export_controller extends abstract_controller {
+abstract class controller extends abstract_controller {
 
     /** @var string The component that this instance belongs to */
     protected $component = null;

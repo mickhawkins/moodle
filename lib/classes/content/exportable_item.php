@@ -24,7 +24,7 @@
 namespace core\content;
 
 use context;
-use core\content\controllers\export_controller;
+use core\content\controllers\export\controller as export_controller;
 use stdClass;
 use Serializable;
 

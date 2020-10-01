@@ -24,9 +24,9 @@
 namespace core;
 
 use context;
-use core\content\controllers\export_controller;
-use core\content\controllers\component_export_controller;
-use core\content\controllers\plugintype_export_controller;
+use core\content\controllers\export\controller as export_controller;
+use core\content\controllers\export\component_controller as component_export_controller;
+use core\content\controllers\export\plugintype_controller as plugintype_export_controller;
 use core\content\servable_item;
 use core\content\zipwriter;
 use core_component;
@@ -109,12 +109,12 @@ class content {
     protected static function get_export_controller_instances(stdClass $user, context $context, zipwriter $archive): array {
         $instances = [];
         foreach (self::get_component_list() as $component) {
-            $classname = component_export_controller::get_export_classname_for_component($component);
+            $classname = component_export_controller::get_classname_for_component($component);
             if (class_exists($classname) && is_a($classname, component_export_controller::class, true)) {
                 $instances[] = new $classname($component, $user, $context, $archive);
             }
 
-            $classname = plugintype_export_controller::get_export_classname_for_component($component);
+            $classname = plugintype_export_controller::get_classname_for_component($component);
             if (class_exists($classname) && is_a($classname, plugintype_export_controller::class, true)) {
                 $instances[] = new $classname($component, $user, $context, $archive);
             }

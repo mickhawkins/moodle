@@ -24,11 +24,11 @@
 
 declare(strict_types=1);
 
-namespace core\content\exportable_items;
+namespace core_course\content\exportable_items;
 
 use context;
 use core\content\exportable_item;
-use core\content\controllers\export\controller as export_controller;
+use core\content\controllers\export_controller;
 use stdClass;
 use stored_file;
 
@@ -38,7 +38,7 @@ use stored_file;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class exportable_textarea extends exportable_item {
+class exportable_course extends exportable_item {
 
     /** @var string The destination path of the text content */
     protected $filepath;
@@ -84,25 +84,11 @@ class exportable_textarea extends exportable_item {
         context $context,
         string $component,
         string $uservisiblename,
-        string $filepath,
-        string $tablename,
-        string $textfield,
-        int $id,
-        ?string $textformatfield = null,
-        ?string $filearea = null,
-        ?int $itemid = null,
-        ?int $pluginfileitemid = null
+        int $courseid
     ) {
         parent::__construct($context, $component, $uservisiblename);
 
-        $this->filepath = $filepath;
-        $this->tablename = $tablename;
-        $this->textfield = $textfield;
-        $this->textformatfield = $textformatfield;
-        $this->id = $id;
-        $this->filearea = $filearea;
-        $this->itemid = $itemid;
-        $this->pluginfileitemid = $pluginfileitemid;
+        $this->courseid = $courseid;
     }
 
     /**
@@ -112,6 +98,14 @@ class exportable_textarea extends exportable_item {
      */
     public function add_to_archive(export_controller $controller): void {
         global $DB;
+
+        // A course export is composed of:
+        // - Course summary (including inline files)
+        // - Overview files
+        // - Section:
+        // -- Section name
+        // -- Section summary (including inline files)
+        // -- List of available activities.
 
         // Fetch the field.
         $fields = [$this->textfield];
