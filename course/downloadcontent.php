@@ -25,8 +25,8 @@
 
 require_once('../config.php');
 
-use core_course\coursecontentexport\manager;
-use core_course\coursecontentexport\zipwriter;
+use core\content;
+use core\content\export\zipwriter;
 
 $contextid = required_param('contextid', PARAM_INT);
 $isdownload = optional_param('download', 0, PARAM_BOOL);
@@ -34,8 +34,7 @@ $coursecontext = context::instance_by_id($contextid);
 $courseid = $coursecontext->instanceid;
 $courselink = new moodle_url('/course/view.php', ['id' => $courseid]);
 
-// Ensure download is being requested on a valid context, and by a user that is allowed to do so.
-if ($coursecontext->contextlevel != CONTEXT_COURSE || !manager::can_export_content($coursecontext)) {
+if (!\core\content::can_export_content_for_context($coursecontext, $USER)) {
     redirect($courselink);
 }
 
@@ -58,7 +57,7 @@ if ($isdownload) {
 
     $streamwriter = zipwriter::get_stream_writer($filename, $exportoptions);
 
-    manager::export_all_content_for_course($coursecontext, $streamwriter);
+    content::export_content_for_context($coursecontext, $USER, $streamwriter);
 
     redirect($courselink);
 } else {

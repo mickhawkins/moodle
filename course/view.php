@@ -224,7 +224,7 @@
     }
 
     // Determine whether the user has permission to download course content.
-    $candownloadcourse = \core_course\coursecontentexport\manager::can_export_content($context);
+    $candownloadcourse = \core\content::can_export_content_for_context($context, $USER);
 
     // We are currently keeping the button here from 1.x to help new teachers figure out
     // what to do, even though the link also appears in the course admin block.  It also
@@ -233,15 +233,11 @@
         $buttons = $OUTPUT->edit_button($PAGE->url);
         $PAGE->set_button($buttons);
     } else if ($candownloadcourse) {
-        // Only display the download course content button if allowed to access it and some compatible modules exist in the course.
-        // Also only show this if user doesn't have edit rights, since those who do will access it via the actions menu.
-        $modulenames = \core_course\coursecontentexport\manager::get_supported_modules($context);
-        //TODO: Find another way to check any modules exist, since we don't need the actual names of them anymore for the string
-        if ($modulenames) {
-            $buttonattr = \core_course\output\content_export_link::get_attributes($context);
-            $button = new single_button($buttonattr->url, $buttonattr->displaystring, 'post', false, $buttonattr->elementattributes);
-            $PAGE->set_button($OUTPUT->render($button));
-        }
+        // Show the download course content button if user has permission to access it.
+        // Only showing this if user doesn't have edit rights, since those who do will access it via the actions menu.
+        $buttonattr = \core_course\output\content_export_link::get_attributes($context);
+        $button = new single_button($buttonattr->url, $buttonattr->displaystring, 'post', false, $buttonattr->elementattributes);
+        $PAGE->set_button($OUTPUT->render($button));
     }
 
     // If viewing a section, make the title more specific
