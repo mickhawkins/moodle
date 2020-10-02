@@ -23,6 +23,7 @@
  */
 namespace core;
 
+use coding_exception;
 use context;
 use core\content\controllers\export\controller as export_controller;
 use core\content\controllers\export\component_controller as component_export_controller;
@@ -63,6 +64,16 @@ class content {
      * @param   zipwriter $archive The Zip Archive to export to
      */
     public static function export_content_for_context(context $requestedcontext, stdClass $user, zipwriter $archive): void {
+        global $USER;
+
+        if ($requestedcontext->contextlevel != CONTEXT_COURSE) {
+            throw new coding_exception('The Content Export API currently only supports the export of courses');
+        }
+
+        if ($USER->id != $user->id) {
+            throw new coding_exception('The Content Export API currently only supports export of the current user');
+        }
+
         // Ensure that the zipwriter is aware of the requested context.
         $archive->set_root_context($requestedcontext);
 
@@ -77,16 +88,39 @@ class content {
         // Reverse the order by key - this ensures that child contexts are processed before their parent.
         krsort($contextlist);
 
+        // Get the course modinfo.
+        $modinfo = get_fast_modinfo($requestedcontext->instanceid);
+
         // Filter out any context which cannot be exported.
-        $contextlist = array_filter($contextlist, function($context) use ($user): bool {
-            return self::can_export_content_for_context($context, $user);
+        $contextlist = array_filter($contextlist, function($context) use ($user, $modinfo): bool {
+            if ($context->contextlevel == CONTEXT_COURSE) {
+                return self::can_export_content_for_context($context, $user);
+            }
+            if ($context->contextlevel == CONTEXT_MODULE) {
+                if (empty($modinfo->cms[$context->instanceid])) {
+                    // Unknown coursemodule in the course.
+                    return false;
+                }
+
+                $cm = $modinfo->cms[$context->instanceid];
+
+                if (!$cm->uservisible) {
+                    // This user cannot view the activity.
+                    return false;
+                }
+
+                // Defer to setting checks.
+                return self::can_export_content_for_context($context, $user);
+            }
+
+            // Only course and activities are supported at this time.
+            return false;
         });
 
         // Export each context.
         foreach ($contextlist as $context) {
             if ($context->contextlevel === CONTEXT_MODULE) {
-                [, , $cm] = get_context_info_array($context->id);
-
+                $cm = $modinfo->cms[$context->instanceid];
                 $component = "mod_{$cm->modname}";
 
                 // Check for a specific implementation for this module.

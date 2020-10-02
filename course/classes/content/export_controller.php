@@ -138,16 +138,18 @@ class export_controller {
         $modinfo = get_fast_modinfo($this->course);
         foreach ($modinfo->sections[$section->section] as $cmid) {
             $cm = $modinfo->cms[$cmid];
+            if (!$cm->uservisible) {
+                continue;
+            }
 
             if (array_key_exists($cm->context->path, $exportedcontexts)) {
-                error_log("Fetching CM path");
                 $url = $this->archive->get_relative_context_path($this->context, $cm->context, 'index.html');
-                error_log("CM path from root is {$url}");
             } else {
                 $url = $cm->url;
             }
             $sectiondata->activities[] = (object) [
                 'title' => $cm->name,
+                'modname' => $cm->modfullname,
                 'link' => $url,
             ];
         }

@@ -4,14 +4,17 @@
         <a href="{{{activity.link}}}" title="{{#str}}contentexport_vieworiginalactivity, core, {{activity.name}} {{/str}}">{{{activity.name}}}</a>
     </h3>
 
+    <div class="alert alert-info alert-block">
+        {{#str}}contentexport_vieworiginalactivityfullmessage, core, {{{activity.link}}} {{/str}}
+    </div>
+
     {{#intro}}
     <h4>{{#str}}moduleintro, core{{/str}}</h4>
     <div>
         {{{intro}}}
     </div>
+    <hr>
     {{/intro}}
-
-    {{#str}}contentexport_vieworiginalactivityfullmessage, core, {{{activity.link}}} {{/str}}
 
     {{#sections}}
     <div>
@@ -23,13 +26,16 @@
             </div>
             {{/content}}
 
-            {{#files}}
+            {{#files.0}}
             <ul>
+            {{#files}}
                 <li><a href="{{filepath}}" title="{{#str}}contentexport_viewfilename, core, {{filename}}{{/str}}">{{filename}}</a></li>
-            </ul>
             {{/files}}
+            </ul>
+            {{/files.0}}
         </div>
     </div>
+    <hr>
     {{/sections}}
 {{/pagecontent}}
 {{/core/content/export/external_page}}

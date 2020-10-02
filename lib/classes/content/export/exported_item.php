@@ -131,7 +131,7 @@ class exported_item {
     public function get_template_data(): stdClass {
         return (object) [
             'title' => $this->get_title(),
-            'files' => array_diff_key($this->files, $this->contentfiles),
+            'files' => array_values(array_diff_key($this->files, $this->contentfiles)),
             'content' => $this->content,
         ];
     }

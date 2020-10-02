@@ -25,6 +25,7 @@ namespace core\content;
 
 use context;
 use context_system;
+use moodle_url;
 use stdClass;
 use stored_file;
 
@@ -61,6 +62,12 @@ class zipwriter {
     /** @var bool Whether page requirements needed for HTML pages have been added */
     protected $pagerequirementsadded = false;
 
+    /** @var stdClass The course relating to the root context */
+    protected $course;
+
+    /** @var context The context of the course for the root contect */
+    protected $coursecontext;
+
     /**
      * zipwriter constructor.
      *
@@ -85,6 +92,19 @@ class zipwriter {
      */
     public function set_root_context(context $rootcontext): void {
         $this->rootcontext = $rootcontext;
+    }
+
+    protected function get_course(): stdClass {
+        if ($this->course && ($this->coursecontext !== $this->rootcontext->get_course_context())) {
+            $this->coursecontext = null;
+            $this->course = null;
+        }
+        if (empty($this->course)) {
+            $this->coursecontext = $this->rootcontext->get_course_context();
+            $this->course = get_course($this->coursecontext->instanceid);
+        }
+
+        return $this->course;
     }
 
     /**
@@ -233,11 +253,27 @@ class zipwriter {
         string $template,
         stdClass $templatedata
     ): void {
-        global $PAGE;
+        global $CFG, $PAGE, $SITE, $USER;
+
+        $exportedcourse = $this->get_course();
+        $courselink = (new moodle_url('/course/view.php', ['id' => $exportedcourse->id]))->out(false);
 
         $this->add_html_page_requirements();
-        $templatedata->pathtotop = $this->get_relative_context_path($context, $this->rootcontext, '/');
-        error_log("Path to top: {$templatedata->pathtotop} (from {$context->path})");
+        $templatedata->global = (object) [
+            'righttoleft' => right_to_left(),
+            'sitename' => $SITE->fullname,
+            'siteurl' => $CFG->wwwroot,
+            'pathtotop' => $this->get_relative_context_path($context, $this->rootcontext, '/'),
+            'contentexportsummary' => get_string('contentexport_footersummary', 'core', (object) [
+                'exportlocationlink' => $courselink,
+                'exportlocationname' => $exportedcourse->fullname,
+                'userfullname' => fullname($USER),
+                'date' => userdate(time()),
+            ]),
+            'coursename' => $exportedcourse->fullname,
+            'courseshortname' => $exportedcourse->shortname,
+            'courselink' => $courselink,
+        ];
 
         $renderer = $PAGE->get_renderer('core');
         $this->add_file_from_string($context, $filepathinzip, $renderer->render_from_template($template, $templatedata));
@@ -312,8 +348,6 @@ class zipwriter {
         if ($targetcontext === $rootcontext) {
             $lookupcontexts = [];
         } else if ($targetcontext->is_child_of($rootcontext, true)) {
-            error_log("{$targetcontext->path} is a child of {$rootcontext->path}");
-
             // Fetch the path from the course down.
             $lookupcontexts = array_filter(
                 $targetcontext->get_parent_contexts(true),
@@ -326,7 +360,6 @@ class zipwriter {
                 array_unshift($path, $this->get_context_folder_name($curcontext));
             }
         } else if ($targetcontext->is_parent_of($rootcontext, true)) {
-            error_log("{$targetcontext->path} is a parent of {$rootcontext->path}");
             $lookupcontexts = $targetcontext->get_parent_contexts(true);
             $path[] = '..';
         }
@@ -341,7 +374,6 @@ class zipwriter {
             $relativepath = "./{$relativepath}";
         }
 
-        error_log($relativepath);
         return $relativepath;
     }
 

@@ -1,34 +1,40 @@
 {{<core/content/export/external_page}}
 {{$pagecontent}}
-    <h1>{{course.fullname}}</h1>
-    <h2>{{course.shortname}}</h2>
-
+    <div class="alert alert-info alert-block">
+        {{#str}}contentexport_vieworiginalcoursefullmessage, core, {{{global.courselink}}} {{/str}}
+    </div>
     <h3>{{#str}}summary, core{{/str}}</h3>
     <div>
         {{{summary}}}
     </div>
+    <hr>
 
     {{#overviewfiles.0}}
     <h3>{{#str}}courseoverviewfiles, core{{/str}}</h3>
     <div>
+        {{#overviewfiles.0}}
         <ul>
-            {{#overviewfiles}}
-            <li>{{filename}}</li>
-            {{/overviewfiles}}
+        {{#overviewfiles}}
+            <li><a href="{{filepath}}" title="{{#str}}contentexport_viewfilename, core, {{filename}}{{/str}}">{{filename}}</a></li>
+        {{/overviewfiles}}
+        </ul>
+        {{/overviewfiles.0}}
     <div>
+    <hr>
     {{/overviewfiles.0}}
 
     {{#sections.0}}
     <div>
         {{#sections}}
         <h4>{{{title}}}</h4>
-            {{#activities.0}}
-            <ul>
-            {{#activities}}
-                <li><a href="{{{link}}}">{{{title}}}</a></li>
-            {{/activities}}
-            </ul>
-            {{/activities.0}}
+        {{#activities.0}}
+        <ul>
+        {{#activities}}
+            <li><a href="{{{link}}}">{{{title}}} ({{{modname}}})</a></li>
+        {{/activities}}
+        </ul>
+        {{/activities.0}}
+        <hr>
         {{/sections}}
     </div>
     {{/sections.0}}

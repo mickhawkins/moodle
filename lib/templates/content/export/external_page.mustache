@@ -48,25 +48,24 @@
 <html {{#righttoleft}}dir="rtl"{{/righttoleft}}>
 <head>
     <meta charset="UTF-8">
-    <title>{{pagetitle}}</title>
-    <link rel="stylesheet" type="text/css" href="{{pathtotop}}/shared/moodle.css" />
+    <title>{{global.sitename}} - {{global.coursename}}</title>
+    <link rel="stylesheet" type="text/css" href="{{global.pathtotop}}/shared/moodle.css" />
 </head>
 <body>
     <nav class="navbar navbar-light bg-light border-bottom">
-        <a class="navbar-brand" href="https://moodle.org" title="Moodle">
-            <img class="moodle-logo" src="{{pathtotop}}/shared/moodlelogo.svg" alt="Moodle logo" />
+        <a class="navbar-brand" href="{{{global.siteurl}}}" title="{{{global.sitename}}}">
+            {{{global.sitename}}}
+            <img class="moodle-logo" src="{{global.pathtotop}}/shared/moodlelogo.svg" alt="Moodle logo">
         </a>
-        <span class="navbar-brand">{{#str}}broughtbymoodle, core_privacy{{/str}}</span>
+        <span class="navbar-brand">{{#str}}contentexport_broughtbymoodle, core{{/str}}</span>
     </nav>
     <div id="page" class="container-fluid mt-2">
-        {{{navigation}}}
+        <h1><a href="{{global.pathtotop}}index.html">{{global.coursename}}</a></h1>
+        <h2><a href="{{global.pathtotop}}index.html">{{global.courseshortname}}</a></h2>
         {{$pagecontent}}{{/pagecontent}}
         <footer class="footer">
             <div class="container">
-                <hr />
-                <div class="text-center text-muted">{{#str}}exportfrom, core_privacy, <a href="{{{siteurl}}}" title="{{systemname}}">{{systemname}}</a>{{/str}}</div>
-                <div class="text-center text-muted">{{#str}}exporttime, core_privacy, {{#userdate}}{{timegenerated}},{{#str}}strftimedatetime, langconfig{{/str}}{{/userdate}}{{/str}}</div>
-                <div class="text-center text-muted">{{#str}}exportuser, core_privacy, {{username}}{{/str}}</div>
+                <div class="text-center text-muted">{{{global.contentexportsummary}}}</div>
             </div>
         </footer>
     </div>
