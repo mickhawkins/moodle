@@ -53,7 +53,27 @@ class content {
      * @return  bool
      */
     public static function can_export_content_for_context(context $currentcontext, stdClass $user): bool {
-        return true;
+        global $CFG;
+
+        $canexport = false;
+
+        if ($currentcontext->contextlevel == CONTEXT_COURSE) {
+            if ($CFG->downloadcoursecontentallowed &&
+                    has_capability('moodle/course:downloadcoursecontent', $currentcontext, $user)) {
+
+                $courseinfo = get_fast_modinfo($currentcontext->instanceid)->get_course();
+
+                // If enabled/disabled explicitly set on course, use that as the course setting, otherwise use site default.
+                if (isset($courseinfo->downloadcontent) && $courseinfo->downloadcontent != DOWNLOAD_COURSE_CONTENT_SITE_DEFAULT) {
+                    $canexport = $courseinfo->downloadcontent;
+                } else {
+                    $canexport = get_config('moodlecourse')->downloadcontentsitedefault;
+                }
+
+            }
+        }
+
+        return $canexport;
     }
 
     /**
