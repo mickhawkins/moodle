@@ -58,6 +58,9 @@ class zipwriter {
     /** @var array The files in the zip */
     protected $filesinzip = [];
 
+    /** @var bool Whether page requirements needed for HTML pages have been added */
+    protected $pagerequirementsadded = false;
+
     /**
      * zipwriter constructor.
      *
@@ -224,6 +227,23 @@ class zipwriter {
         $this->add_file_from_string($context, $filepathinzip, $content);
     }
 
+    public function add_file_from_template(
+        context $context,
+        string $filepathinzip,
+        string $template,
+        stdClass $templatedata
+    ): void {
+        global $PAGE;
+
+        $this->add_html_page_requirements();
+        $templatedata->pathtotop = $this->get_relative_context_path($context, $this->rootcontext, '/');
+        error_log("Path to top: {$templatedata->pathtotop} (from {$context->path})");
+
+        $renderer = $PAGE->get_renderer('core');
+        $this->add_file_from_string($context, $filepathinzip, $renderer->render_from_template($template, $templatedata));
+    }
+
+
     /**
      * Check whether the file was actually added to the archive.
      *
@@ -245,37 +265,95 @@ class zipwriter {
      * @return  string
      */
     public function get_context_path(context $context, string $filepathinzip): string {
-        // Remove paths like ./
-        $filepathinzip = str_replace('./', '/', $filepathinzip);
-
-        // De-duplicate slashes.
-        $filepathinzip = str_replace('//', '/', $filepathinzip);
-
-        // Remove leading /.
-        ltrim($filepathinzip, '/');
-
         // TODO Add additional path sanitisation here.
 
-        // Fetch the path from the course down.
-        $parentcontexts = array_reverse($context->get_parent_contexts(true));
-        foreach ($parentcontexts as $curcontext) {
-            if ($curcontext->contextlevel < CONTEXT_COURSE) {
-                // Ignore anything above the course level.
-                continue;
-            }
+        if (!$context->is_child_of($this->rootcontext, true)) {
+            throw new \coding_exception("Unexpected path requested");
+        }
 
-            $name = $curcontext->get_context_name();
-            $id = ' _.' . $curcontext->id;
-            $path[] = shorten_text(
-                clean_param($name, PARAM_FILE),
-                self::MAX_CONTEXT_NAME_LENGTH,
-                true,
-                json_decode('"' . '\u2026' . '"')
-            ) . $id;
+        // Fetch the path from the course down.
+        $parentcontexts = array_filter(
+            $context->get_parent_contexts(true),
+            function(context $curcontext): bool {
+                return $curcontext->is_child_of($this->rootcontext, true);
+            }
+        );
+
+        foreach (array_reverse($parentcontexts) as $curcontext) {
+            $path[] = $this->get_context_folder_name($curcontext);
         }
 
         $path[] = $filepathinzip;
-        return implode($path, DIRECTORY_SEPARATOR);
+
+        $finalpath = implode($path, DIRECTORY_SEPARATOR);
+
+        // Remove paths like ./
+        $finalpath = str_replace('./', '/', $finalpath);
+
+        // De-duplicate slashes.
+        $finalpath = str_replace('//', '/', $finalpath);
+
+        // Remove leading /.
+        ltrim($finalpath, '/');
+
+        return $finalpath;
+    }
+
+    /**
+     * Get a relative path to the specified context path.
+     *
+     * @param   context $rootcontext
+     * @param   context $targetcontext
+     * @param   string $filepathinzip
+     * @return  string
+     */
+    public function get_relative_context_path(context $rootcontext, context $targetcontext, string $filepathinzip): string {
+        $path = [];
+        if ($targetcontext === $rootcontext) {
+            $lookupcontexts = [];
+        } else if ($targetcontext->is_child_of($rootcontext, true)) {
+            error_log("{$targetcontext->path} is a child of {$rootcontext->path}");
+
+            // Fetch the path from the course down.
+            $lookupcontexts = array_filter(
+                $targetcontext->get_parent_contexts(true),
+                function(context $curcontext): bool {
+                    return $curcontext->is_child_of($this->rootcontext, false);
+                }
+            );
+
+            foreach ($lookupcontexts as $curcontext) {
+                array_unshift($path, $this->get_context_folder_name($curcontext));
+            }
+        } else if ($targetcontext->is_parent_of($rootcontext, true)) {
+            error_log("{$targetcontext->path} is a parent of {$rootcontext->path}");
+            $lookupcontexts = $targetcontext->get_parent_contexts(true);
+            $path[] = '..';
+        }
+
+        $path[] = $filepathinzip;
+        $relativepath =  implode($path, DIRECTORY_SEPARATOR);
+
+        // De-duplicate slashes and remove leading /.
+        $relativepath = ltrim(preg_replace('#/+#', '/', $relativepath), '/');
+
+        if (substr($relativepath, 0, 1) !== '.') {
+            $relativepath = "./{$relativepath}";
+        }
+
+        error_log($relativepath);
+        return $relativepath;
+    }
+
+    protected function get_context_folder_name(context $context): string {
+        $shortenedname = shorten_text(
+            clean_param($context->get_context_name(), PARAM_FILE),
+            self::MAX_CONTEXT_NAME_LENGTH,
+            true,
+            json_decode('"' . '\u2026' . '"')
+        );
+
+        return "{$shortenedname}_.{$context->id}";
     }
 
     /**
@@ -313,6 +391,31 @@ class zipwriter {
     public function rewrite_pluginfile_urls(array $filesinzip, string $component, string $filearea, int $itemid, string $text): string {
         // TODO For each instance of '@@PLUGINFILE@@' replace that usage with the relevant PLUGINFILE usage.
         return $text;
+    }
+
+    public function add_html_page_requirements(): void {
+        global $CFG;
+
+        if ($this->pagerequirementsadded) {
+            return;
+        }
+
+        // CSS required.
+        $this->add_core_content('/theme/boost/style/moodle.css', 'shared/moodle.css');
+
+        // Icons to be used.
+        $this->add_core_content('/pix/moodlelogo.svg', 'shared/moodlelogo.svg');
+
+        $this->pagerequirementsadded = true;
+    }
+
+    protected function add_core_content(string $dirrootpath, string $pathinzip): void {
+        global $CFG;
+
+        $this->archive->addFileFromPath(
+            $this->get_context_path($this->rootcontext, $pathinzip),
+            "{$CFG->dirroot}/{$dirrootpath}"
+        );
     }
 
 }

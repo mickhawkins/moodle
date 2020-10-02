@@ -28,7 +28,8 @@ namespace core\content\exportable_items;
 
 use context;
 use core\content\exportable_item;
-use core\content\controllers\export\controller as export_controller;
+use core\content\export\exported_item;
+use core\content\zipwriter;
 use stdClass;
 use stored_file;
 
@@ -111,16 +112,22 @@ class exportable_stored_file extends exportable_item {
     /**
      * Add the content to the archive.
      *
-     * @param   export_controller $controller The export controller associated with this export
-     * @return  array The list of files which were exported
+     * @param   zipwriter $archive
      */
-    public function add_to_archive(export_controller $controller): void {
+    public function add_to_archive(zipwriter $archive): ?exported_item {
         // Export the content to [contextpath]/[filepath]
-        $controller->get_archive()->add_file_from_stored_file(
+        $relativefilepath = $this->get_filepath_for_file();
+
+        $archive->add_file_from_stored_file(
             $this->get_context(),
-            $this->get_filepath_for_file(),
+            $relativefilepath,
             $this->file
         );
+
+        $exporteditem = new exported_item([$relativefilepath]);
+        $exporteditem->set_title($this->get_user_visible_name());
+
+        return $exporteditem;
     }
 
     /**

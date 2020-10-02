@@ -35,5 +35,32 @@ use core\content\controllers\indirect_export_controller;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class format_controller extends indirect_export_controller {
+class format_controller extends indirect_export_controller {
+    /** @var string The component name */
+    protected $component;
+
+    public function __construct(string $component) {
+        $this->component = $component;
+    }
+
+    /**
+     * Get the contentarea classname for the component.
+     *
+     * @param   string $component
+     * @return  string The classname
+     */
+    protected static function get_classname_for_component(string $component): string {
+        $component = core_component::normalize_componentname($component);
+
+        return "\\{$component}}\\content\\controllers\\export_controller";
+    }
+
+    public static function get_controller_instance_for_component(string $component): self {
+        $classname = self::get_classname_for_component($component);
+        if (class_exists($classname) && is_a($classname, self)) {
+            return new $classname($component);
+        }
+
+        return new self($component);
+    }
 }

@@ -28,7 +28,9 @@ namespace core\content\exportable_items;
 
 use context;
 use core\content\exportable_item;
-use core\content\controllers\export\controller as export_controller;
+use core\content\export\exported_item;
+use core\content\zipwriter;
+use core\content\export\helper;
 use stdClass;
 use stored_file;
 
@@ -108,9 +110,9 @@ class exportable_textarea extends exportable_item {
     /**
      * Add the content to the archive.
      *
-     * @param   export_controller $controller The export controller associated with this export
+     * @param   zipwriter $archive
      */
-    public function add_to_archive(export_controller $controller): void {
+    public function add_to_archive(zipwriter $archive): ?exported_item {
         global $DB;
 
         // Fetch the field.
@@ -121,7 +123,7 @@ class exportable_textarea extends exportable_item {
         $record = $DB->get_record($this->tablename, ['id' => $this->id], implode(', ', $fields));
 
         if (empty($record)) {
-            return;
+            return null;
         }
 
         // Export all of the files for this text area.
@@ -129,119 +131,20 @@ class exportable_textarea extends exportable_item {
         if (empty($text)) {
             $text = '';
         }
-        $content = $this->export_files($controller, $text);
-        $content = $this->rewrite_other_pluginfile_urls($content);
 
-        // Export the content to [contextpath]/[filepath]
-        $controller->get_archive()->add_file_from_html_string(
+        $exporteditem = helper::export_files_for_content(
+            $archive,
             $this->get_context(),
-            $this->filepath,
-            $content
-        );
-    }
-
-    /**
-     * Rewrite any pluginfile URLs in the content.
-     *
-     * @param   string $content
-     * @return  string
-     */
-    protected function rewrite_other_pluginfile_urls(string $content): string {
-        // The pluginfile URLs should have been rewritten when the files were exported, but if any file was too large it
-        // may not have been included.
-        // In that situation use a tokenpluginfile URL.
-
-        if (strpos($content, '@@PLUGINFILE@@/') !== false) {
-            // Some files could not be rewritten.
-            // Use a tokenurl pluginfile for those.
-            $content = file_rewrite_pluginfile_urls(
-                $content,
-                'pluginfile.php',
-                $this->context->id,
-                $this->component,
-                $this->filearea,
-                $this->pluginfileitemid,
-                [
-                    'includetoken' => true,
-                ]
-            );
-        }
-
-        return $content;
-    }
-
-    /**
-     * Export files releating to this text area.
-     *
-     * @param   string $content
-     * @return  string
-     */
-    protected function export_files(export_controller $controller, string $content): string {
-        if ($this->filearea === null) {
-            return $content;
-        }
-
-        if ($this->itemid === null) {
-            return $content;
-        }
-
-        // Export all of the files for this text area.
-        $fs = get_file_storage();
-        $files = $fs->get_area_files($this->context->id, $this->component, $this->filearea, $this->itemid);
-
-        $filelist = [];
-        foreach ($files as $file) {
-            if ($file->is_directory()) {
-                continue;
-            }
-
-            $filepathinzip = $this->get_filepath_for_file($file, false);
-            $controller->get_archive()->add_file_from_stored_file(
-                $this->get_context(),
-                $filepathinzip,
-                $file
-            );
-
-            if ($controller->get_archive()->is_file_in_archive($this->get_context(), $filepathinzip)) {
-                // Attempt to rewrite any @@PLUGINFILE@@ URLs for this file in the content.
-                $searchpath = "@@PLUGINFILE@@" . $file->get_filepath() . rawurlencode($file->get_filename());
-                $content = str_replace($searchpath, $this->get_filepath_for_file($file, true), $content);
-            }
-        }
-
-        return $content;
-    }
-
-    /**
-     * Get the filepath for the specified stored_file.
-     *
-     * @param   stored_file $file
-     * @param   bool $escape
-     * @return  string
-     */
-    protected function get_filepath_for_file(stored_file $file, bool $escape): string {
-        $path = [];
-
-        $textareafilepath = dirname($this->filepath);
-        if ($textareafilepath !== '.') {
-            $path[] = $textareafilepath;
-        }
-
-        $filepath = sprintf(
-            '%s%s%s',
-            $file->get_filearea(),
-            $file->get_filepath(),
-            $file->get_filename()
+            "",
+            $text,
+            $this->component,
+            $this->filearea,
+            $this->itemid,
+            $this->pluginfileitemid
         );
 
-        if ($escape) {
-            foreach (explode('/', $filepath) as $dirname) {
-                $path[] = rawurlencode($dirname);
-            }
-            $filepath = implode('/', $path);
-        }
-
-        return ltrim(preg_replace('#/+#', '/', $filepath), '/');
+        $exporteditem->set_title($this->get_user_visible_name());
+        return $exporteditem;
     }
 
     /**

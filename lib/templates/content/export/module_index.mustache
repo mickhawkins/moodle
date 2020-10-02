@@ -1,0 +1,35 @@
+{{<core/content/export/external_page}}
+{{$pagecontent}}
+    <h3>
+        <a href="{{{activity.link}}}" title="{{#str}}contentexport_vieworiginalactivity, core, {{activity.name}} {{/str}}">{{{activity.name}}}</a>
+    </h3>
+
+    {{#intro}}
+    <h4>{{#str}}moduleintro, core{{/str}}</h4>
+    <div>
+        {{{intro}}}
+    </div>
+    {{/intro}}
+
+    {{#str}}contentexport_vieworiginalactivityfullmessage, core, {{{activity.link}}} {{/str}}
+
+    {{#sections}}
+    <div>
+        <h4>{{title}}</h4>
+        <div>
+            {{#content}}
+            <div>
+                {{{content}}}
+            </div>
+            {{/content}}
+
+            {{#files}}
+            <ul>
+                <li><a href="{{filepath}}" title="{{#str}}contentexport_viewfilename, core, {{filename}}{{/str}}">{{filename}}</a></li>
+            </ul>
+            {{/files}}
+        </div>
+    </div>
+    {{/sections}}
+{{/pagecontent}}
+{{/core/content/export/external_page}}

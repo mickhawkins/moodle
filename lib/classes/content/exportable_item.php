@@ -24,7 +24,7 @@
 namespace core\content;
 
 use context;
-use core\content\controllers\export\controller as export_controller;
+use core\content\export\exported_item;
 use stdClass;
 use Serializable;
 
@@ -78,9 +78,9 @@ abstract class exportable_item implements Serializable {
     /**
      * Add the content to the archive.
      *
-     * @param   export_controller $controller
+     * @param   zipwriter $archive
      */
-    abstract public function add_to_archive(export_controller $controller): void;
+    abstract public function add_to_archive(zipwriter $archive): ?exported_item;
 
     /**
      * Serialize the exportable item.

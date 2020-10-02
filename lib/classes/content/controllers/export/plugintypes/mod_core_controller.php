@@ -23,9 +23,12 @@
  */
 namespace core\content\controllers\export\plugintypes;
 
+use cm_info;
 use context;
 use core\content\controllers\export\plugintype_controller;
 use core\content\exportable_items\exportable_textarea;
+use core\content\export\helper;
+use core\content\export\exported_item;
 use core\content\servable_item;
 use stdClass;
 
@@ -49,34 +52,78 @@ final class mod_core_controller extends plugintype_controller {
      * @return  exportable_item[]
      */
     public function get_exportable_items_for_user(context $currentcontext): array {
-        if ($currentcontext->contextlevel != CONTEXT_MODULE) {
-            return [];
-        }
-
         $cm = self::get_cm_from_context($currentcontext);
-        if (!plugin_supports('mod', $cm->modname, FEATURE_MOD_INTRO, true)) {
-            return [];
-        }
-
-        if ($this->component !== "mod_{$cm->modname}") {
-            return [];
-        }
-
         $contentitems = [];
-        $contentitems[] = new exportable_textarea(
-            $currentcontext,
-            $this->component,
-            get_string('moduleintro', 'core'),
+
+        if (plugin_supports('mod', $cm->modname, FEATURE_MOD_INTRO, true)) {
+            $contentitems[] = new exportable_textarea(
+                $currentcontext,
+                $this->component,
+                get_string('moduleintro', 'core'),
+                'index.html',
+                $this->get_modname($currentcontext),
+                'intro',
+                $cm->instance,
+                'introformat',
+                'intro',
+                0,
+                null
+            );
+        }
+
+        return $contentitems;
+    }
+
+    public function export_exportables(context $context, array $exportables) {
+        global $PAGE;
+
+        $cm = self::get_cm_from_context($context);
+
+        $templatedata = (object) [
+            'activity' => (object) [
+                'link' => $cm->url,
+                'name' => $cm->get_formatted_name(),
+            ],
+            'intro' => null,
+            'sections' => [],
+        ];
+
+        if (plugin_supports('mod', $cm->modname, FEATURE_MOD_INTRO, true)) {
+            $templatedata->intro = $this->get_rewritten_intro($context, $cm)->get_content();
+        }
+
+        $exporteditems = [];
+        foreach ($exportables as $exportable) {
+            $exporteditems[] = $exportable->add_to_archive($this->get_archive());
+        }
+
+        foreach ($exporteditems as $item) {
+            $templatedata->sections[] = $item->get_template_data();
+        }
+
+        // Add the index to the archive.
+        $this->archive->add_file_from_template(
+            $context,
             'index.html',
-            $this->get_modname($currentcontext),
-            'intro',
-            $cm->instance,
-            'introformat',
+            'core/content/export/module_index',
+            $templatedata
+        );
+    }
+
+    protected function get_rewritten_intro(context $context, cm_info $cm): exported_item {
+        global $DB;
+
+        $record = $DB->get_record($cm->modname, ['id' => $cm->instance], 'intro');
+
+        return helper::export_files_for_content(
+            $this->get_archive(),
+            $context,
+            '',
+            $record->intro,
+            "mod_{$cm->modname}",
             'intro',
             0,
             null
         );
-
-        return $contentitems;
     }
 }

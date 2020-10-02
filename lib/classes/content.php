@@ -63,64 +63,52 @@ class content {
      * @param   zipwriter $archive The Zip Archive to export to
      */
     public static function export_content_for_context(context $requestedcontext, stdClass $user, zipwriter $archive): void {
-        // Fetch all child contexts.
-        $contextlist = array_merge(
-            [$requestedcontext->id => $requestedcontext],
-            $requestedcontext->get_child_contexts()
-        );
+        // Ensure that the zipwriter is aware of the requested context.
+        $archive->set_root_context($requestedcontext);
 
+        // Fetch all child contexts, indexed by path.
+        $contextlist = [
+            $requestedcontext->path => $requestedcontext,
+        ];
+        foreach ($requestedcontext->get_child_contexts() as $context) {
+            $contextlist[$context->path] = $context;
+        }
+
+        // Reverse the order by key - this ensures that child contexts are processed before their parent.
+        krsort($contextlist);
+
+        // Filter out any context which cannot be exported.
         $contextlist = array_filter($contextlist, function($context) use ($user): bool {
             return self::can_export_content_for_context($context, $user);
         });
 
-        $exportcontrollers = self::get_export_controller_instances($user, $requestedcontext, $archive);
-        foreach ($exportcontrollers as $controller) {
-            // Loop over all child contexts.
-            foreach ($contextlist as $exportedcontext) {
-                $controller->export_items_for_user($controller->get_exportable_items_for_user($exportedcontext));
+        // Export each context.
+        foreach ($contextlist as $context) {
+            if ($context->contextlevel === CONTEXT_MODULE) {
+                [, , $cm] = get_context_info_array($context->id);
+
+                $component = "mod_{$cm->modname}";
+
+                // Check for a specific implementation for this module.
+                // This will export any content specific to this activity.
+                // For example, in mod_folder it will export the list of folders.
+                $classname = component_export_controller::get_classname_for_component($component);
+                $exportables = [];
+                if (class_exists($classname) && is_a($classname, component_export_controller::class, true)) {
+                    $controller = new $classname($component, $user, $context, $archive);
+                    $exportables = $controller->get_exportable_items_for_user($context);
+                }
+
+                // Export any shared content for this activity.
+                $activitycontroller = new \core\content\controllers\export\plugintypes\mod_core_controller($component, $user, $context, $archive);
+                $activitycontroller->export_exportables($context, $exportables);
+            } else if ($context->contextlevel === CONTEXT_COURSE) {
+                // Export the course content.
+                $controller = new \core_course\content\export_controller($context, $archive);
+                $controller->export_items_for_user($contextlist, $user);
             }
         }
 
         $archive->finish();
-    }
-
-    /**
-     * Get the list of components, including all subsystems.
-     *
-     * @return  array
-     */
-    protected static function get_component_list(): array {
-        $components = array_keys(array_reduce(\core_component::get_component_list(), function($carry, $item) {
-            return array_merge($carry, $item);
-        }, []));
-        $components[] = 'core';
-
-        return $components;
-    }
-
-    /**
-     * Get a set of export controller instances for all components.
-     *
-     * @param   stdClass $user The user being exported
-     * @param   context $context The context requested for export
-     * @param   zipwriter $archive The instance of the zipwriter to be used for export
-     * @return  export_controller[]
-     */
-    protected static function get_export_controller_instances(stdClass $user, context $context, zipwriter $archive): array {
-        $instances = [];
-        foreach (self::get_component_list() as $component) {
-            $classname = component_export_controller::get_classname_for_component($component);
-            if (class_exists($classname) && is_a($classname, component_export_controller::class, true)) {
-                $instances[] = new $classname($component, $user, $context, $archive);
-            }
-
-            $classname = plugintype_export_controller::get_classname_for_component($component);
-            if (class_exists($classname) && is_a($classname, plugintype_export_controller::class, true)) {
-                $instances[] = new $classname($component, $user, $context, $archive);
-            }
-
-        }
-
-        return $instances;
     }
 }

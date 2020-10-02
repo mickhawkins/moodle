@@ -28,7 +28,8 @@ namespace core_course\content\exportable_items;
 
 use context;
 use core\content\exportable_item;
-use core\content\controllers\export_controller;
+use core\content\controllers\export\controller;
+use section_info;
 use stdClass;
 use stored_file;
 
@@ -40,29 +41,8 @@ use stored_file;
  */
 class exportable_course extends exportable_item {
 
-    /** @var string The destination path of the text content */
-    protected $filepath;
-
-    /** @var string The name of the table that ha the textarea within it */
-    protected $tablename;
-
-    /** @var int The id in the table */
-    protected $id;
-
-    /** @var string The name of the text field within the table */
-    protected $textfield;
-
-    /** @var null|string The name of the format field relating to the text field */
-    protected $textformatfield;
-
-    /** @var null|string The name of a file area for this content */
-    protected $filearea;
-
-    /** @var null|int The itemid for files in this text field */
-    protected $itemid;
-
-    /** @var null|int The itemid used for constructing pluginfiles */
-    protected $pluginfileitemid;
+    /** @var stdClass The course to be exported */
+    protected $course;
 
     /**
      * Create a new exportable_item instance.
@@ -70,34 +50,28 @@ class exportable_course extends exportable_item {
      * If no filearea or itemid  is specified the no attempt will be made to export files.
      *
      * @param   context $context The context that this content belongs to
+     * @param   string $component
      * @param   string $uservisiblename The name displayed to the user when filtering
-     * @param   string $tablename The name of the table that this textarea is in
-     * @param   string $textfield The field within the tbale
-     * @param   int $id The id in the database
-     * @param   null|string $textformatfield The field in the database relating to the format field if one is present
-     * @param   null|string $filearea The name of the file area for files associated with this text area
-     * @param   null|int $itemid The itemid for files associated with this text area
-     * @param   null|int $pluginfileitemid The itemid to use when constructing the pluginfile URL
-     *          Some fileareas do not use any itemid in the URL and should therefore provide a `null` value here.
+     * @param   stdClass $course
      */
     public function __construct(
         context $context,
         string $component,
         string $uservisiblename,
-        int $courseid
+        stdClass $course
     ) {
         parent::__construct($context, $component, $uservisiblename);
 
-        $this->courseid = $courseid;
+        $this->course = $course;
     }
 
     /**
      * Add the content to the archive.
      *
-     * @param   export_controller $controller The export controller associated with this export
+     * @param   controller $controller The export controller associated with this export
      */
-    public function add_to_archive(export_controller $controller): void {
-        global $DB;
+    public function add_to_archive(controller $controller): void {
+        global $PAGE;
 
         // A course export is composed of:
         // - Course summary (including inline files)
@@ -107,30 +81,117 @@ class exportable_course extends exportable_item {
         // -- Section summary (including inline files)
         // -- List of available activities.
 
-        // Fetch the field.
-        $fields = [$this->textfield];
-        if (!empty($this->textformatfield)) {
-            $fields[] = $this->textformatfield;
-        }
-        $record = $DB->get_record($this->tablename, ['id' => $this->id], implode(', ', $fields));
+        $templatedata = (object) [
+            'course' => $this->course,
+            'overviewfiles' => [],
+            'sections' => '',
+        ];
 
-        if (empty($record)) {
-            return;
+        if (empty($this->course->summary)) {
+            $this->course->summary = '';
         }
 
-        // Export all of the files for this text area.
-        $text = $record->{$this->textfield};
-        if (empty($text)) {
-            $text = '';
-        }
-        $content = $this->export_files($controller, $text);
-        $content = $this->rewrite_other_pluginfile_urls($content);
+        // Add the course summary.
+        $templatedata->summary = $this->export_files($controller, 'summary', 0, $this->course->summary, '_course', null);
 
-        // Export the content to [contextpath]/[filepath]
+        // Add the overview files.
+        $templatedata->overviewfiles = $this->export_overview_files($controller);
+
+        // Add all sections.
+        $modinfo = get_fast_modinfo($this->course);
+        foreach ($modinfo->get_section_info_all() as $number => $section) {
+            $templatedata->sections = $this->export_section($controller, $section);
+        }
+
+        $courserenderer = $PAGE->get_renderer('core', 'course');
+        $content = $courserenderer->render_from_template('core_course/content/courseexport', $templatedata);
+
         $controller->get_archive()->add_file_from_html_string(
             $this->get_context(),
-            $this->filepath,
+            'index.html',
             $content
+        );
+    }
+
+    /**
+     * Export files releating to this text area.
+     *
+     * @param   string $content
+     * @return  string
+     */
+    protected function export_files(controller $controller, string $filearea, int $itemid, string $content, string $subdir, ?int $pluginfileitemid): string {
+        // Export all of the files for this filearea.
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($this->context->id, $this->component, $filearea, $itemid);
+
+        $filelist = [];
+        foreach ($files as $file) {
+            if ($file->is_directory()) {
+                continue;
+            }
+
+            $filepathinzip = $this->get_filepath_for_file($file, $subdir, false);
+            $controller->get_archive()->add_file_from_stored_file(
+                $this->get_context(),
+                $filepathinzip,
+                $file
+            );
+
+            if ($controller->get_archive()->is_file_in_archive($this->get_context(), $filepathinzip)) {
+                // Attempt to rewrite any @@PLUGINFILE@@ URLs for this file in the content.
+                $searchpath = "@@PLUGINFILE@@" . $file->get_filepath() . rawurlencode($file->get_filename());
+                $content = str_replace($searchpath, $this->get_filepath_for_file($file, $subdir, true), $content);
+            }
+        }
+
+        return $this->rewrite_other_pluginfile_urls($content, $filearea, $pluginfileitemid);
+    }
+
+    /**
+     * Export all course overview files for the course.
+     *
+     * @param   controller $controller
+     * @return  string
+     */
+    protected function export_overview_files(controller $controller): string {
+        global $PAGE;
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($this->context->id, $this->component, 'overviewfiles', 0);
+
+        $exportedfiles = [];
+        foreach ($files as $file) {
+            if ($file->is_directory()) {
+                continue;
+            }
+            $exportedfiles[] = (object) [
+                'filename' => $file->get_filename(),
+                'filepath' => "@@PLUGINFILE@@" . $file->get_filepath() . rawurlencode($file->get_filename()),
+            ];
+        }
+
+        if (empty($exportedfiles)) {
+            return '';
+        }
+
+        $courserenderer = $PAGE->get_renderer('core', 'course');
+        $content = $courserenderer->render_from_template(
+            'core_course/content/overviewfilelist',
+            (object) [
+                'files' => $exportedfiles,
+            ]);
+
+        return $this->export_files($controller, 'overviewfiles', 0, $content, '_course', null);
+    }
+
+    protected function export_section(controller $controller, section_info $section): string {
+        error_log($section->summary);
+        return $this->export_files(
+            $controller,
+            'section',
+            (int) $section->id,
+            $section->summary,
+            "_course/sections/{$section->id}",
+            (int) $section->id
         );
     }
 
@@ -138,9 +199,11 @@ class exportable_course extends exportable_item {
      * Rewrite any pluginfile URLs in the content.
      *
      * @param   string $content
+     * @param   string $filearea
+     * @param   null|int $pluginfileitemid
      * @return  string
      */
-    protected function rewrite_other_pluginfile_urls(string $content): string {
+    protected function rewrite_other_pluginfile_urls(string $content, string $filearea, ?int $pluginfileitemid): string {
         // The pluginfile URLs should have been rewritten when the files were exported, but if any file was too large it
         // may not have been included.
         // In that situation use a tokenpluginfile URL.
@@ -153,54 +216,12 @@ class exportable_course extends exportable_item {
                 'pluginfile.php',
                 $this->context->id,
                 $this->component,
-                $this->filearea,
-                $this->pluginfileitemid,
+                $filearea,
+                $pluginfileitemid,
                 [
                     'includetoken' => true,
                 ]
             );
-        }
-
-        return $content;
-    }
-
-    /**
-     * Export files releating to this text area.
-     *
-     * @param   string $content
-     * @return  string
-     */
-    protected function export_files(export_controller $controller, string $content): string {
-        if ($this->filearea === null) {
-            return $content;
-        }
-
-        if ($this->itemid === null) {
-            return $content;
-        }
-
-        // Export all of the files for this text area.
-        $fs = get_file_storage();
-        $files = $fs->get_area_files($this->context->id, $this->component, $this->filearea, $this->itemid);
-
-        $filelist = [];
-        foreach ($files as $file) {
-            if ($file->is_directory()) {
-                continue;
-            }
-
-            $filepathinzip = $this->get_filepath_for_file($file, false);
-            $controller->get_archive()->add_file_from_stored_file(
-                $this->get_context(),
-                $filepathinzip,
-                $file
-            );
-
-            if ($controller->get_archive()->is_file_in_archive($this->get_context(), $filepathinzip)) {
-                // Attempt to rewrite any @@PLUGINFILE@@ URLs for this file in the content.
-                $searchpath = "@@PLUGINFILE@@" . $file->get_filepath() . rawurlencode($file->get_filename());
-                $content = str_replace($searchpath, $this->get_filepath_for_file($file, true), $content);
-            }
         }
 
         return $content;
@@ -213,16 +234,16 @@ class exportable_course extends exportable_item {
      * @param   bool $escape
      * @return  string
      */
-    protected function get_filepath_for_file(stored_file $file, bool $escape): string {
+    protected function get_filepath_for_file(stored_file $file, string $subdir, bool $escape): string {
         $path = [];
 
-        $textareafilepath = dirname($this->filepath);
-        if ($textareafilepath !== '.') {
-            $path[] = $textareafilepath;
+        if (!empty($subdir)) {
+            $subdir = '/' . $subdir . '/';
         }
 
         $filepath = sprintf(
-            '%s%s%s',
+            '%s%s%s%s',
+            $subdir,
             $file->get_filearea(),
             $file->get_filepath(),
             $file->get_filename()
@@ -246,14 +267,7 @@ class exportable_course extends exportable_item {
     public function __serialize(): array {
         return array_merge(
             [
-                'filepath' => $this->filepath,
-                'tablename' => $this->tablename,
-                'fieldid' => $this->id,
-                'textfield' => $this->textfield,
-                'textformatfield' => $this->textformatfield,
-                'filearea' => $this->filearea,
-                'itemid' => $this->itemid,
-                'pluginfileitemid' => $this->pluginfileitemid,
+                'courseid' => $this->course->id,
             ],
             parent::__serialize()
         );
@@ -265,14 +279,7 @@ class exportable_course extends exportable_item {
      * @param   array $data
      */
     public function __unserialize(array $data): void {
-        $this->filepath = $data['filepath'];
-        $this->tablename = $data['tablename'];
-        $this->id = $data['fieldid'];
-        $this->textfield = $data['textfield'];
-        $this->textformatfield = $data['textformatfield'];
-        $this->filearea = $data['filearea'];
-        $this->itemid = $data['itemid'];
-        $this->pluginfileitemid = $data['pluginfileitemid'];
+        $this->course = get_course($data['courseid']);
 
         parent::__unserialize($data);
     }

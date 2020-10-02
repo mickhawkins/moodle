@@ -1,0 +1,36 @@
+{{<core/content/export/external_page}}
+{{$pagecontent}}
+    <h1>{{course.fullname}}</h1>
+    <h2>{{course.shortname}}</h2>
+
+    <h3>{{#str}}summary, core{{/str}}</h3>
+    <div>
+        {{{summary}}}
+    </div>
+
+    {{#overviewfiles.0}}
+    <h3>{{#str}}courseoverviewfiles, core{{/str}}</h3>
+    <div>
+        <ul>
+            {{#overviewfiles}}
+            <li>{{filename}}</li>
+            {{/overviewfiles}}
+    <div>
+    {{/overviewfiles.0}}
+
+    {{#sections.0}}
+    <div>
+        {{#sections}}
+        <h4>{{{title}}}</h4>
+            {{#activities.0}}
+            <ul>
+            {{#activities}}
+                <li><a href="{{{link}}}">{{{title}}}</a></li>
+            {{/activities}}
+            </ul>
+            {{/activities.0}}
+        {{/sections}}
+    </div>
+    {{/sections.0}}
+{{/pagecontent}}
+{{/core/content/export/external_page}}

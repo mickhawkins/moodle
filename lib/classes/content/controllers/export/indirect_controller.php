@@ -23,7 +23,7 @@
  */
 namespace core\content\controllers\export;
 
-use core\content\controllers\export\controller as export_controller;
+use core\content\controllers\abstract_controller;
 
 use core_component;
 
@@ -33,5 +33,5 @@ use core_component;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-abstract class indirect_controller extends export_controller {
+abstract class indirect_controller extends abstract_controller {
 }

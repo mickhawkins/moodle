@@ -277,6 +277,9 @@ $string['confirmcheckfull'] = 'Are you absolutely sure you want to confirm {$a} 
 $string['confirmcoursemove'] = 'Are you sure you want to move this course ({$a->course}) into this category ({$a->category})?';
 $string['considereddigitalminor'] = 'You are too young to create an account on this site.';
 $string['content'] = 'Content';
+$string['contentexport_viewfilename'] = 'View the file {$a}';
+$string['contentexport_vieworiginalactivity'] = 'View the full content of the "{$a}" activity';
+$string['contentexport_vieworiginalactivityfullmessage'] = 'This activity may contain additional content which cannot be downloaded. You can <a href="{$a}">view the content of this activity</a> at from its original location.';
 $string['contentbank'] = 'Content bank';
 $string['continue'] = 'Continue';
 $string['continuetocourse'] = 'Click here to enter your course';

@@ -24,9 +24,13 @@
 namespace core_course\content;
 
 use context;
-use core\content\exportable_items\exportable_textarea;
-use core\content\exportable_items\exportable_stored_file;
+use context_course;
+use core_course\content\exportable_items\exportable_course;
 use core\content\controllers\export\component_controller;
+use core\content\zipwriter;
+use core\content\export\helper;
+use core\content\export\exported_item;
+use section_info;
 use stdClass;
 
 /**
@@ -35,72 +39,123 @@ use stdClass;
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class export_controller extends component_controller {
+class export_controller {
+    /** @var context The course context */
+    protected $context;
 
-    /**
-     * Get the exportable items for the user in the specified context.
-     *
-     * Note: This context must be a child of the root context defined in the instance.
-     *
-     * @param   context $currentcontext The current context being exported
-     * @return  exportable_item[]
-     */
-    public function get_exportable_items_for_user(context $currentcontext): array {
-        if ($currentcontext->contextlevel != CONTEXT_COURSE) {
-            return [];
+    /** @var zipwriter */
+    protected $archive;
+
+    public function __construct(context_course $context, zipwriter $archive) {
+        $this->context = $context;
+        $this->course = get_course($context->instanceid);
+        $this->archive = $archive;
+    }
+
+    public function export_items_for_user(array $exportedcontexts): void {
+        global $PAGE;
+
+        // A course export is composed of:
+        // - Course summary (including inline files)
+        // - Overview files
+        // - Section:
+        // -- Section name
+        // -- Section summary (including inline files)
+        // -- List of available activities.
+
+        if (empty($this->course->summary)) {
+            $this->course->summary = '';
         }
 
-        $course = get_course($currentcontext->instanceid);
-        if (empty($course)) {
-            return [];
+        $templatedata = (object) [
+            'course' => $this->course,
+            'summary' => $this->get_course_summary()->get_content(),
+            'overviewfiles' => $this->get_course_overview_files()->get_template_data()->files,
+            'sections' => [],
+        ];
+
+        // Add all sections.
+        $modinfo = get_fast_modinfo($this->course);
+        foreach ($modinfo->get_section_info_all() as $number => $section) {
+            $templatedata->sections[] = $this->get_course_section($exportedcontexts, $section);
         }
 
-        $modinfo = get_fast_modinfo($course);
-
-        $contentitems = [];
-
-        // Display the summary.
-        $contentitems[] = new exportable_textarea(
-            $currentcontext,
-            $this->get_component(),
-            //get_string('summary', 'course'),
-            'Summary',
+        $this->archive->add_file_from_template(
+            $this->context,
             'index.html',
+            'core_course/content/courseexport',
+            $templatedata
+        );
+    }
+
+    protected function get_course_summary(): exported_item {
+        global $DB;
+
+        return helper::export_files_for_content(
+            $this->archive,
+            $this->context,
+            '',
+            $this->course->summary,
             'course',
             'summary',
-            $course->id,
-            'summaryformat',
-            'summary',
             0,
-            // The pluginfile URL does not include any itemid.
             null
         );
+    }
 
-        // Add the overview files.
-        $contentitems = array_merge(
-            $contentitems,
-            exportable_stored_file::create_from_area_params($currentcontext, $this->component, 'overviewfiles', 0)
+    protected function get_course_overview_files(): exported_item {
+        return helper::export_files_for_content(
+            $this->archive,
+            $this->context,
+            '',
+            '',
+            'course',
+            'overviewfiles',
+            0,
+            null
+        );
+    }
+
+    protected function get_course_section(array $exportedcontexts, section_info $section): stdClass {
+        $sectiondata = (object) [
+            'number' => $section->section,
+            'title' => $section->name,
+            'summary' => '',
+            'activities' => [],
+        ];
+
+        $sectiondata->summary = helper::export_files_for_content(
+            $this->archive,
+            $this->context,
+            "sections/{$section->section}",
+            $section->summary,
+            'course',
+            'section',
+            $section->id,
+            $section->id
         );
 
-        // Loop over all sections.
-        foreach ($modinfo->get_section_info_all() as $number => $section) {
-            $contentitems[] = new exportable_textarea(
-                $currentcontext,
-                $this->get_component(),
-                //get_string('section', 'course'),
-                "Section {$number}",
-                "section-{$number}.html",
-                'course_sections',
-                'summary',
-                $section->id,
-                'summaryformat',
-                // Files are stored in section/sectionid.
-                'section',
-                $section->id,
-                // The pluginfile URL uses section->id as an itemid.
-                $section->id
-            );
+        $modinfo = get_fast_modinfo($this->course);
+        foreach ($modinfo->sections[$section->section] as $cmid) {
+            $cm = $modinfo->cms[$cmid];
+
+            if (array_key_exists($cm->context->path, $exportedcontexts)) {
+                error_log("Fetching CM path");
+                $url = $this->archive->get_relative_context_path($this->context, $cm->context, 'index.html');
+                error_log("CM path from root is {$url}");
+            } else {
+                $url = $cm->url;
+            }
+            $sectiondata->activities[] = (object) [
+                'title' => $cm->name,
+                'link' => $url,
+            ];
         }
-        return $contentitems;
+
+        return $sectiondata;
+    }
+
+    protected function get_archive(): zipwriter {
+        return $this->archive;
     }
 }
