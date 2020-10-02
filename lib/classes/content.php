@@ -96,6 +96,7 @@ class content {
             if ($context->contextlevel == CONTEXT_COURSE) {
                 return self::can_export_content_for_context($context, $user);
             }
+
             if ($context->contextlevel == CONTEXT_MODULE) {
                 if (empty($modinfo->cms[$context->instanceid])) {
                     // Unknown coursemodule in the course.

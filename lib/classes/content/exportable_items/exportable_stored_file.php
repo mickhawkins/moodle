@@ -29,6 +29,7 @@ namespace core\content\exportable_items;
 use context;
 use core\content\exportable_item;
 use core\content\export\exported_item;
+use core\content\export\helper;
 use core\content\zipwriter;
 use stdClass;
 use stored_file;
@@ -47,6 +48,9 @@ class exportable_stored_file extends exportable_item {
     /** @var stored_file The file to be exported */
     protected $file;
 
+    /** @var int The itemid to use in the pluginfile URL */
+    protected $pluginfileitemid;
+
     /**
      * Create a new exportable_item instance.
      *
@@ -63,12 +67,14 @@ class exportable_stored_file extends exportable_item {
         string $component,
         string $uservisiblename,
         stored_file $file,
+        ?int $pluginfileitemid = null,
         string $folderpath = ''
     ) {
         parent::__construct($context, $component, $uservisiblename);
 
         $this->file = $file;
         $this->folderpath = $folderpath;
+        $this->pluginfileitemid = $pluginfileitemid;
     }
 
     /**
@@ -87,7 +93,8 @@ class exportable_stored_file extends exportable_item {
         context $context,
         string $component,
         string $filearea,
-        ?int $itemid,
+        int $itemid,
+        ?int $pluginfileitemid = null,
         string $folderpath = ''
     ): array {
         $fs = get_file_storage();
@@ -103,7 +110,7 @@ class exportable_stored_file extends exportable_item {
                 continue;
             }
             $filepath = $file->get_filepath() . $file->get_filename();
-            $exportables[] = new self($context, $component, $filepath, $file, $folderpath);
+            $exportables[] = new self($context, $component, $filepath, $file, $pluginfileitemid, $folderpath);
         }
 
         return $exportables;
@@ -124,8 +131,15 @@ class exportable_stored_file extends exportable_item {
             $this->file
         );
 
-        $exporteditem = new exported_item([$relativefilepath]);
+        $exporteditem = new exported_item();
         $exporteditem->set_title($this->get_user_visible_name());
+
+        if ($archive->is_file_in_archive($this->context, $relativefilepath)) {
+            $exporteditem->add_file($relativefilepath, false);
+        } else {
+            $exporteditem->add_file($relativefilepath, false, helper::get_pluginfile_url_for_stored_file($this->file, $this->pluginfileitemid));
+        }
+
 
         return $exporteditem;
     }

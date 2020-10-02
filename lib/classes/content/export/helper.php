@@ -28,6 +28,7 @@ namespace core\content\export;
 
 use context;
 use core\content\zipwriter;
+use moodle_url;
 use stored_file;
 
 /**
@@ -101,6 +102,21 @@ class helper {
         }
 
         return $content;
+    }
+
+    public static function get_pluginfile_url_for_stored_file(stored_file $file, ?int $pluginfileitemid): string {
+        $link = moodle_url::make_pluginfile_url(
+            $file->get_contextid(),
+            $file->get_component(),
+            $file->get_filearea(),
+            $pluginfileitemid,
+            $file->get_filepath(),
+            $file->get_filename(),
+            true,
+            true
+        );
+
+        return $link->out(false);
     }
 
     /**

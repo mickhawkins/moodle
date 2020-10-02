@@ -75,9 +75,13 @@ class exported_item {
      * @param   string $relativefilepath The path to the content relative to the exported context
      * @param   bool $incontent Whether this file is included within the content
      */
-    public function add_file(string $relativefilepath, bool $incontent = false): void {
+    public function add_file(string $relativefilepath, bool $incontent = false, ?string $filepath = null): void {
+        if ($filepath === null) {
+            $filepath = $relativefilepath;
+        }
+
         $file = (object) [
-            'filepath' => $relativefilepath,
+            'filepath' => $filepath,
             'filename' => basename($relativefilepath),
         ];
 

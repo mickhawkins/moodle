@@ -15,39 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Content export definition.
+ * TODO
  *
  * @package     core
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace mod_folder\content;
 
-use context;
-use core\content\exportable_items\exportable_stored_file;
-use core\content\controllers\export\plugintypes\mod_controller;
+namespace core\content\export;
 
 /**
- * A class which assists a component to export content.
+ * TODO
  *
  * @copyright   2020 Andrew Nicols <andrew@nicols.co.uk>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class export_controller extends mod_controller {
-
-    /**
-     * Get the exportable items for the user in the specified context.
-     *
-     * Note: This context must be a child of the root context defined in the instance.
-     *
-     * @param   context $currentcontext The current context being exported
-     * @return  exportable_item[]
-     */
-    public function get_exportable_items_for_user(context $currentcontext): array {
-        $contentitems = [];
-
-        $cm = self::get_cm_from_context($currentcontext);
-
-        return exportable_stored_file::create_from_area_params($currentcontext, $this->component, 'content', 0, 0);
-    }
+class zipwriter extends \core\content\zipwriter {
 }

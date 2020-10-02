@@ -91,7 +91,7 @@ class export_controller {
     protected function get_course_summary(): exported_item {
         global $DB;
 
-        return helper::export_files_for_content(
+        return helper::add_text_with_pluginfiles_to_archive(
             $this->archive,
             $this->context,
             '',
@@ -124,7 +124,7 @@ class export_controller {
             'activities' => [],
         ];
 
-        $sectiondata->summary = helper::export_files_for_content(
+        $sectiondata->summary = helper::add_text_with_pluginfiles_to_archive(
             $this->archive,
             $this->context,
             "sections/{$section->section}",
@@ -133,7 +133,7 @@ class export_controller {
             'section',
             $section->id,
             $section->id
-        );
+        )->get_template_data()->content;
 
         $modinfo = get_fast_modinfo($this->course);
         foreach ($modinfo->sections[$section->section] as $cmid) {

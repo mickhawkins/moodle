@@ -3,14 +3,14 @@
     <div class="alert alert-info alert-block">
         {{#str}}contentexport_vieworiginalcoursefullmessage, core, {{{global.courselink}}} {{/str}}
     </div>
-    <h3>{{#str}}summary, core{{/str}}</h3>
+    <h2>{{#str}}summary, core{{/str}}</h2>
     <div>
         {{{summary}}}
     </div>
     <hr>
 
     {{#overviewfiles.0}}
-    <h3>{{#str}}courseoverviewfiles, core{{/str}}</h3>
+    <h2>{{#str}}courseoverviewfiles, core{{/str}}</h2>
     <div>
         {{#overviewfiles.0}}
         <ul>
@@ -26,7 +26,12 @@
     {{#sections.0}}
     <div>
         {{#sections}}
-        <h4>{{{title}}}</h4>
+        <h3>{{{title}}}</h3>
+        {{#summary}}
+        <div>
+            {{{summary}}}
+        </div>
+        {{/summary}}
         {{#activities.0}}
         <ul>
         {{#activities}}
