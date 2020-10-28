@@ -4609,7 +4609,9 @@ class settings_navigation extends navigation_node {
         // Will only be included here if the action menu is already in use, otherwise a button will be added to the UI elsewhere.
         if (\core\content::can_export_context($coursecontext, $USER) && !empty($coursenode->get_children_key_list())) {
             $linkattr = \core_course\output\content_export_link::get_attributes($coursecontext);
-            $actionlink = new action_link($linkattr->url, $linkattr->displaystring, null, $linkattr->elementattributes);
+            // Link needs to keep user on current page for keyboard compatibility in Classic theme.
+            $downloadlinkurl = new moodle_url('#');
+            $actionlink = new action_link($downloadlinkurl, $linkattr->displaystring, null, $linkattr->elementattributes);
 
             $coursenode->add($linkattr->displaystring, $actionlink, self::TYPE_SETTING, null, 'download',
                     new pix_icon('t/download', ''));
