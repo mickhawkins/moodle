@@ -9828,6 +9828,11 @@ a.text-dark:hover, a.text-dark:focus {
     text-align: right;
 }
 */
+/*rtl:raw:
+.custom-switch .custom-control-label::after {
+    right: -1.6rem;
+}
+*/
 /**
  * Moodle variables
  *

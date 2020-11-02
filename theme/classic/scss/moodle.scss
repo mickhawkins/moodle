@@ -1,2 +1,8 @@
 // Import Boost Core moodle CSS
 @import "../../boost/scss/moodle";
+
+/*rtl:raw:
+.custom-switch .custom-control-label::after {
+    right: -1.4rem;
+}
+*/
