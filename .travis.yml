@@ -26,6 +26,12 @@ addons:
 # services:
 #     - redis-server
 
+# Testing
+env:
+    global:
+    - MOODLE_DATABASE=mysqli
+    - MOODLE_PHP=all
+
 jobs:
     # Enable fast finish.
     # This will fail the build if a single job fails (except those in allow_failures).
