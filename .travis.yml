@@ -19,6 +19,7 @@ services:
 addons:
   postgresql: "9.6"
 
+# Testing
 env:
     - MOODLE_DATABASE='mysqli'     MOODLE_PHP='all'
 
