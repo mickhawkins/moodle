@@ -21,7 +21,9 @@ addons:
 
 # Testing
 env:
-    - MOODLE_DATABASE=mysqli     MOODLE_PHP=all
+    global:
+    - MOODLE_DATABASE=mysqli
+    - MOODLE_PHP=all
 
 jobs:
     # Enable fast finish.
