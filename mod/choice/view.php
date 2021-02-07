@@ -19,6 +19,7 @@ $PAGE->set_url($url);
 if (! $cm = get_coursemodule_from_id('choice', $id)) {
     print_error('invalidcoursemodule');
 }
+$cm = cm_info::create($cm);
 
 if (! $course = $DB->get_record("course", array("id" => $cm->course))) {
     print_error('coursemisconf');
@@ -98,6 +99,7 @@ choice_view($choice, $course, $cm, $context);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($choice->name), 2, null);
+echo $OUTPUT->activity_information($cm);
 
 if ($notify and confirm_sesskey()) {
     if ($notify === 'choicesaved') {
