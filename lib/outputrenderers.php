@@ -906,18 +906,14 @@ class core_renderer extends renderer_base {
     /**
      * Returns information about an activity.
      *
+     * @param stdClass $course The course object.
      * @param cm_info $cm The course module info object.
      * @param int|null $userid The user ID.
      * @return string the activity information HTML.
      * @throws coding_exception
      */
-    public function activity_information(cm_info $cm, ?int $userid = 0): string {
-        global $USER;
-
-        // Default to the currently logged in user if user ID's not set.
-        if (empty($userid)) {
-            $userid = $USER->id;
-        }
+    public function activity_information(stdClass $course, cm_info $cm, ?int $userid = 0): string {
+        global $CFG;
 
         // Get completion details for this user.
         $completioninfo = new completion_info($cm->get_course());
@@ -937,10 +933,18 @@ class core_renderer extends renderer_base {
             'hascompletion' => $hascompletion,
             'istrackeduser' => $completioninfo->is_tracked_user($userid),
             'isautomatic' => $cmdetails->is_automatic(),
-            'details' => $cmdetails->get_details(),
+            'details' => [],
             'overallstatus' => $cmdetails->get_overall_completion(),
             'overrideby' => $overridebyname,
         ];
+
+        if ($CFG->enablecompletion && $course->enablecompletion) {
+            if ($course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS) {
+                $completion->details = $cmdetails->get_details();
+            }
+        } else {
+            return '';
+        }
 
         // Get activity dates for the module.
         $activitydates = activity_dates::get_dates_for_module($cm, $userid);
