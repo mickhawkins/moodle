@@ -141,6 +141,10 @@ define('COMPLETION_AGGREGATION_ALL', 1);
  */
 define('COMPLETION_AGGREGATION_ANY', 2);
 
+/**
+ * Completion conditions should be displayed on activities/course page.
+ */
+define('COMPLETION_SHOW_CONDITIONS', 1);
 
 /**
  * Utility function for checking if the logged in user can view

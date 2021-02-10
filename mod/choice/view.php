@@ -99,7 +99,7 @@ choice_view($choice, $course, $cm, $context);
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($choice->name), 2, null);
-echo $OUTPUT->activity_information($cm);
+echo $OUTPUT->activity_information($course, $cm);
 
 if ($notify and confirm_sesskey()) {
     if ($notify === 'choicesaved') {
