@@ -912,44 +912,46 @@ class core_renderer extends renderer_base {
      * @throws coding_exception
      */
     public function activity_information(stdClass $course, cm_info $cm, ?int $userid = 0): string {
-        global $CFG;
+        global $CFG, $USER;
+
+        // Default to the currently logged in user if user ID's not set.
+        if (empty($userid)) {
+            $userid = $USER->id;
+        }
 
         // Get completion details for this user.
         $completioninfo = new completion_info($cm->get_course());
         $cmdetails = new cm_completion_details($completioninfo, $cm, $userid);
-        $hascompletion = $cmdetails->has_completion();
 
-        // Fetch the name of the user who has overridden this activity completion for the user.
-        $overrideby = $cmdetails->overridden_by();
-        $overridebyname = null;
-        if (!empty($overrideby)) {
-            $overridebyrecord = core_user::get_user($overrideby, 'id, ' . get_all_user_name_fields(true), MUST_EXIST);
-            $overridebyname = fullname($overridebyrecord);
-        }
-
-        // Build the object containing this course module's completion data.
         $completion = (object)[
-            'hascompletion' => $hascompletion,
+            'hascompletion' => $cmdetails->has_completion(),
             'istrackeduser' => $completioninfo->is_tracked_user($userid),
             'isautomatic' => $cmdetails->is_automatic(),
-            'details' => [],
+            'details' => $cmdetails->get_details(),
             'overallstatus' => $cmdetails->get_overall_completion(),
-            'overrideby' => $overridebyname,
+            'overrideby' => '',
         ];
 
         if ($CFG->enablecompletion && $course->enablecompletion) {
-            if ($course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS) {
-                $completion->details = $cmdetails->get_details();
+            // Fetch the name of the user who has overridden this activity completion for the user.
+            $overrideby = $cmdetails->overridden_by();
+            $overridebyname = null;
+            if (!empty($overrideby)) {
+                $overridebyrecord = core_user::get_user($overrideby, 'id, ' . get_all_user_name_fields(true), MUST_EXIST);
+                $completion->overrideby = fullname($overridebyrecord);
             }
-        } else {
-            return '';
+
+            // Hide automatic completion details if not configured to show.
+            if ($cmdetails->is_automatic() && $course->showcompletionconditions != COMPLETION_SHOW_CONDITIONS) {
+                $completion->hascompletion = false;
+            }
         }
 
         // TODO get activity dates for the module.
         $activitydates = [];
 
         // Return nothing if there's nothing to render.
-        if (empty($activitydates) && !$hascompletion) {
+        if (empty($activitydates) && !$completion->hascompletion) {
             return '';
         }
 
