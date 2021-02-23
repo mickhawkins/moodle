@@ -117,7 +117,7 @@ class activity_custom_completion_test extends advanced_testcase {
                 )
                 ->willReturn($rulestates[0], $rulestates[1]);
         } else {
-            $stub->expects($this->exactly($invokecount))
+            $stub->expects($this->never())
                 ->method('get_state');
         }
 
