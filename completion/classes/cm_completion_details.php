@@ -108,7 +108,8 @@ class cm_completion_details {
 
         // Custom completion rules.
         /** @var activity_custom_completion $cmcompletionclass */
-        $cmcompletionclass = activity_custom_completion::get_cm_completion_class($this->cminfo->modname);
+        $cmcompletionclassname = activity_custom_completion::get_cm_completion_class($this->cminfo->modname);
+        $cmcompletionclass = $cmcompletionclassname ? new $cmcompletionclassname($this->cminfo, $this->userid) : false;
         if (!isset($completiondata->customcompletion) || !$cmcompletionclass) {
             // Return early if there are no custom rules to process or the cm completion class implementation is not available.
             return $details;
@@ -117,7 +118,7 @@ class cm_completion_details {
         foreach ($completiondata->customcompletion as $rule => $status) {
             $details[$rule] = (object)[
                 'status' => !$hasoverride ? $status : COMPLETION_COMPLETE,
-                'description' => $cmcompletionclass::get_custom_rule_description($rule),
+                'description' => $cmcompletionclass->get_custom_rule_description($rule),
             ];
         }
 

@@ -86,7 +86,7 @@ abstract class activity_custom_completion {
      * @return bool
      */
     public function is_defined(string $rule): bool {
-        return in_array($rule, static::get_defined_custom_rules());
+        return in_array($rule, $this->get_defined_custom_rules());
     }
 
     /**
@@ -105,7 +105,7 @@ abstract class activity_custom_completion {
      * @return array
      */
     public function get_available_custom_rules(): array {
-        $rules = static::get_defined_custom_rules();
+        $rules = $this->get_defined_custom_rules();
         $availablerules = [];
         foreach ($rules as $rule) {
             $customrule = $this->cm->customdata['customcompletionrules'][$rule] ?? false;
@@ -139,8 +139,8 @@ abstract class activity_custom_completion {
      * @param string $rule The custom completion rule.
      * @return string
      */
-    public static function get_custom_rule_description(string $rule): string {
-        $descriptions = static::get_custom_rule_descriptions();
+    public function get_custom_rule_description(string $rule): string {
+        $descriptions = $this->get_custom_rule_descriptions();
         if (!isset($descriptions[$rule])) {
             // Lang string not found for this custom completion rule. Just return it.
             return $rule;
@@ -175,12 +175,12 @@ abstract class activity_custom_completion {
      *
      * @return array
      */
-    public abstract static function get_defined_custom_rules(): array;
+    public abstract function get_defined_custom_rules(): array;
 
     /**
      * Returns an associative array of the descriptions of custom completion rules.
      *
      * @return array
      */
-    public abstract static function get_custom_rule_descriptions(): array;
+    public abstract function get_custom_rule_descriptions(): array;
 }
