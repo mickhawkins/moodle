@@ -921,7 +921,8 @@ class core_renderer extends renderer_base {
         }
 
         // Get completion details for this user.
-        $completioninfo = new completion_info($cm->get_course());
+        $course = $cm->get_course();
+        $completioninfo = new completion_info($course);
         $cmdetails = new cm_completion_details($completioninfo, $cm, $userid);
         $hascompletion = $cmdetails->has_completion();
 
@@ -944,8 +945,11 @@ class core_renderer extends renderer_base {
             'overrideby' => $overridebyname,
         ];
 
-        // Get activity dates for the module.
-        $activitydates = activity_dates::get_dates_for_module($cm, $userid);
+        $activitydates = [];
+        if ($course->showactivitydates == 1) {
+            // Get activity dates for the module.
+            $activitydates = activity_dates::get_dates_for_module($cm, $userid);
+        }
 
         // Return nothing if there's nothing to render.
         if (empty($activitydates) && !$hascompletion) {
