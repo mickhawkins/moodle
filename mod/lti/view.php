@@ -114,6 +114,9 @@ if ($lti->showtitlelaunch) {
     echo $OUTPUT->heading(format_string($lti->name, true, array('context' => $context)));
 }
 
+// Display any activity information (eg completion requirements / dates).
+echo $OUTPUT->activity_information(cm_info::create($cm));
+
 if ($lti->showdescriptionlaunch && $lti->intro) {
     echo $OUTPUT->box(format_module_intro('lti', $lti, $cm->id), 'generalbox description', 'intro');
 }
