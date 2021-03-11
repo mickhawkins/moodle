@@ -270,6 +270,8 @@ function url_print_workaround($url, $cm, $course) {
 
     url_print_header($url, $cm, $course);
     url_print_heading($url, $cm, $course, true);
+    // Display any activity information (eg completion requirements / dates).
+    echo $OUTPUT->activity_information($course, cm_info::create($cm));
     url_print_intro($url, $cm, $course, true);
 
     $fullurl = url_get_full_url($url, $cm, $course);
@@ -338,6 +340,9 @@ function url_display_embed($url, $cm, $course) {
 
     url_print_header($url, $cm, $course);
     url_print_heading($url, $cm, $course);
+
+    // Display any activity information (eg completion requirements / dates).
+    echo $OUTPUT->activity_information($course, cm_info::create($cm));
 
     echo $code;
 
