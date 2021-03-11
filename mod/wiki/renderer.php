@@ -235,8 +235,14 @@ class mod_wiki_renderer extends plugin_renderer_base {
         return $output;
     }
     public function wiki_info() {
-        return $this->output->box(format_module_intro('wiki',
+        // Display any activity information (eg completion requirements / dates).
+        $info = $this->output->activity_information(get_course($this->page->cm->course), cm_info::create($this->page->cm));
+
+        // Add the rest of the wiki info.
+        $info .= $this->output->box(format_module_intro('wiki',
                 $this->page->activityrecord, $this->page->cm->id), 'generalbox', 'intro');
+
+        return $info;
     }
 
     public function tabs($page, $tabitems, $options) {
