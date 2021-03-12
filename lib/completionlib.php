@@ -1118,13 +1118,13 @@ class completion_info {
 
         // Return early if the plugin does not define custom completion rules.
         if (empty($cm->customdata['customcompletionrules'])) {
-            return [];
+            return $data;
         }
 
         // Return early if the activity modules doe not implement the activity_custom_completion class.
         $cmcompletionclass = activity_custom_completion::get_cm_completion_class($cm->modname);
         if (!$cmcompletionclass) {
-            return [];
+            return $data;
         }
 
         /** @var activity_custom_completion $customcmcompletion */
@@ -1137,7 +1137,6 @@ class completion_info {
             // Get this custom completion rule's completion state.
             $data['customcompletion'][$rule] = $customcmcompletion->get_state($rule);
         }
-
         return $data;
     }
 
