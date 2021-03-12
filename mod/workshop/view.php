@@ -103,6 +103,8 @@ $output = $PAGE->get_renderer('mod_workshop');
 
 echo $output->header();
 echo $output->heading_with_help(format_string($workshop->name), 'userplan', 'workshop');
+// Display any activity information (eg completion requirements / dates).
+echo $OUTPUT->activity_information($course, cm_info::create($cm));
 echo $output->heading(format_string($currentphasetitle), 3, null, 'mod_workshop-userplanheading');
 echo $output->render($userplan);
 
