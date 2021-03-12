@@ -24,6 +24,8 @@
 
 namespace core_course\output;
 
+use core\activity_dates;
+use core_completion\cm_completion_details;
 use core_course\course_format;
 use section_info;
 use completion_info;
@@ -82,20 +84,24 @@ class cm_format implements renderable, templatable {
      * @return stdClass data context for a mustache template
      */
     public function export_for_template(\renderer_base $output): stdClass {
+        global $USER;
+
         $format = $this->format;
-        $course = $format->get_course();
         $mod = $this->mod;
         $displayoptions = $this->displayoptions;
 
+        $completiondetails = cm_completion_details::get_instance($mod, $USER->id, $this->displayoptions['showcompletionconditions']);
+        $activitydates = [];
+        if ($this->displayoptions['showactivitydates']) {
+            $activitydates = activity_dates::get_dates_for_module($mod, $USER->id);
+        }
         $data = (object)[
             'cmname' => $output->course_section_cm_name($mod, $displayoptions),
             'afterlink' => $mod->afterlink,
             'altcontent' => $output->course_section_cm_text($mod, $displayoptions),
             'availability' => $output->course_section_cm_availability($mod, $displayoptions),
             'url' => $mod->url,
-            'completion' => $output->course_section_cm_completion(
-                $course, $this->completioninfo, $mod, $displayoptions
-            ),
+            'activityinfo' => $output->activity_information($mod, $completiondetails, $activitydates),
         ];
 
         if (!empty($mod->indent)) {
@@ -125,7 +131,7 @@ class cm_format implements renderable, templatable {
             $data->moveicon = course_get_cm_move($mod, $returnsection);
         }
 
-        if (!empty($data->completion) || !empty($data->extras)) {
+        if (!empty($data->extras)) {
             $data->hasextras = true;
         }
 

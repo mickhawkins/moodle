@@ -28,7 +28,7 @@
         "afterlink": "<span class=\"badge badge-primary\">30 unread messages</span>",
         "hasextras": true,
         "extras": ["<span class=\"badge badge-secondary\">[extras]</span>"],
-        "completion": "<span class=\"badge badge-success\">Completed!</span>",
+        "activityinfo": "<span class=\"badge badge-success\">Completed!</span>",
         "availability": "<div><span class=\"badge badge-info\">Restricted</span> Available from <strong>3 Dec 2029</strong></div>"
 
     }
@@ -57,9 +57,10 @@
             {{#hasextras}}
             <div class="actions">
                 {{#extras}} {{{.}}} {{/extras}}
-                {{{completion}}}
             </div>
             {{/hasextras}}
+
+            {{{activityinfo}}}
 
             {{{availability}}}
 
