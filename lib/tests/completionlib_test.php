@@ -623,27 +623,42 @@ class core_completionlib_testcase extends advanced_testcase {
         $this->setup_data();
         $user = $this->user;
 
+        $this->setAdminUser();
+
         /** @var \mod_choice_generator $choicegenerator */
         $choicegenerator = $this->getDataGenerator()->get_plugin_generator('mod_choice');
         $choice = $choicegenerator->create_instance([
             'course' => $this->course->id,
-            'completion' => true,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
             'completionview' => true,
+            'completionsubmit' => true,
         ]);
 
-        $cm = get_coursemodule_from_instance('choice', $choice->id);
+        $cmchoice = get_coursemodule_from_instance('choice', $choice->id);
 
-        // Let's manually create a course completion record instead of going thru the hoops to complete an activity.
+        /** @var \mod_workshop_generator $workshopgenerator */
+        $workshopgenerator = $this->getDataGenerator()->get_plugin_generator('mod_workshop');
+        $workshop = $workshopgenerator->create_instance([
+            'course' => $this->course->id,
+            'completion' => COMPLETION_TRACKING_AUTOMATIC,
+            'completionview' => true,
+            // Submission grade required.
+            'completiongradeitemnumber' => 0,
+        ]);
+
+        $cmworkshop = get_coursemodule_from_instance('workshop', $workshop->id);
+
+        // Let's manually create a course completion record instead of going through the hoops to complete an activity.
         if ($hasrecord) {
-            $cmcompletionrecord = (object)[
-                'coursemoduleid' => $cm->id,
+            $choicecmcompletionrecord = (object)[
+                'coursemoduleid' => $cmchoice->id,
                 'userid' => $user->id,
                 'completionstate' => $completion,
                 'viewed' => 0,
                 'overrideby' => null,
                 'timemodified' => 0,
             ];
-            $DB->insert_record('course_modules_completion', $cmcompletionrecord);
+            $DB->insert_record('course_modules_completion', $choicecmcompletionrecord);
         }
 
         // Whether we expect for the returned completion data to be stored in the cache.
@@ -659,17 +674,18 @@ class core_completionlib_testcase extends advanced_testcase {
         // Mock other completion data.
         $completioninfo = new completion_info($this->course);
 
-        $result = $completioninfo->get_data($cm, $wholecourse, $user->id);
+        $choiceresult = $completioninfo->get_data($cmchoice, $wholecourse, $user->id);
+
         // Course module ID of the returned completion data must match this activity's course module ID.
-        $this->assertEquals($cm->id, $result->coursemoduleid);
+        $this->assertEquals($cmchoice->id, $choiceresult->coursemoduleid);
         // User ID of the returned completion data must match the user's ID.
-        $this->assertEquals($user->id, $result->userid);
+        $this->assertEquals($user->id, $choiceresult->userid);
         // The completion state of the returned completion data must match the expected completion state.
-        $this->assertEquals($completion, $result->completionstate);
+        $this->assertEquals($completion, $choiceresult->completionstate);
 
         // If the user has no completion record, then the default record should be returned.
         if (!$hasrecord) {
-            $this->assertEquals(0, $result->id);
+            $this->assertEquals(0, $choiceresult->id);
         }
 
         // Check caching.
@@ -677,7 +693,7 @@ class core_completionlib_testcase extends advanced_testcase {
         $cache = cache::make('core', 'completion');
         if ($iscached) {
             // If we expect this to be cached, then fetching the result must match the cached data.
-            $this->assertEquals($result, (object)$cache->get($key)[$cm->id]);
+            $this->assertEquals($choiceresult, (object)$cache->get($key)[$cmchoice->id]);
 
             // Check cached data for other course modules in the course.
             // The sample module created in setup_data() should suffice to confirm this.
@@ -690,6 +706,19 @@ class core_completionlib_testcase extends advanced_testcase {
         } else {
             // Otherwise, this should not be cached.
             $this->assertFalse($cache->get($key));
+        }
+
+        // Check that fetching  data for a module provides its completion info.
+        if (!$wholecourse) {
+            // Module with custom completion.
+            $this->assertTrue(property_exists($choiceresult, 'viewed'));
+            $this->assertTrue(property_exists($choiceresult, 'customcompletion'));
+            $this->assertArrayHasKey('completionsubmit', $choiceresult->customcompletion);
+
+            // Module without custom completion, with viewed and grade completion items.
+            $workshopresult = $completioninfo->get_data($cmworkshop, $wholecourse, $user->id);
+            $this->assertTrue(property_exists($workshopresult, 'viewed'));
+            $this->assertTrue(property_exists($workshopresult, 'completiongrade'));
         }
     }
 
