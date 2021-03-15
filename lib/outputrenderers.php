@@ -935,12 +935,17 @@ class core_renderer extends renderer_base {
             $overridebyname = fullname($overridebyrecord);
         }
 
+        $completiondetails = [];
+        if ($course->showcompletionconditions == COMPLETION_SHOW_CONDITIONS) {
+            $completiondetails = $cmdetails->get_details();
+        }
+
         // Build the object containing this course module's completion data.
         $completion = (object)[
             'hascompletion' => $hascompletion,
             'istrackeduser' => $completioninfo->is_tracked_user($userid),
             'isautomatic' => $cmdetails->is_automatic(),
-            'details' => $cmdetails->get_details(),
+            'details' => $completiondetails,
             'overallstatus' => $cmdetails->get_overall_completion(),
             'overrideby' => $overridebyname,
         ];
