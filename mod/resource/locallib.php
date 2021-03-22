@@ -102,6 +102,9 @@ function resource_display_embed($resource, $cm, $course, $file) {
     resource_print_header($resource, $cm, $course);
     resource_print_heading($resource, $cm, $course);
 
+    // Display any activity information (eg completion requirements / dates).
+    echo $OUTPUT->activity_information(cm_info::create($cm));
+
     echo $code;
 
     resource_print_intro($resource, $cm, $course);
@@ -206,6 +209,10 @@ function resource_print_workaround($resource, $cm, $course, $file) {
 
     resource_print_header($resource, $cm, $course);
     resource_print_heading($resource, $cm, $course, true);
+
+    // Display any activity information (eg completion requirements / dates).
+    echo $OUTPUT->activity_information(cm_info::create($cm));
+
     resource_print_intro($resource, $cm, $course, true);
 
     $resource->mainfile = $file->get_filename();
