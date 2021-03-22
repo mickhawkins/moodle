@@ -139,6 +139,9 @@ $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();
 echo $OUTPUT->heading(format_string($scorm->name));
 
+// Display any activity information (eg completion requirements / dates).
+echo $OUTPUT->activity_information(cm_info::create($cm));
+
 if (!empty($action) && confirm_sesskey() && has_capability('mod/scorm:deleteownresponses', $contextmodule)) {
     if ($action == 'delete') {
         $confirmurl = new moodle_url($PAGE->url, array('action' => 'deleteconfirm'));
