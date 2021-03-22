@@ -940,8 +940,13 @@ class mod_quiz_renderer extends plugin_renderer_base {
 
         $output = '';
 
-        // Print quiz name and description.
+        // Print quiz name.
         $output .= $this->heading(format_string($quiz->name));
+
+        // Print any activity information (eg completion requirements / dates).
+        $output .= $this->output->activity_information(cm_info::create($cm));
+
+        // Print quiz description.
         $output .= $this->quiz_intro($quiz, $cm);
 
         // Output any access messages.
