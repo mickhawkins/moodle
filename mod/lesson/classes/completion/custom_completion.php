@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace mod_lesson\completion;
 
@@ -46,17 +46,17 @@ class custom_completion extends activity_custom_completion {
         switch ($rule) {
             case 'completiontimespent':
                 $duration = $DB->get_field_sql(
-                      "SELECT SUM(lessontime - starttime)
-                         FROM {lesson_timer}
-                        WHERE lessonid = :lessonid
-                          AND userid = :userid",
-                        ['userid' => $this->userid, 'lessonid' => $this->cm->instance]);
+                    "SELECT SUM(lessontime - starttime)
+                       FROM {lesson_timer}
+                      WHERE lessonid = :lessonid
+                        AND userid = :userid",
+                    ['userid' => $this->userid, 'lessonid' => $this->cm->instance]);
 
                 $status = ($duration && $duration >= $this->cm->customdata['customcompletionrules']['completiontimespent']);
                 break;
             case 'completionendreached':
                 $status = $DB->record_exists('lesson_timer',
-                        ['lessonid' => $this->cm->instance, 'userid' => $this->userid, 'completed' => 1]);
+                    ['lessonid' => $this->cm->instance, 'userid' => $this->userid, 'completed' => 1]);
                 break;
             default:
                 $status = false;
