@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace mod_scorm\completion;
 
@@ -53,11 +53,11 @@ class custom_completion extends activity_custom_completion {
             case 'completionstatusrequired':
                 $status = false;
                 $query = $basequery .
-                        " AND element IN (
-                              'cmi.core.lesson_status',
-                              'cmi.completion_status',
-                              'cmi.success_status'
-                        )";
+                    " AND element IN (
+                          'cmi.core.lesson_status',
+                          'cmi.completion_status',
+                          'cmi.success_status'
+                    )";
 
                 $tracks = $DB->get_records_sql($query, [$this->cm->instance, $this->userid]);
 
@@ -85,10 +85,10 @@ class custom_completion extends activity_custom_completion {
             case 'completionscorerequired':
                 $status = false;
                 $query = $basequery .
-                        " AND element IN (
-                              'cmi.core.score.raw',
-                              'cmi.score.raw'
-                        )";
+                    " AND element IN (
+                          'cmi.core.score.raw',
+                          'cmi.score.raw'
+                    )";
 
                 $tracks = $DB->get_records_sql($query, [$this->cm->instance, $this->userid]);
 
@@ -96,7 +96,7 @@ class custom_completion extends activity_custom_completion {
 
                 // Check if any track meets or exceeds the minimum score required.
                 foreach ($tracks as $track) {
-                    if (strlen($track->value) && floatval($track->value) >= $requiredscore) {
+                    if (strlen($track->value) && (floatval($track->value) >= $requiredscore)) {
                         $status = true;
 
                         // No need to check any other tracks once condition is confirmed completed.
@@ -110,11 +110,11 @@ class custom_completion extends activity_custom_completion {
                 // Assume complete unless we find a sco that is not complete.
                 $status = true;
                 $query = $basequery .
-                        " AND element IN (
-                              'cmi.core.lesson_status',
-                              'cmi.completion_status',
-                              'cmi.success_status'
-                        )";
+                    " AND element IN (
+                          'cmi.core.lesson_status',
+                          'cmi.completion_status',
+                          'cmi.success_status'
+                    )";
 
                 $tracks = $DB->get_records_sql($query, [$this->cm->instance, $this->userid]);
 
@@ -171,20 +171,19 @@ class custom_completion extends activity_custom_completion {
         $scorerequired = $this->cm->customdata['customcompletionrules']['completionscorerequired'] ?? 0;
 
         // Prepare completion status requirements string.
-        $statusstrings = \scorm_status_options(true);
+        $statusstrings = \scorm_status_options();
         $completionstatusid = $this->cm->customdata['customcompletionrules']['completionstatusrequired'] ?? 0;
-        $statusrequired = '';
 
         if (array_key_exists($completionstatusid, $statusstrings)) {
             // Single status required.
             $statusrequired = $statusstrings[$completionstatusid];
-        } else if (!empty($completionstatusid)) {
+        } else {
             // All statuses required.
-            $statusrequired = implode(', ', $statusstrings);
+            $statusrequired = 'completedandpassed';
         }
 
         return [
-            'completionstatusrequired' => get_string('completiondetail:completionstatus', 'scorm', $statusrequired),
+            'completionstatusrequired' => get_string("completiondetail:completionstatus{$statusrequired}", 'scorm'),
             'completionscorerequired' => get_string('completiondetail:completionscore', 'scorm', $scorerequired),
             'completionstatusallscos' => get_string('completiondetail:allscos', 'scorm'),
         ];
