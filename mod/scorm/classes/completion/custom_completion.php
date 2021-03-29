@@ -51,7 +51,7 @@ class custom_completion extends activity_custom_completion {
 
         switch ($rule) {
             case 'completionstatusrequired':
-                $status = false;
+                $status = COMPLETION_INCOMPLETE;
                 $query = $basequery .
                     " AND element IN (
                           'cmi.core.lesson_status',
@@ -75,7 +75,7 @@ class custom_completion extends activity_custom_completion {
 
                     // All completion status requirements met.
                     if ($statusbits == $requiredcompletionstatusid) {
-                        $status = true;
+                        $status = COMPLETION_COMPLETE;
                         break;
                     }
                 }
@@ -83,7 +83,7 @@ class custom_completion extends activity_custom_completion {
                 break;
 
             case 'completionscorerequired':
-                $status = false;
+                $status = COMPLETION_INCOMPLETE;
                 $query = $basequery .
                     " AND element IN (
                           'cmi.core.score.raw',
@@ -97,7 +97,7 @@ class custom_completion extends activity_custom_completion {
                 // Check if any track meets or exceeds the minimum score required.
                 foreach ($tracks as $track) {
                     if (strlen($track->value) && (floatval($track->value) >= $requiredscore)) {
-                        $status = true;
+                        $status = COMPLETION_COMPLETE;
 
                         // No need to check any other tracks once condition is confirmed completed.
                         break;
@@ -108,7 +108,7 @@ class custom_completion extends activity_custom_completion {
 
             case 'completionstatusallscos':
                 // Assume complete unless we find a sco that is not complete.
-                $status = true;
+                $status = COMPLETION_COMPLETE;
                 $query = $basequery .
                     " AND element IN (
                           'cmi.core.lesson_status',
@@ -135,18 +135,28 @@ class custom_completion extends activity_custom_completion {
                 foreach ($scos as $sco) {
                     // If we find a sco without a lesson status, this condition is not completed.
                     if (!in_array($sco->id, $scoids)) {
-                        $status = false;
+                        $status = COMPLETION_INCOMPLETE;
                     }
                 }
 
                 break;
 
             default:
-                $status = false;
+                $status = COMPLETION_INCOMPLETE;
                 break;
         }
 
-        return $status ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
+        // If not yet meeting the requirement and no attempts remain to complete it, mark it as failed.
+        if ($status === COMPLETION_INCOMPLETE) {
+            $scorm = $DB->get_record('scorm', array('id' => $this->cm->instance));
+            $attemptcount = scorm_get_attempt_count($this->userid, $scorm);
+
+            if ($scorm->maxattempt > 0 && $attemptcount >= $scorm->maxattempt) {
+                $status = COMPLETION_COMPLETE_FAIL;
+            }
+        }
+
+        return $status;
     }
 
     /**
