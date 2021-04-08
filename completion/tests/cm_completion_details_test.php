@@ -52,9 +52,12 @@ class cm_completion_details_test extends advanced_testcase {
      *
      * @param int|null $completion The completion tracking mode for the module.
      * @param array $completionoptions Completion options (e.g. completionview, completionusegrade, etc.)
+     * @param string $modname The modname to set in the cm if a specific one is required.
      * @return cm_completion_details
      */
-    protected function setup_data(?int $completion, array $completionoptions = []): cm_completion_details {
+    protected function setup_data(?int $completion, array $completionoptions = [],
+            $modname = 'somenonexistentmod'): cm_completion_details {
+
         if (is_null($completion)) {
             $completion = COMPLETION_TRACKING_AUTOMATIC;
         }
@@ -81,9 +84,11 @@ class cm_completion_details_test extends advanced_testcase {
             ->will($this->returnValueMap([
                 ['completion', $completion],
                 ['instance', 1],
-                ['modname', 'somenonexistentmod'],
+                ['modname', $modname],
                 ['completionview', $completionoptions['completionview'] ?? COMPLETION_VIEW_NOT_REQUIRED],
                 ['completiongradeitemnumber', $completionoptions['completionusegrade'] ?? null],
+                ['customcompletion', $completionoptions['customcompletion'] ?? null],
+                ['customdata', $completionoptions['customdata'] ?? null],
             ]));
 
         return new cm_completion_details($this->completioninfo, $mockcminfo, 2);
@@ -281,5 +286,121 @@ class cm_completion_details_test extends advanced_testcase {
             ->willReturn($getdatareturn);
 
         $this->assertEquals($expecteddetails, $cmcompletion->get_details());
+    }
+
+    /**
+     * Data provider for test_get_details().
+     * @return array[]
+     */
+    public function get_details_custom_order_provider() {
+        return [
+            'Custom and view/grade standard conditions, view first and grade last' => [
+                true,
+                true,
+                [
+                    'completionsubmit' => true,
+                ],
+                'assign',
+                ['completionview', 'completionsubmit', 'completionusegrade'],
+            ],
+            'Custom and view/grade standard conditions, grade not last' => [
+                true,
+                true,
+                [
+                    'completionminattempts' => 2,
+                    'completionusegrade' => 50,
+                    'completionpassorattemptsexhausted' => 1,
+                ],
+                'quiz',
+                ['completionview', 'completionminattempts', 'completionusegrade', 'completionpassorattemptsexhausted'],
+            ],
+            'Custom and grade standard conditions only, no view condition' => [
+                false,
+                true,
+                [
+                    'completionsubmit' => true,
+                ],
+                'assign',
+                ['completionsubmit', 'completionusegrade'],
+            ],
+            'Custom and view standard conditions only, no grade condition' => [
+                true,
+                false,
+                [
+                    'completionsubmit' => true
+                ],
+                'assign',
+                ['completionview', 'completionsubmit'],
+            ],
+            'View and grade conditions only, activity with no custom conditions' => [
+                true,
+                true,
+                [
+                    'completionview' => true,
+                    'completionusegrade' => true
+                ],
+                'workshop',
+                ['completionview', 'completionusegrade'],
+            ],
+            'View condition only, activity with no custom conditions' => [
+                true,
+                false,
+                [
+                    'completionview' => true,
+                ],
+                'workshop',
+                ['completionview'],
+            ],
+        ];
+    }
+
+    /**
+     * Test custom sort order is functioning in \core_completion\cm_completion_details::get_details().
+     *
+     * @dataProvider get_details_custom_order_provider
+     * @param bool $completionview Completion status of the "view" completion condition.
+     * @param bool $completiongrade Completion status of the "must receive grade" completion condition.
+     * @param array $customcompletionrules Custom completion requirements, along with their values.
+     * @param string $modname The name of the module having data fetched.
+     * @param array $expectedorder The expected order of completion conditions returned about the module.
+     */
+    public function test_get_details_custom_order(bool $completionview, bool $completiongrade, array $customcompletionrules,
+            string $modname, array $expectedorder) {
+
+        $options['customcompletion'] = [];
+        $customcompletiondata = [];
+
+        if ($completionview) {
+            $options['completionview'] = true;
+        }
+        if ($completiongrade) {
+            $options['completionusegrade'] = true;
+        }
+
+        // Set up the completion rules for the cm custom data and completion info.
+        foreach ($customcompletionrules as $customtype => $isenabled) {
+            $options['customcompletion'][$customtype] = $isenabled;
+            $options['customdata']['customcompletionrules'] = $customcompletionrules;
+
+            $customcompletiondata[$customtype] = COMPLETION_COMPLETE;
+        }
+
+        $cmcompletion = $this->setup_data(COMPLETION_TRACKING_AUTOMATIC, $options, $modname);
+
+        $getdatareturn = (object)[
+            'viewed' => $completionview ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE,
+            'completiongrade' => $completiongrade ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE,
+            'customcompletion' => $customcompletiondata,
+        ];
+
+        $this->completioninfo->expects($this->any())
+            ->method('get_data')
+            ->willReturn($getdatareturn);
+
+        $fetcheddetails = $cmcompletion->get_details();
+
+        // Check the expected number of items are returned, and sorted in the correct order.
+        $this->assertCount(count($expectedorder), $fetcheddetails);
+        $this->assertTrue((array_keys($fetcheddetails) === $expectedorder));
     }
 }
