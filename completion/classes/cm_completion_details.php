@@ -68,6 +68,7 @@ class cm_completion_details {
      * Fetches the completion details for a user.
      *
      * @return array An array of completion details for a user containing the completion requirement's description and status.
+     * @throws \coding_exception
      */
     public function get_details(): array {
         if (!$this->is_automatic()) {
@@ -132,7 +133,24 @@ class cm_completion_details {
             ];
         }
 
-        return $details;
+        // Sort the conditions.
+        $sortorder = $cmcompletion->get_sort_order();
+        $sorteddetails = [];
+
+        foreach ($sortorder as $sortedkey) {
+            if (isset($details[$sortedkey])) {
+                $sorteddetails[$sortedkey] = $details[$sortedkey];
+            }
+        }
+
+        // Make sure the sorted list includes all of the conditions that were set.
+        if (count($sorteddetails) < count($details)) {
+            $exceptiontext = "{$cmcompletionclass}::get_sort_order() is missing one or more completion conditions." .
+                ' All custom and standard conditions that apply to this activity must be listed.';
+            throw new \coding_exception($exceptiontext);
+        }
+
+        return $sorteddetails;
     }
 
     /**
