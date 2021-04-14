@@ -52,9 +52,12 @@ class cm_completion_details_test extends advanced_testcase {
      *
      * @param int|null $completion The completion tracking mode for the module.
      * @param array $completionoptions Completion options (e.g. completionview, completionusegrade, etc.)
+     * @param string $modname The modname to set in the cm if a specific one is required.
      * @return cm_completion_details
      */
-    protected function setup_data(?int $completion, array $completionoptions = []): cm_completion_details {
+    protected function setup_data(?int $completion, array $completionoptions = [],
+            $modname = 'somenonexistentmod'): cm_completion_details {
+
         if (is_null($completion)) {
             $completion = COMPLETION_TRACKING_AUTOMATIC;
         }
@@ -81,9 +84,10 @@ class cm_completion_details_test extends advanced_testcase {
             ->will($this->returnValueMap([
                 ['completion', $completion],
                 ['instance', 1],
-                ['modname', 'somenonexistentmod'],
+                ['modname', $modname],
                 ['completionview', $completionoptions['completionview'] ?? COMPLETION_VIEW_NOT_REQUIRED],
                 ['completiongradeitemnumber', $completionoptions['completionusegrade'] ?? null],
+                ['customcompletion', $completionoptions['customcompletion'] ?? null]
             ]));
 
         return new cm_completion_details($this->completioninfo, $mockcminfo, 2);
@@ -281,5 +285,106 @@ class cm_completion_details_test extends advanced_testcase {
             ->willReturn($getdatareturn);
 
         $this->assertEquals($expecteddetails, $cmcompletion->get_details());
+    }
+
+    /**
+     * Data provider for test_get_details().
+     * @return array[]
+     */
+    public function get_details_custom_order_provider() {
+        return [
+        /*    'Custom and view/grade standard conditions, view first and grade last' => [
+                true,
+                true,
+                ['completionview', 'completionsubmit', 'completiongrade'],
+                ['completionview', 'completionsubmit', 'completiongrade'],
+            ],*/
+            'Custom and view/grade standard conditions, view first and grade not last' => [
+                true,
+                true,
+                ['completionview', 'completiongrade', 'completionsubmit'],
+                ['completionview', 'completiongrade', 'completionsubmit'],
+            ],/*
+            'Custom and grade standard conditions only, no view condition' => [
+                false,
+                true,
+                ['completionview', 'completionsubmit', 'completiongrade'],
+                ['completionsubmit', 'completiongrade'],
+            ],
+            'Custom and view standard conditions only, no grade condition' => [
+                false,
+                true,
+                ['completionview', 'completionsubmit', 'completiongrade'],
+                ['completionview','completionsubmit'],
+            ],
+            'Incomplete sort order provided' => [
+                true,
+                true,
+                ['completionview', 'completionsubmit'],
+                [],
+            ],*/
+        ];
+    }
+
+    /**
+     * Test custom sort order is functioning in \core_completion\cm_completion_details::get_details().
+     *
+     * @dataProvider get_details_custom_order_provider
+     * //TODO
+     * @param bool $completionview Completion status of the "view" completion condition.
+     * @param bool $completiongrade Completion status of the "must receive grade" completion condition.
+     * @param array $sortorder Custom sort order configured by the module.
+     * @param array $expectedorder The expected keys output, in order.
+     */
+    public function test_get_details_custom_order(bool $completionview, bool $completiongrade, array $sortorder, array $expectedorder) {
+        $options['customcompletion'] = [
+            'somecustomcondition' => true,
+        ];
+
+        if ($completionview) {
+            $options['completionview'] = true;
+        }
+        if ($completiongrade) {
+            $options['completionusegrade'] = true;
+        }
+
+        $cmcompletion = $this->setup_data(COMPLETION_TRACKING_AUTOMATIC, $options, 'assign');
+
+        $getdatareturn = (object)[
+            'viewed' => $completionview ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE,
+            'completiongrade' => $completiongrade ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE,
+            'customcompletion' => [
+                'completionsubmit' => COMPLETION_COMPLETE,
+            ],
+        ];
+
+        // Expect a coding exception if we don't provide sort order for all conditions.
+        if (empty($expectedorder)) {
+            $this->expectException(coding_exception::class);
+            $exceptiontext = "\mod_assign\completion\custom_completion::get_sort_order() is missing one" .
+            " or more completion conditions. All custom and standard conditions that apply to this activity must be listed.";
+            $this->expectExceptionMessage($exceptiontext);
+        }
+
+        $mockcompletion = $this->getMockBuilder(\mod_assign\completion\custom_completion::class)
+            ->onlyMethods(['get_sort_order'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mockcompletion->expects($this->once())
+            ->method('get_sort_order')
+            ->willReturn($sortorder);
+
+        $this->completioninfo->expects($this->any())
+            ->method('get_data')
+            ->willReturn($getdatareturn);
+
+        $fetcheddetails = $cmcompletion->get_details();
+
+        // Check the expected number of items are returned, and sorted in the correct order.
+        if (!empty($expectedorder)) {
+            $this->assertCount(count($expectedorder), $fetcheddetails);
+            $this->assertTrue((array_keys($fetcheddetails) === $expectedorder));
+        }
     }
 }
