@@ -259,7 +259,8 @@ class reply_handler extends \core\message\inbound\handler {
         // Update completion state.
         $completion = new \completion_info($course);
         if ($completion->is_enabled($cm) && ($forum->completionreplies || $forum->completionposts)) {
-            $completion->update_state($cm, COMPLETION_COMPLETE);
+            $possibleconditions = ['completionreplies', 'completionposts'];
+            $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, $possibleconditions);
 
             mtrace("--> Updating completion status for user {$USER->id} in forum {$forum->id} for post {$addpost->id}.");
         }

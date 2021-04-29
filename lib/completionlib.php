@@ -580,10 +580,11 @@ class completion_info {
      *   must be used; these directly set the specified state.
      * @param int $userid User ID to be updated. Default 0 = current user
      * @param bool $override Whether manually overriding the existing completion state.
+     * @param array $possibleconditions Specific custom completion conditions that may have changed.
      * @return void
      * @throws moodle_exception if trying to override without permission.
      */
-    public function update_state($cm, $possibleresult=COMPLETION_UNKNOWN, $userid=0, $override = false) {
+    public function update_state($cm, $possibleresult=COMPLETION_UNKNOWN, $userid=0, $override = false, $possibleconditions = []) {
         global $USER;
 
         // Do nothing if completion is not enabled for that activity
@@ -597,6 +598,47 @@ class completion_info {
                 throw new required_capability_exception(context_course::instance($this->course_id),
                                                         'moodle/course:overridecompletion', 'nopermission', '');
             }
+        }
+
+        // Default to current user if one is not provided.
+        if ($userid === 0) {
+            $userid = $USER->id;
+        }
+
+        $current = $this->get_data($cm, false, $userid);
+        $cminfo = cm_info::create($cm, $userid);
+
+        // Before updating overall completion state, check any specific completion conditions that have been passed in.
+        // If those conditions have changed status, update them in the cache.
+        if ($possibleconditions && plugin_supports('mod', $cminfo->modname, FEATURE_COMPLETION_HAS_RULES)) {
+            $cmcompletionclass = activity_custom_completion::get_cm_completion_class($cminfo->modname);
+
+            if ($cmcompletionclass) {
+                $haschanges = false;
+                $cmcompletion = new $cmcompletionclass($cminfo, $userid);
+
+                // Check each completion condition that may have been updated.
+                foreach ($possibleconditions as $customcondition) {
+
+                    if (isset($current->customcompletion[$customcondition])) {
+
+                        $oldconditionstate = $current->customcompletion[$customcondition];
+                        $newconditionstate = $cmcompletion->get_state($customcondition);
+
+                        if ($oldconditionstate !== $newconditionstate) {
+                            $haschanges = true;
+                            $current->customcompletion[$customcondition] = $newconditionstate;
+
+                        }
+                    }
+                }
+
+                // If any completion condition statuses have changed, update them in the cache.
+                if ($haschanges) {
+                    $this->internal_set_data($cm, $current);
+                }
+            }
+
         }
 
         // Get current value of completion state and do nothing if it's same as
@@ -634,7 +676,7 @@ class completion_info {
             $newstate = $this->internal_get_state($cm, $userid, $current);
         }
 
-        // If changed, update
+        // If the overall completion state has changed, update it in the cache.
         if ($newstate != $current->completionstate) {
             $current->completionstate = $newstate;
             $current->timemodified    = time();

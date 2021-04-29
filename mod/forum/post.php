@@ -917,8 +917,9 @@ if ($mformpost->is_cancelled()) {
             // Update completion state.
             $completion = new completion_info($course);
             if ($completion->is_enabled($cm) &&
-                ($forum->completionreplies || $forum->completionposts)) {
-                $completion->update_state($cm, COMPLETION_COMPLETE);
+                    ($forum->completionreplies || $forum->completionposts)) {
+                $possibleconditions = ['completionreplies', 'completionposts'];
+                $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, $possibleconditions);
             }
 
             redirect(
@@ -1023,8 +1024,9 @@ if ($mformpost->is_cancelled()) {
         // Update completion status.
         $completion = new completion_info($course);
         if ($completion->is_enabled($cm) &&
-            ($forum->completiondiscussions || $forum->completionposts)) {
-            $completion->update_state($cm, COMPLETION_COMPLETE);
+                ($forum->completiondiscussions || $forum->completionposts)) {
+            $possibleconditions = ['completiondiscussions', 'completionposts'];
+            $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, $possibleconditions);
         }
 
         // Redirect back to the discussion.

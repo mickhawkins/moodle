@@ -3265,6 +3265,19 @@ function forum_add_discussion($discussion, $mform=null, $unused=null, $userid=nu
         forum_trigger_content_uploaded_event($post, $cm, 'forum_add_discussion');
     }
 
+    // Update completion status.
+    $vaultfactory = \mod_forum\local\container::get_vault_factory();
+    $forumvault = $vaultfactory->get_forum_vault();
+    $forumentity = $forumvault->get_from_id($cm->instance);
+
+    $course = $forumentity->get_course_record();
+    $completion = new completion_info($course);
+
+    if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC && ($forum->completiondiscussions || $forum->completionposts)) {
+        $possibleconditions = ['completiondiscussions', 'completionposts'];
+        $completion->update_state($cm, COMPLETION_COMPLETE, $post->userid, false, $possibleconditions);
+    }
+
     return $post->discussion;
 }
 
@@ -3310,7 +3323,8 @@ function forum_delete_discussion($discussion, $fulldelete, $course, $cm, $forum)
         $completion = new completion_info($course);
         if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC &&
            ($forum->completiondiscussions || $forum->completionreplies || $forum->completionposts)) {
-            $completion->update_state($cm, COMPLETION_INCOMPLETE, $discussion->userid);
+            $possibleconditions = ['completiondiscussions', 'completionreplies', 'completionposts'];
+            $completion->update_state($cm, COMPLETION_INCOMPLETE, $discussion->userid, false, $possibleconditions);
         }
     }
 
@@ -3397,7 +3411,8 @@ function forum_delete_post($post, $children, $course, $cm, $forum, $skipcompleti
             $completion = new completion_info($course);
             if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC &&
                ($forum->completiondiscussions || $forum->completionreplies || $forum->completionposts)) {
-                $completion->update_state($cm, COMPLETION_INCOMPLETE, $post->userid);
+                $possibleconditions = ['completiondiscussions', 'completionreplies', 'completionposts'];
+                $completion->update_state($cm, COMPLETION_INCOMPLETE, $post->userid, false, $possibleconditions);
             }
         }
 

@@ -1373,7 +1373,8 @@ class mod_forum_external extends external_api {
             $completion = new completion_info($course);
             if ($completion->is_enabled($cm) &&
                     ($forum->get_completion_replies() || $forum->get_completion_posts())) {
-                $completion->update_state($cm, COMPLETION_COMPLETE);
+                $possibleconditions = ['completionreplies', 'completionposts'];
+                $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, $possibleconditions);
             }
 
             if ($options['discussionsubscribe']) {
@@ -1669,7 +1670,8 @@ class mod_forum_external extends external_api {
             $completion = new completion_info($course);
             if ($completion->is_enabled($cm) &&
                     ($forum->completiondiscussions || $forum->completionposts)) {
-                $completion->update_state($cm, COMPLETION_COMPLETE);
+                $possibleconditions = ['completiondiscussions', 'completionposts'];
+                $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, $possibleconditions);
             }
 
             $settings = new stdClass();
