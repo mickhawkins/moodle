@@ -4125,7 +4125,7 @@ function glossary_edit_entry($entry, $course, $cm, $glossary, $context) {
         // Update completion state.
         $completion = new completion_info($course);
         if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC && $glossary->completionentries && $entry->approved) {
-            $completion->update_state($cm, COMPLETION_COMPLETE);
+            $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, ['completionentries']);
         }
     }
 
@@ -4385,7 +4385,7 @@ function mod_glossary_delete_entry($entry, $glossary, $cm, $context, $course, $h
         // Update completion state.
         $completion = new completion_info($course);
         if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC && $glossary->completionentries) {
-            $completion->update_state($cm, COMPLETION_INCOMPLETE, $entry->userid);
+            $completion->update_state($cm, COMPLETION_INCOMPLETE, $entry->userid, 0, false, ['completionentries']);
         }
 
         // Delete glossary entry ratings.

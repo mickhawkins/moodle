@@ -47,7 +47,7 @@ if (($newstate != $entry->approved) && confirm_sesskey()) {
     // Update completion state
     $completion = new completion_info($course);
     if ($completion->is_enabled($cm) == COMPLETION_TRACKING_AUTOMATIC && $glossary->completionentries) {
-        $completion->update_state($cm, COMPLETION_COMPLETE, $entry->userid);
+        $completion->update_state($cm, COMPLETION_COMPLETE, $entry->userid, 0, false, ['completionentries']);
     }
 
     // Reset caches.
