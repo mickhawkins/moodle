@@ -7527,7 +7527,7 @@ class assign {
         $completion = new completion_info($this->get_course());
         if ($completion->is_enabled($this->get_course_module()) && $instance->completionsubmit) {
             foreach ($users as $id) {
-                $completion->update_state($this->get_course_module(), $complete, $id);
+                $completion->update_state($this->get_course_module(), $complete, $id, false, ['completionsubmit']);
             }
         }
 
@@ -8138,7 +8138,7 @@ class assign {
         $completion = new completion_info($this->get_course());
         if ($completion->is_enabled($this->get_course_module()) &&
                 $this->get_instance()->completionsubmit) {
-            $completion->update_state($this->get_course_module(), COMPLETION_INCOMPLETE, $userid);
+            $completion->update_state($this->get_course_module(), COMPLETION_INCOMPLETE, $userid, false, ['completionsubmit']);
         }
         \mod_assign\event\submission_status_updated::create_from_submission($this, $submission)->trigger();
         return true;
@@ -9205,10 +9205,10 @@ class assign {
             $members = groups_get_members($submission->groupid);
 
             foreach ($members as $member) {
-                $completion->update_state($this->get_course_module(), $complete, $member->id);
+                $completion->update_state($this->get_course_module(), $complete, $member->id, false, ['completionsubmit']);
             }
         } else {
-            $completion->update_state($this->get_course_module(), $complete, $userid);
+            $completion->update_state($this->get_course_module(), $complete, $userid, false, ['completionsubmit']);
         }
 
         return;
