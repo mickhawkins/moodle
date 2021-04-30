@@ -4470,9 +4470,9 @@ function data_update_completion_state($data, $course, $cm) {
         $numentries = data_numentries($data);
         // Check the number of entries required against the number of entries already made.
         if ($numentries >= $data->completionentries) {
-            $completion->update_state($cm, COMPLETION_COMPLETE);
+            $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, ['completionentries']);
         } else {
-            $completion->update_state($cm, COMPLETION_INCOMPLETE);
+            $completion->update_state($cm, COMPLETION_INCOMPLETE, 0, false, ['completionentries']);
         }
     }
 }
