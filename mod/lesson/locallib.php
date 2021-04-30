@@ -2278,7 +2278,7 @@ class lesson extends lesson_base {
         $course = get_course($cm->course);
         $completion = new completion_info($course);
         if ($completion->is_enabled($cm) && $this->properties()->completiontimespent > 0) {
-            $completion->update_state($cm, COMPLETION_COMPLETE);
+            $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, ['completiontimespent']);
         }
         return $timer;
     }
@@ -3547,7 +3547,7 @@ class lesson extends lesson_base {
                 // Update completion state.
                 $completion = new completion_info($course);
                 if ($completion->is_enabled($cm) && $this->properties->completionendreached) {
-                    $completion->update_state($cm, COMPLETION_COMPLETE);
+                    $completion->update_state($cm, COMPLETION_COMPLETE, 0, false, ['completionendreached']);
                 }
 
                 if ($this->properties->completiontimespent > 0) {
