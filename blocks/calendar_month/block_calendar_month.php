@@ -55,7 +55,7 @@ class block_calendar_month extends block_base {
         $categoryid = ($this->page->context->contextlevel === CONTEXT_COURSECAT && !empty($this->page->category)) ?
             $this->page->category->id : null;
         $calendar = \calendar_information::create(time(), $courseid, $categoryid);
-        list($data, $template) = calendar_get_view($calendar, 'month', isloggedin());
+        list($data, $template) = calendar_get_view($calendar, 'monthblock', isloggedin());
 
         $renderer = $this->page->get_renderer('core_calendar');
         $this->content->text .= $renderer->render_from_template($template, $data);
