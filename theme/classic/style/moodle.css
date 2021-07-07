@@ -13315,15 +13315,15 @@ input[disabled] {
 
 .block .calendar-controls .previous {
   text-align: left;
-  width: 12%; }
+  width: 25%; }
 
 .block .calendar-controls .current {
   text-align: center;
-  width: 76%; }
+  width: 50%; }
 
 .block .calendar-controls .next {
   text-align: right;
-  width: 12%; }
+  width: 25%; }
 
 .block .calendar_filters ul {
   list-style: none;
