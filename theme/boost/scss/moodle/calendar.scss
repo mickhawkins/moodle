@@ -15,6 +15,7 @@ $calendarEventGlobalBorder: 2px solid #2b8713 !default; // Green.
 $calendarEventGroupBorder: 2px solid #9a6e02 !default; // Dark orange.
 $calendarEventUserBorder: 2px solid #4e7c91 !default; // Blue.
 $calendarEventOtherBorder: 2px solid #687889 !default; // Gray.
+$calendar-month-color: #cc8500 !default;
 
 // This will be the colour of mini-calendar links, hide/show filter icons, edit/delete icon buttons.
 $calendarEventColor: #0d5ca1 !default;
@@ -103,7 +104,7 @@ $calendarEventColor: #0d5ca1 !default;
     .current {
         text-align: center;
         width: 76%;
-        color: #cc8500;
+        color: $calendar-month-color;
         font-size: x-large;
         font-weight: bold;
     }

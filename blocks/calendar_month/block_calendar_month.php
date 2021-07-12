@@ -36,7 +36,7 @@ class block_calendar_month extends block_base {
      * @return stdClass the content
      */
     public function get_content() {
-        global $CFG, $PAGE;
+        global $CFG;
 
         require_once($CFG->dirroot.'/calendar/lib.php');
 
@@ -48,7 +48,7 @@ class block_calendar_month extends block_base {
         $this->content->text = '';
         $this->content->footer = '';
 
-        $renderer = $PAGE->get_renderer('core_calendar');
+        $renderer = $this->page->get_renderer('core_calendar');
         $this->content->text = $renderer->start_layout();
 
         $courseid = $this->page->course->id;

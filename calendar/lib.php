@@ -3505,6 +3505,7 @@ function calendar_get_view(\calendar_information $calendar, $view, $includenavig
         $day = new \core_calendar\external\calendar_day_exporter($calendar, $related);
         $data = $day->export($renderer);
         $data->viewingday = true;
+        $data->showviewselector = true;
         $template = 'core_calendar/calendar_day';
     } else if ($view == "upcoming" || $view == "upcoming_mini") {
         $upcoming = new \core_calendar\external\calendar_upcoming_exporter($calendar, $related);
@@ -3513,6 +3514,7 @@ function calendar_get_view(\calendar_information $calendar, $view, $includenavig
         if ($view == "upcoming") {
             $template = 'core_calendar/calendar_upcoming';
             $data->viewingupcoming = true;
+            $data->showviewselector = true;
         } else if ($view == "upcoming_mini") {
             $template = 'core_calendar/calendar_upcoming_mini';
         }
