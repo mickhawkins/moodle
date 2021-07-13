@@ -3681,14 +3681,14 @@ function calendar_get_timestamp($d, $m, $y, $time = 0) {
  * @param calendar_information $calendar The calendar information object.
  * @return array The data for template and template name.
  */
-function calendar_get_footer_options($calendar) {
+function calendar_get_footer_options($calendar, array $options = []) {
     global $CFG, $USER, $PAGE;
 
     // Generate hash for iCal link.
     $authtoken = calendar_get_export_token($USER);
 
     $renderer = $PAGE->get_renderer('core_calendar');
-    $footer = new \core_calendar\external\footer_options_exporter($calendar, $USER->id, $authtoken);
+    $footer = new \core_calendar\external\footer_options_exporter($calendar, $USER->id, $authtoken, $options);
     $data = $footer->export($renderer);
     $template = 'core_calendar/footer_options';
 

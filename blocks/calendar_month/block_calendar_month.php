@@ -61,6 +61,14 @@ class block_calendar_month extends block_base {
             $this->content->text .= $renderer->event_filter();
         }
 
+        $options = [
+            'showexportlink' => false,
+            'showfullcalendarlink' => true,
+            'subscriptionlabel' => get_string('managesubscriptions', 'calendar')
+        ];
+        list($footerdata, $footertemplate) = calendar_get_footer_options($calendar, $options);
+        $this->content->footer .= $renderer->render_from_template($footertemplate, $footerdata);
+
         return $this->content;
     }
 }
