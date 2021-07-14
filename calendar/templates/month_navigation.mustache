@@ -47,7 +47,12 @@
         </a>
         <span class="hide"> | </span>
         <span>
-            <a class="current" href="{{{url}}}" title="{{#str}}monththis, calendar{{/str}}">{{periodname}}</a>
+            {{#viewinginblock}}
+                <a class="current" href="{{{url}}}" title="{{#str}}monththis, calendar{{/str}}">{{periodname}}</a>
+            {{/viewinginblock}}
+            {{^viewinginblock}}
+                <h2 class="current">{{periodname}}</h2>
+            {{/viewinginblock}}
         </span>
         <span class="hide"> | </span>
         <a{{!
