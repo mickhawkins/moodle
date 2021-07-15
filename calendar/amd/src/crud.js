@@ -186,7 +186,7 @@ function(
                 return;
             })
             .fail(Notification.exception);
-
+            e.stopImmediatePropagation();
             e.preventDefault();
         });
 
