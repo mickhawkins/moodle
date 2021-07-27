@@ -29,7 +29,7 @@ global $CFG;
 require_once($CFG->libdir . '/filelib.php');
 require_once($CFG->dirroot . '/repository/lib.php');
 
-class core_filelib_testcase extends advanced_testcase {
+class filelib_test extends advanced_testcase {
     public function test_format_postdata_for_curlcall() {
 
         // POST params with just simple types.
@@ -335,6 +335,73 @@ class core_filelib_testcase extends advanced_testcase {
         $this->assertFileExists($tofile);
         $this->assertSame('done', file_get_contents($tofile));
         @unlink($tofile);
+    }
+
+    /**
+     * Test filelib's request redirect handling
+     */
+    public function test_curl_redirect_security() {
+        global $CFG;
+        $this->resetAfterTest();
+
+        //$testurl = $this->getExternalTestFileUrl('/test_redir_sec.php');
+        $testurl = 'http://836409361ce8.ngrok.io/test/test_redir_sec.php';
+        $localhost = $CFG->wwwroot;
+
+        // Set a blocked host (localhost).
+        set_config('curlsecurityblockedhosts', $localhost);
+
+        // Test basic multi-redirect succeeds.
+        $params = implode('&', [
+            'steps=3',
+            'localstep=1',
+            "localhost={$localhost}",
+            "remotehost={$testurl}",
+        ]);
+
+        $curl = new curl();
+        $contents = $curl->get("{$testurl}?steps=3");
+        $response = $curl->getResponse();
+        $this->assertSame('200 OK', reset($response));
+        $this->assertSame(0, $curl->get_errno());
+        $this->assertSame('done', $contents);
+
+        // Test redirecting to blocked host first fails.
+        $params = implode('&', [
+            'steps=3',
+            'localstep=1',
+            "localhost={$localhost}",
+            "remotehost={$testurl}",
+        ]);
+        $curl = new curl();
+        $blockedstring = $curl->get_security()->get_blocked_url_string();
+        $contents = $curl->get("{$testurl}?{$params}");
+        $this->assertSame($blockedstring, $contents);
+        $this->assertSame(0, $curl->get_errno());
+
+        // Test middle redirect to blocked host in redirect chain fails.
+        $params = implode('&', [
+            'steps=3',
+            'localstep=2',
+            "localhost={$localhost}",
+            "remotehost={$testurl}",
+        ]);
+        $curl = new curl();
+        $contents = $curl->get("{$testurl}?{$params}");
+        $this->assertSame($blockedstring, $contents);
+        $this->assertSame(0, $curl->get_errno());
+
+        // Test final redirect to blocked host in redirect chain fails.
+        $params = implode('&', [
+            'steps=3',
+            'localstep=3',
+            "localhost={$localhost}",
+            "remotehost={$testurl}",
+        ]);
+        $curl = new curl();
+        $contents = $curl->get("{$testurl}?{$params}");
+        $this->assertSame($blockedstring, $contents);
+        $this->assertSame(0, $curl->get_errno());
     }
 
     public function test_curl_relative_redirects() {
