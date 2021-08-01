@@ -1,6 +1,10 @@
 This files describes API changes in /calendar/* ,
 information provided here is intended especially for developers.
 
+=== 4.0 ===
+* `core_calendar_get_calendar_monthly_view` web service accepts an optional parameter `limitdayevents` to limit the number of
+  events returned per day.
+
 === 3.10 ===
 * The core_calendar\local\event\value_objects\times_interface class now has new method get_usermidnight_time() which
   returns the user midnight time for a given event.

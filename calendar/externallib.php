@@ -992,10 +992,11 @@ class core_calendar_external extends external_api {
      * @param bool $mini Whether to return the mini month view or not
      * @param int $day The day we want to keep as the current day
      * @param string|null $view The view mode for the calendar.
+     * @param int $limitdayevents limit number of events per day.
      * @return  array
      */
     public static function get_calendar_monthly_view($year, $month, $courseid, $categoryid, $includenavigation, $mini, $day,
-            ?string $view = null) {
+            ?string $view = null, int $limitdayevents = 0) {
         global $USER, $PAGE;
 
         // Parameter validation.
@@ -1008,6 +1009,7 @@ class core_calendar_external extends external_api {
             'mini' => $mini,
             'day' => $day,
             'view' => $view,
+            'limitdayevents' => $limitdayevents,
         ]);
 
         $context = \context_user::instance($USER->id);
@@ -1021,7 +1023,8 @@ class core_calendar_external extends external_api {
         self::validate_context($calendar->context);
 
         $view = $params['view'] ?? ($params['mini'] ? 'mini' : 'month');
-        list($data, $template) = calendar_get_view($calendar, $view, $params['includenavigation']);
+        list($data, $template) = calendar_get_view($calendar, $view, $params['includenavigation'],
+            false, null, $params['limitdayevents']);
 
         return $data;
     }
@@ -1054,6 +1057,13 @@ class core_calendar_external extends external_api {
                 ),
                 'day' => new external_value(PARAM_INT, 'Day to be viewed', VALUE_DEFAULT, 1),
                 'view' => new external_value(PARAM_ALPHA, 'The view mode of the calendar', VALUE_DEFAULT, 'month', NULL_ALLOWED),
+                'limitdayevents' => new external_value(
+                    PARAM_INT,
+                    'return limited number of events per day',
+                    VALUE_DEFAULT,
+                    0,
+                    NULL_ALLOWED
+                ),
             ]
         );
     }
