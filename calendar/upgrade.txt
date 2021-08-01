@@ -4,6 +4,11 @@ information provided here is intended especially for developers.
 === 4.0 ===
 * `core_calendar_get_calendar_monthly_view` web service accepts an optional parameter `limitdayevents` to limit the number of
   events returned per day.
+* Added core_calendar_update_subscription, which allows to update the calendar subscription.
+* Added core_calendar_delete_subscription, which allows to delete the calendar subscription.
+* The following functions have been deprecated because they were no longer used:
+  - calendar_process_subscription_row()
+  - calendar_import_icalendar_events()
 
 === 3.10 ===
 * The core_calendar\local\event\value_objects\times_interface class now has new method get_usermidnight_time() which

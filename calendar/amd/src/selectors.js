@@ -49,6 +49,8 @@ define([], function() {
             edit: '[data-action="edit"]',
             remove: '[data-action="delete"]',
             viewEvent: '[data-action="view-event"]',
+            updateSubscription: '[data-action="update-subscription"]',
+            deleteSubscription: '[data-action="delete-subscription"]',
         },
         elements: {
             courseSelector: 'select[name="course"]',
