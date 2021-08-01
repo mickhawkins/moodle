@@ -196,3 +196,40 @@ export const getCourseGroupsData = (courseId) => {
 
     return Ajax.call([request])[0];
 };
+
+/**
+ * Delete calendar subscription by id.
+ *
+ * @param {Number} subscriptionId The subscription id
+ * @return {promise}
+ */
+export const deleteSubscription = (subscriptionId) => {
+    const request = {
+        methodname: 'core_calendar_delete_subscription',
+        args: {
+            subscriptionid: subscriptionId
+        }
+    };
+
+    return Ajax.call([request])[0];
+};
+
+/**
+ * Update calendar subscription by id.
+ *
+ * @param {Number} subscriptionId The subscription id
+ * @param {Number} pollInterval The poll interval of the subscription
+ * @return {promise}
+ */
+export const updateSubscription = (subscriptionId, pollInterval) => {
+    const request = {
+        methodname: 'core_calendar_update_subscription',
+        args: {
+            subscriptionid: subscriptionId,
+            pollinterval: pollInterval
+        }
+    };
+
+    return Ajax.call([request])[0];
+};
+
