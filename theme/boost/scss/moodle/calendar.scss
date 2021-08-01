@@ -156,6 +156,7 @@ $calendarCurrentDateBackground: $primary;
 
             li {
                 list-style-type: none;
+                line-height: 1em;
 
                 > a {
                     @include text-truncate;
@@ -169,6 +170,10 @@ $calendarCurrentDateBackground: $primary;
                             text-decoration: $link-hover-decoration;
                         }
                     }
+                }
+
+                a[data-action="view-day-link"] {
+                    @include text-truncate;
                 }
 
                 .icon {

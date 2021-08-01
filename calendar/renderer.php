@@ -81,15 +81,15 @@ class core_calendar_renderer extends plugin_renderer_base {
 
         // Previous.
         $calendar->set_time($prev);
-        list($previousmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+        list($previousmonth, ) = calendar_get_view($calendar, 'minithree', false, true, null, CALENDAR_LIMIT_DAY_EVENTS);
 
         // Current month.
         $calendar->set_time($current);
-        list($currentmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+        list($currentmonth, ) = calendar_get_view($calendar, 'minithree', false, true, null, CALENDAR_LIMIT_DAY_EVENTS);
 
         // Next month.
         $calendar->set_time($next);
-        list($nextmonth, ) = calendar_get_view($calendar, 'minithree', false, true);
+        list($nextmonth, ) = calendar_get_view($calendar, 'minithree', false, true, null, CALENDAR_LIMIT_DAY_EVENTS);
 
         // Reset the time back.
         $calendar->set_time($current);
