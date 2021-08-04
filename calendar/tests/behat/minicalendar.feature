@@ -31,6 +31,7 @@ Feature: Open calendar popup
     Then I should see "Event 1:1"
     And I should see "Event 1:2"
     And I follow "Home"
+    When I hover over day "1" of this month in the mini-calendar
     And I should see "Event 1:1"
     And I should see "Event 1:2"
 
