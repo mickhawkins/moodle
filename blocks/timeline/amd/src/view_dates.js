@@ -95,7 +95,8 @@ function(
         var limits = getPagingLimits(root);
         var config = {
             persistentLimitKey: "block_timeline_user_limit_preference",
-            eventNamespace: namespace
+            eventNamespace: namespace,
+            datesview: true
         };
         Str.get_string('ariaeventlistpaginationnavdates', 'block_timeline')
             .then(function(string) {

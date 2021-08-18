@@ -1,0 +1,19 @@
+.block_timeline {
+    .badge-pill {
+        border-radius: 8px;
+    }
+    h6.event-action {
+        margin: 0;
+    }
+}
+#block-region-side-pre .block_timeline {
+    h6.event-action {
+        flex-basis: 100%;
+    }
+    .event-name-container {
+        flex-basis: 50%;
+    }
+    h6.event-action a.btn {
+        width: auto;
+    }
+}
