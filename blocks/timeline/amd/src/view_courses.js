@@ -433,15 +433,18 @@ function(
                         // Create a preloaded page to pass to the event list because we've already
                         // loaded the first page of events.
                         var pageOnePreload = $.Deferred().resolve({events: events}).promise();
+                        const config = {
+                            courseview: true
+                        };
                         // Initialise the event list pagination area for this course.
                         Str.get_string('ariaeventlistpaginationnavcourses', 'block_timeline', course.fullnamedisplay)
                             .then(function(string) {
-                                EventList.init(eventListRoot, COURSE_EVENT_LIMIT, {'1': pageOnePreload}, string);
+                                EventList.init(eventListRoot, COURSE_EVENT_LIMIT, {'1': pageOnePreload}, string, config);
                                 return string;
                             })
                             .catch(function() {
                                 // An error is ok, just render with the default string.
-                                EventList.init(eventListRoot, COURSE_EVENT_LIMIT, {'1': pageOnePreload});
+                                EventList.init(eventListRoot, COURSE_EVENT_LIMIT, {'1': pageOnePreload}, "", config);
                             });
                     });
 
@@ -495,16 +498,19 @@ function(
 
                     pageDeferred.resolve({events: events});
 
+                    const additionalConfig = {courseview: true};
                     // Re-initialise the events list with the preloaded events we just got from
                     // the server.
                     Str.get_string('ariaeventlistpaginationnavcourses', 'block_timeline', courseName)
                         .then(function(string) {
-                            EventList.init(eventListContainer, COURSE_EVENT_LIMIT, {'1': pageDeferred.promise()}, string);
+                            EventList.init(eventListContainer, COURSE_EVENT_LIMIT, {'1': pageDeferred.promise()},
+                                string, additionalConfig);
                             return string;
                         })
                         .catch(function() {
                             // Ignore a failure to load the string. Just render with the default string.
-                            EventList.init(eventListContainer, COURSE_EVENT_LIMIT, {'1': pageDeferred.promise()});
+                            EventList.init(eventListContainer, COURSE_EVENT_LIMIT, {'1': pageDeferred.promise()},
+                                undefined, additionalConfig);
                         });
                 });
 
