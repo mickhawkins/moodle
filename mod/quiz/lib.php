@@ -2451,3 +2451,16 @@ function mod_quiz_output_fragment_add_random_question_form($args) {
 
     return $form->render();
 }
+
+/**
+ * Callback to fetch the activity event type lang string.
+ *
+ * @param string $eventtype The event type.
+ * @return lang_string The event type lang string.
+ */
+function mod_quiz_core_calendar_get_event_action_string($eventtype) {
+    $modulename = get_string('modulename', 'quiz');
+    $identifier = ($eventtype == QUIZ_EVENT_TYPE_OPEN) ? 'quizeventopens' : 'quizeventcloses';
+
+    return get_string($identifier, 'quiz', $modulename);
+}
