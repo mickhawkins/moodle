@@ -330,10 +330,9 @@ function(
      * @param {Number} midnight The midnight timestamp in the user's timezone.
      * @param {Number} daysOffset Number of days from today to offset the events.
      * @param {Number} daysLimit Number of days from today to limit the events to.
-     * @param {string} noEventsURL URL for the image to display for no events.
      * @return {object} jQuery promise resolved after rendering is complete.
      */
-    var updateDisplayFromCourses = function(courses, root, midnight, daysOffset, daysLimit, noEventsURL) {
+    var updateDisplayFromCourses = function(courses, root, midnight, daysOffset, daysLimit) {
         // Render the courses template.
         return Templates.render(TEMPLATES.COURSE_ITEMS, {
             courses: courses,
@@ -343,9 +342,6 @@ function(
             daysoffset: daysOffset,
             dayslimit: daysLimit,
             nodayslimit: daysLimit == undefined,
-            urls: {
-                noevents: noEventsURL
-            }
         }).then(function(html) {
             hideLoadingPlaceholder(root);
 
@@ -406,14 +402,15 @@ function(
             var midnight = getMidnight(root);
             var startTime = getStartTime(root);
             var endTime = getEndTime(root);
-            var noEventsURL = root.attr('data-no-events-url');
+
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
+
             // Record the next offset if we want to request more courses.
             setOffset(root, nextOffset);
             // Load the events for these courses.
             var eventsPromise = loadEventsForCourses(courses, startTime, endTime, searchValue);
             // Render the courses in the DOM.
-            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit, noEventsURL);
+            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit);
 
             return $.when(eventsPromise, renderPromise)
                 .then(function(eventsByCourse) {
