@@ -38,7 +38,8 @@
             "key": "icon",
             "component": "mod_assign",
             "alttext": "Assignment icon"
-        }
+        },
+        "overdue": false
     }
 }}
 <div class="list-group-item timeline-event-list-item flex-column py-2 pl-0 pr-0 border-bottom"
@@ -54,7 +55,10 @@
             <a href="{{url}}"
                title={{#quote}}{{{name}}}{{/quote}}
                aria-label='{{#str}} ariaeventlistitem, block_timeline, { "name": {{#quote}}{{{activityname}}}{{/quote}}, "course": {{#quote}}{{{course.fullnamedisplay}}}{{/quote}}, "date": "{{#userdate}} {{timesort}}, {{#str}} strftimedatetime, core_langconfig {{/str}} {{/userdate}}" } {{/str}}'>
-                <h6 class="event-name text-truncate mb-0">{{{activityname}}}</h6>
+                <h6 class="event-name text-truncate mb-0">
+                {{{activityname}}}
+                {{#overdue}}<span class="badge badge-pill badge-danger">{{#str}} overdue, block_timeline {{/str}}</span>{{/overdue}}
+                </h6>
             </a>
             <small class="text-muted text-truncate mb-0">
                 {{#courseview}}
