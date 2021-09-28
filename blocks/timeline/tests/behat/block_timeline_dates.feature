@@ -22,9 +22,11 @@ Feature: The timeline block allows users to see upcoming activities
       | feedback | C2     | feedback1 | Test feedback 1 | Test feedback description | ##yesterday## | ##tomorrow##  |
       | feedback | C1     | feedback2 | Test feedback 2 | Test feedback description | ##first day of +10 months## | ##last day of +10 months##  |
       | feedback | C3     | feedback3 | Test feedback 3 | Test feedback description | ##first day of +5 months## | ##last day of +5 months## |
+      | feedback | C2     | feedback4 | Test feedback 4 | Test feedback description | ##yesterday## | ##now +1 minute## |
     And the following "activities" exist:
-      | activity | course | idnumber  | name            | intro                   | timeopen        | duedate     |
-      | assign   | C1     | assign1   | Test assign 1   | Test assign description | ##1 month ago## | ##yesterday##  |
+      | activity | course | idnumber  | name            | intro                   | timeopen        | duedate           |
+      | assign   | C1     | assign1   | Test assign 1   | Test assign description | ##1 month ago## | ##yesterday##     |
+      | assign   | C2     | assign2   | Test assign 2   | Test assign description | ##yesterday##   | ##now -1 minute## |
     And the following "course enrolments" exist:
       | user | course | role |
       | student1 | C1 | student |
@@ -47,6 +49,9 @@ Feature: The timeline block allows users to see upcoming activities
     And I click on "Filter timeline items" "button" in the "Timeline" "block"
     When I click on "Overdue" "link" in the "Timeline" "block"
     Then I should see "Assignment requires action" in the "Timeline" "block"
+    And I should see "Test assign 1" in the "Timeline" "block"
+    And I should see "Test assign 2" in the "Timeline" "block"
+    And I should not see "Test feedback 4" in the "Timeline" "block"
     And I should not see "Test choice 2 closes" in the "Timeline" "block"
     And I should not see "Test feedback 1 closes" in the "Timeline" "block"
     And I should not see "Test choice 1 closes" in the "Timeline" "block"
@@ -113,7 +118,10 @@ Feature: The timeline block allows users to see upcoming activities
     And I click on "Filter timeline items" "button" in the "Timeline" "block"
     When I click on "Overdue" "link" in the "Timeline" "block"
     And I reload the page
-    Then I should see "Assignment is due" in the "Timeline" "block"
+    Then I should see "Assignment requires action" in the "Timeline" "block"
+    And I should see "Test assign 1" in the "Timeline" "block"
+    And I should see "Test assign 2" in the "Timeline" "block"
+    And I should not see "Test feedback 4" in the "Timeline" "block"
     And I should not see "Test choice 2 closes" in the "Timeline" "block"
     And I should not see "Test feedback 1 closes" in the "Timeline" "block"
     And I should not see "Test choice 1 closes" in the "Timeline" "block"
