@@ -60,12 +60,12 @@
                 {{#overdue}}<span class="badge badge-pill badge-danger">{{#str}} overdue, block_timeline {{/str}}</span>{{/overdue}}
                 </h6>
             </a>
-            <small class="text-muted text-truncate mb-0">
+            <small class="text-truncate mb-0">
                 {{#courseview}}
                     {{activitystr}}
                 {{/courseview}}
                 {{^courseview}}
-                    {{#course.fullnamedisplay}}{{{course.fullnamedisplay}}} &#8226; {{/course.fullnamedisplay}}{{activitystr}}
+                    {{#course.fullnamedisplay}}{{{course.fullnamedisplay}}} &#8901; {{/course.fullnamedisplay}}{{activitystr}}
                 {{/courseview}}
             </small>
         </div>
