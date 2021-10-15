@@ -47,11 +47,11 @@
 }}
 <div class="list-group-item timeline-event-list-item flex-column py-2 px-2 border-bottom"
         data-region="event-list-item">
-    <div class="d-flex justify-content-between flex-wrap">
+    <div class="d-flex flex-wrap">
         <small class="text-right text-nowrap align-self-center ml-1">
             {{#userdate}} {{timesort}}, {{#str}} strftimetime24, core_langconfig {{/str}} {{/userdate}}
         </small>
-        <div class="icon-size-4 align-self-top align-self-center mx-2">
+        <div class="icon-size-4 align-self-top align-self-center mx-2 text-nowrap">
             {{#icon}}{{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}{{/icon}}
         </div>
         <div class="event-name-container flex-grow-1 text-truncate line-height-3">
