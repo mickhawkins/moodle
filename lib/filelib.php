@@ -2513,8 +2513,13 @@ function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring
         $lifetime = $CFG->filelifetime;
     }
 
+    // Whether the file is part of a module's content.
+    $ismodulecontent = false;
+
     if (is_object($path)) {
         $pathisstring = false;
+
+        $ismodulecontent = ($path->get_filearea() === 'content' && strpos($path->get_component(), 'mod_') === 0);
     }
 
     \core\session\manager::write_close(); // Unlock session during file serving.
@@ -2529,8 +2534,9 @@ function send_file($path, $filename, $lifetime = null , $filter=0, $pathisstring
         $filename = rawurlencode($filename);
     }
 
-    // Make sure we force download of SVG files for security reasons (https://digi.ninja/blog/svg_xss.php).
-    if (file_is_svg_image_from_mimetype($mimetype)) {
+    // Make sure we force download of SVG files, unless they form part of an activity's content.
+    // This is for security reasons (https://digi.ninja/blog/svg_xss.php).
+    if (file_is_svg_image_from_mimetype($mimetype) && !$ismodulecontent) {
         $forcedownload = true;
     }
 
