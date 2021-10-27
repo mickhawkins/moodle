@@ -48,7 +48,7 @@
 <div class="list-group-item timeline-event-list-item flex-column py-2 px-2 border-bottom"
         data-region="event-list-item">
     <div class="d-flex flex-wrap">
-        <div class="d-flex mr-auto pb-1 mw-100">
+        <div class="d-flex mr-auto pb-1 mw-100 timeline-name">
             <small class="text-right text-nowrap align-self-center ml-1">
                 {{#userdate}} {{timesort}}, {{#str}} strftimetime24, core_langconfig {{/str}} {{/userdate}}
             </small>
@@ -74,7 +74,7 @@
             </div>
         </div>
         {{#action.actionable}}
-        <div class="d-flex">
+        <div class="d-flex timeline-action-button">
         <h6 class="event-action">
             <a class="list-group-item-action btn btn-outline-secondary btn-sm text-nowrap"
                    href="{{action.url}}"
