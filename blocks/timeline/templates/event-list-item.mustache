@@ -56,12 +56,12 @@
                 {{#icon}}{{#pix}} {{key}}, {{component}}, {{alttext}} {{/pix}}{{/icon}}
             </div>
             <div class="event-name-container flex-grow-1 line-height-3 nowrap text-truncate">
+                {{#overdue}}<span class="badge badge-pill badge-danger ml-1 float-right">{{#str}} overdue, block_timeline {{/str}}</span>{{/overdue}}
                 <h6 class="event-name mb-0 pb-1 text-truncate">
                     <a href="{{url}}"
                             title={{#quote}}{{{name}}}{{/quote}}
                             aria-label='{{#str}} ariaeventlistitem, block_timeline, { "name": {{#quote}}{{{activityname}}}{{/quote}}, "course": {{#quote}}{{{course.fullnamedisplay}}}{{/quote}}, "date": "{{#userdate}} {{timesort}}, {{#str}} strftimedatetime, core_langconfig {{/str}} {{/userdate}}" } {{/str}}'>
                         {{{activityname}}}</a>
-                    {{#overdue}}<span class="badge badge-pill badge-danger ml-1">{{#str}} overdue, block_timeline {{/str}}</span>{{/overdue}}
                 </h6>
                 <small class="mb-0">
                     {{#courseview}}
