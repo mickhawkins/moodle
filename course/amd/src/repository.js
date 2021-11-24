@@ -31,9 +31,12 @@ import Ajax from 'core/ajax';
  * @param {int} limit Only return this many results
  * @param {int} offset Skip this many results from the start of the result set
  * @param {string} sort Column to sort by and direction, e.g. 'shortname asc'
+ * @param {bool} withEventsOnly Whether to only fetch courses containing at least one event
+ * @param {int} eventsFrom If only fetching courses with events, the start timestamp (inclusive) of events
+ * @param {int} eventsTo If only fetching courses with events, the end timestamp (inclusive) of events
  * @return {object} jQuery promise resolved with courses.
  */
-const getEnrolledCoursesByTimelineClassification = (classification, limit, offset, sort) => {
+const getEnrolledCoursesByTimelineClassification = (classification, limit, offset, sort, withEventsOnly, eventsFrom, eventsTo) => {
     const args = {
         classification: classification
     };
@@ -50,6 +53,18 @@ const getEnrolledCoursesByTimelineClassification = (classification, limit, offse
         args.sort = sort;
     }
 
+    if (typeof withEventsOnly !== undefined) {
+        args.withactioneventsonly = withEventsOnly;
+    }
+
+    if (typeof eventsFrom !== 'undefined' && eventsFrom !== null) {
+        args.eventsfrom = eventsFrom;
+    }
+
+    if (typeof eventsTo !== 'undefined' && eventsTo !== null) {
+        args.eventsto = eventsTo;
+    }
+window.console.log(args);
     const request = {
         methodname: 'core_course_get_enrolled_courses_by_timeline_classification',
         args: args

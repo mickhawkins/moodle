@@ -387,22 +387,25 @@ function(
     var loadMoreCourses = function(root) {
         var offset = getOffset(root);
         var limit = getLimit(root);
+        var startTime = getStartTime(root);
+        var endTime = getEndTime(root);
 
         // Start loading the next set of courses.
         return CourseRepository.getEnrolledCoursesByTimelineClassification(
             COURSE_CLASSIFICATION,
             limit,
             offset,
-            COURSE_SORT
-        ).then(function(result) {
+            COURSE_SORT,
+            true,
+            startTime,
+            endTime
+        ).then(function(result, startTime, endTime) {
             var startEventLoadingTime = Date.now();
             var courses = result.courses;
             var nextOffset = result.nextoffset;
             var daysOffset = getDaysOffset(root);
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
-            var startTime = getStartTime(root);
-            var endTime = getEndTime(root);
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
 
             // Record the next offset if we want to request more courses.
@@ -484,7 +487,8 @@ function(
         // Show more courses and load their events when the user clicks the "more courses"
         // button.
         root.on(CustomEvents.events.activate, SELECTORS.MORE_COURSES_BUTTON, function(e, data) {
-            enableMoreCoursesButtonLoading(root);
+            window.console.log('sdfsdfsdfsdfsdfsdfs');
+enableMoreCoursesButtonLoading(root);
             loadMoreCourses(root)
                 .then(function() {
                     disableMoreCoursesButtonLoading(root);

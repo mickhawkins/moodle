@@ -3762,6 +3762,12 @@ class core_course_external extends external_api {
                     VALUE_DEFAULT, null),
                 'searchvalue' => new external_value(PARAM_TEXT, 'The value a user wishes to search against',
                     VALUE_DEFAULT, null),
+                'withactioneventsonly' => new external_value(PARAM_BOOL, 'Whether to omit courses with no action events',
+                VALUE_DEFAULT, false),
+                'eventsfrom' => new external_value(PARAM_INT, 'Optional starting timestamp if withactioneventsonly is true',
+                VALUE_DEFAULT, null),
+                'eventsto' => new external_value(PARAM_INT, 'Optional ending timestamp if withactioneventsonly is true',
+                VALUE_DEFAULT, null),
             )
         );
     }
@@ -3787,6 +3793,9 @@ class core_course_external extends external_api {
      * @param  string $customfieldname
      * @param  string $customfieldvalue
      * @param  string $searchvalue
+     * @param  bool $withactioneventsonly Whether to omit courses which do not contain any action events
+     * @param  int $eventsfrom The start timestamp (inclusive) of events, if $withactioneventsonly has time constraints
+     * @param  int $eventsto The end timestamp (inclusive) of events, if $withactioneventsonly has time constraints
      * @return array list of courses and warnings
      * @throws  invalid_parameter_exception
      */
@@ -3797,10 +3806,14 @@ class core_course_external extends external_api {
         string $sort = null,
         string $customfieldname = null,
         string $customfieldvalue = null,
-        string $searchvalue = null
+        string $searchvalue = null,
+        bool $withactioneventsonly = false,
+        int $eventsfrom = null,
+        int $eventsto = null
     ) {
         global $CFG, $PAGE, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
+        require_once($CFG->dirroot . '/calendar/externallib.php');
 
         $params = self::validate_parameters(self::get_enrolled_courses_by_timeline_classification_parameters(),
             array(
@@ -3931,9 +3944,58 @@ class core_course_external extends external_api {
             }
         });
 
+        // If only interested in courses with action events, check the courses for those.
+        // Remove any courses without action events, then fetch more until we reach the required limit.
+        if ($withactioneventsonly) {
+            $finalcourseids = array_column($formattedcourses, 'id');
+
+            if (!empty($finalcourseids)) {
+                // Need to check this to know how many are expected (since it is possible for this to be less than the limit).
+                $numcoursesfetched = count($finalcourseids);
+error_log("COURSE IDs: " . var_export($finalcourseids,true));
+                // Try to fetch one action event within the time/search parameters for each course, to confirm it should be included.
+                $events = core_calendar_external::get_calendar_action_events_by_courses($finalcourseids, $eventsfrom, $eventsto, 1,
+                    $searchvalue);
+
+                foreach ($events->groupedbycourse as $courseevents) {
+                    // Remove course if no events were found.
+                    if (empty($courseevents->events)) {
+                        error_log("No events in course " . $courseevents->courseid);
+                        $coursekey = array_search($courseevents->courseid, $finalcourseids);
+                        unset($finalcourseids[$coursekey]);
+
+                        foreach ($formattedcourses as $key => $formattedcourse) {
+                            if ($formattedcourse->id == $courseevents->courseid) {
+                                unset($formattedcourses[$key]);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // If any courses were removed, try to fetch that many more, starting from the course after the last one fetched.
+                if (count($finalcourseids) < $numcoursesfetched) {
+                    error_log("Fetching more");
+                    $newlimit = $limit - count($finalcourseids);
+                    $newoffset = $offset + $numcoursesfetched; //TODO - something here isn't right, is fetching
+                                                               //[4, 10], then searching more and getting [4] then [10]
+
+                    $additionalcourses = self::get_enrolled_courses_by_timeline_classification($classification, $newlimit,
+                        $newoffset, $sort,$customfieldname, $customfieldvalue, $searchvalue, $withactioneventsonly, $eventsfrom,
+                        $eventsto);
+
+                    $formattedcourses += $additionalcourses['courses'];
+                }
+            }
+
+            //Remove any $formattedcourses belonging to yeeted courses
+            // If no course IDs left, then set up the correct empty state of $formattedcourses
+            //if $morecourses adds extra courses, need to add its nextoffset to nextoffset
+        }
+
         return [
             'courses' => $formattedcourses,
-            'nextoffset' => $offset + $processedcount
+            'nextoffset' => $offset + $processedcount //TODO - does this need another value added from all the recursion stuff
         ];
     }
 
