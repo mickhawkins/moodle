@@ -8,10 +8,10 @@ Feature: The timeline block allows users to search for upcoming activities
       | username | firstname | lastname | email                | idnumber |
       | student1 | Student  | 1        | student1@example.com | S1       |
     And the following "courses" exist:
-      | fullname | shortname | category | startdate                  | enddate                    |
-      | Course 1 | C1        | 0        | ##1 month ago##            | ##15 days ago##            |
-      | Course 2 | C2        | 0        | ##yesterday##              | ##tomorrow##               |
-      | Course 3 | C3        | 0        | ##first day of next month## | ##last day of next month## |
+      | fullname | shortname | category | startdate                   | enddate                    |
+      | Course 1 | C1        | 0        | ##1 month ago##             | ##tomorrow##               |
+      | Course 2 | C2        | 0        | ##yesterday##               | ##tomorrow##               |
+      | Course 3 | C3        | 0        | ##first day of last month## | ##last day of next month## |
     And the following "activities" exist:
       | activity | course | idnumber  | name            | intro                     | timeopen                  | timeclose                  |
       | choice   | C2     | choice1   | Test choice 1   | Test choice description   | ##yesterday##             | ##tomorrow##               |
@@ -93,3 +93,24 @@ Feature: The timeline block allows users to search for upcoming activities
     And I should not see "Test choice 6" in the "Timeline" "block"
     And I click on "Show more activities" "button"
     And I should see "Test choice 6" in the "Timeline" "block"
+
+  Scenario: Courses view is refreshed when search changes
+    Given I log in as "student1"
+    And I click on "Sort timeline items" "button" in the "Timeline" "block"
+    And I click on "Sort by courses" "link" in the "Timeline" "block"
+    And I click on "Filter timeline by date" "button" in the "Timeline" "block"
+    And I click on "All" "link" in the "Timeline" "block"
+    And I click on "Show more courses" "button" in the "Timeline" "block"
+    And I should see "Course 1" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should see "Course 2" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should see "Course 3" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should see "Test choice 1" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should see "Test choice 2" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should see "Test choice 3" in the ".block-timeline [data-region='view-courses']" "css_element"
+    When I set the field "Search by activity type or name" to "choice 1"
+    Then I should see "Test choice 1" in the "Timeline" "block"
+    And I should see "Course 2" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should not see "Course 1" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should not see "Course 3" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should not see "Test choice 2" in the ".block-timeline [data-region='view-courses']" "css_element"
+    And I should not see "Test choice 3" in the ".block-timeline [data-region='view-courses']" "css_element"
