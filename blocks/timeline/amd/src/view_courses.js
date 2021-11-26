@@ -391,12 +391,12 @@ function(
         var endTime = getEndTime(root);
 
         // Start loading the next set of courses.
-        return CourseRepository.getEnrolledCoursesByTimelineClassification(
+        // Only loads courses with at least one action event, so we omit any that have nothing to show in the timeline.
+        return CourseRepository.getEnrolledCoursesWithEventsByTimelineClassification(
             COURSE_CLASSIFICATION,
             limit,
             offset,
             COURSE_SORT,
-            true,
             startTime,
             endTime
         ).then(function(result, startTime, endTime) {

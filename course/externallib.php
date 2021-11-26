@@ -3762,12 +3762,6 @@ class core_course_external extends external_api {
                     VALUE_DEFAULT, null),
                 'searchvalue' => new external_value(PARAM_TEXT, 'The value a user wishes to search against',
                     VALUE_DEFAULT, null),
-                'withactioneventsonly' => new external_value(PARAM_BOOL, 'Whether to omit courses with no action events',
-                VALUE_DEFAULT, false),
-                'eventsfrom' => new external_value(PARAM_INT, 'Optional starting timestamp if withactioneventsonly is true',
-                VALUE_DEFAULT, null),
-                'eventsto' => new external_value(PARAM_INT, 'Optional ending timestamp if withactioneventsonly is true',
-                VALUE_DEFAULT, null),
             )
         );
     }
@@ -3793,9 +3787,6 @@ class core_course_external extends external_api {
      * @param  string $customfieldname
      * @param  string $customfieldvalue
      * @param  string $searchvalue
-     * @param  bool $withactioneventsonly Whether to omit courses which do not contain any action events
-     * @param  int $eventsfrom The start timestamp (inclusive) of events, if $withactioneventsonly has time constraints
-     * @param  int $eventsto The end timestamp (inclusive) of events, if $withactioneventsonly has time constraints
      * @return array list of courses and warnings
      * @throws  invalid_parameter_exception
      */
@@ -3806,10 +3797,7 @@ class core_course_external extends external_api {
         string $sort = null,
         string $customfieldname = null,
         string $customfieldvalue = null,
-        string $searchvalue = null,
-        bool $withactioneventsonly = false,
-        int $eventsfrom = null,
-        int $eventsto = null
+        string $searchvalue = null
     ) {
         global $CFG, $PAGE, $USER;
         require_once($CFG->dirroot . '/course/lib.php');
@@ -3944,55 +3932,6 @@ class core_course_external extends external_api {
             }
         });
 
-        // If only interested in courses with action events, check the courses for those.
-        // Remove any courses without action events, then fetch more until we reach the required limit.
-        if ($withactioneventsonly) {
-            $finalcourseids = array_column($formattedcourses, 'id');
-
-            if (!empty($finalcourseids)) {
-                // Need to check this to know how many are expected (since it is possible for this to be less than the limit).
-                $numcoursesfetched = count($finalcourseids);
-error_log("COURSE IDs: " . var_export($finalcourseids,true));
-                // Try to fetch one action event within the time/search parameters for each course, to confirm it should be included.
-                $events = core_calendar_external::get_calendar_action_events_by_courses($finalcourseids, $eventsfrom, $eventsto, 1,
-                    $searchvalue);
-
-                foreach ($events->groupedbycourse as $courseevents) {
-                    // Remove course if no events were found.
-                    if (empty($courseevents->events)) {
-                        error_log("No events in course " . $courseevents->courseid);
-                        $coursekey = array_search($courseevents->courseid, $finalcourseids);
-                        unset($finalcourseids[$coursekey]);
-
-                        foreach ($formattedcourses as $key => $formattedcourse) {
-                            if ($formattedcourse->id == $courseevents->courseid) {
-                                unset($formattedcourses[$key]);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                // If any courses were removed, try to fetch that many more, starting from the course after the last one fetched.
-                if (count($finalcourseids) < $numcoursesfetched) {
-                    error_log("Fetching more");
-                    $newlimit = $limit - count($finalcourseids);
-                    $newoffset = $offset + $numcoursesfetched; //TODO - something here isn't right, is fetching
-                                                               //[4, 10], then searching more and getting [4] then [10]
-
-                    $additionalcourses = self::get_enrolled_courses_by_timeline_classification($classification, $newlimit,
-                        $newoffset, $sort,$customfieldname, $customfieldvalue, $searchvalue, $withactioneventsonly, $eventsfrom,
-                        $eventsto);
-
-                    $formattedcourses += $additionalcourses['courses'];
-                }
-            }
-
-            //Remove any $formattedcourses belonging to yeeted courses
-            // If no course IDs left, then set up the correct empty state of $formattedcourses
-            //if $morecourses adds extra courses, need to add its nextoffset to nextoffset
-        }
-
         return [
             'courses' => $formattedcourses,
             'nextoffset' => $offset + $processedcount //TODO - does this need another value added from all the recursion stuff
@@ -4012,6 +3951,171 @@ error_log("COURSE IDs: " . var_export($finalcourseids,true));
             )
         );
     }
+
+////////////////////////////////////
+
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     */
+    public static function get_enrolled_courses_with_action_events_by_timeline_classification_parameters() {
+        return new external_function_parameters(
+            [
+                'classification' => new external_value(PARAM_ALPHA, 'future, inprogress, or past'),
+                'limit' => new external_value(PARAM_INT, 'Result set limit', VALUE_DEFAULT, 0),
+                'offset' => new external_value(PARAM_INT, 'Result set offset', VALUE_DEFAULT, 0),
+                'sort' => new external_value(PARAM_TEXT, 'Sort string', VALUE_DEFAULT, null),
+                'customfieldname' => new external_value(PARAM_ALPHANUMEXT, 'Used when classification = customfield',
+                    VALUE_DEFAULT, null),
+                'customfieldvalue' => new external_value(PARAM_RAW, 'Used when classification = customfield',
+                    VALUE_DEFAULT, null),
+                'searchvalue' => new external_value(PARAM_TEXT, 'The value a user wishes to search against',
+                    VALUE_DEFAULT, null),
+                'eventsfrom' => new external_value(PARAM_INT, 'Optional starting timestamp for action events',
+                VALUE_DEFAULT, null),
+                'eventsto' => new external_value(PARAM_INT, 'Optional ending timestamp for action events',
+                VALUE_DEFAULT, null),
+            ]
+        );
+    }
+
+    /**
+     * Get courses matching the given timeline classification which have action event(s).
+     *
+     * Uses get_enrolled_courses_by_timeline_classification() to fetch courses, then checks they have at least one action event.
+     * Any with no action events in the specified parameters (eg between from/to timestamps and search term) will be skipped
+     * and more events fetched in their place.
+     *
+     * @param  string $classification past, inprogress, or future
+     * @param  int $limit Result set limit
+     * @param  int $offset Offset the full course set before timeline classification is applied
+     * @param  string $sort SQL sort string for results
+     * @param  string $customfieldname
+     * @param  string $customfieldvalue
+     * @param  string $searchvalue
+     * @param  int $eventsfrom The start timestamp (inclusive) to search from for action events in the course
+     * @param  int $eventsto The end timestamp (inclusive) to search to for action events in the course
+     * @return array list of courses and warnings
+     * @throws invalid_parameter_exception
+     */
+    public static function get_enrolled_courses_with_action_events_by_timeline_classification(
+        string $classification,
+        int $limit = 0,
+        int $offset = 0,
+        string $sort = null,
+        string $customfieldname = null,
+        string $customfieldvalue = null,
+        string $searchvalue = null,
+        int $eventsfrom = null,
+        int $eventsto = null
+    ) {
+ //       global $CFG, $PAGE, $USER;
+ //       require_once($CFG->dirroot . '/course/lib.php');
+     //   require_once($CFG->dirroot . '/calendar/externallib.php');
+
+        $params = self::validate_parameters(
+            self::get_enrolled_courses_with_action_events_by_timeline_classification_parameters(),
+            array(
+                'classification' => $classification,
+                'limit' => $limit,
+                'offset' => $offset,
+                'sort' => $sort,
+                'customfieldvalue' => $customfieldvalue,
+                'searchvalue' => $searchvalue,
+                'eventsfrom' => $eventsfrom,
+                'eventsto' => $eventsto
+            )
+        );
+
+        $classification = $params['classification'];
+        $limit = $params['limit'];
+        $offset = $params['offset'];
+        $sort = $params['sort'];
+        $customfieldvalue = $params['customfieldvalue'];
+        $searchvalue = $params['searchvalue'];
+        $eventsfrom = $params['eventsfrom'];
+        $eventsto = $params['eventsto'];
+        $courseswithevents = [];
+        $morecoursestofetch = true;
+
+        do {
+error_log("Fetching courses ... limit $limit, offset $offset.");
+            // Fetch courses.
+            [
+                'courses' => $courses,
+                'nextoffset' => $nextoffset,
+            ] = self::get_enrolled_courses_by_timeline_classification($classification, $limit,
+                    $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue);
+
+            // Only interested in courses with action events, check the courses for those.
+            // Remove any courses without action events, then fetch more until we reach the required limit.
+
+            $courseids = array_column($courses, 'id');
+
+            if (!empty($courseids)) {
+                // Need to check this to know how many are expected (since it is possible for this to be less than the limit).
+                $numcoursesfetched = count($courseids);
+error_log("COURSE IDs: " . var_export($courseids,true));
+                // Try to fetch one action event within the time/search parameters for each course, to confirm it should be included.
+                $events = core_calendar_external::get_calendar_action_events_by_courses($courseids, $eventsfrom, $eventsto, 1,
+                    $searchvalue);
+
+                foreach ($events->groupedbycourse as $courseevents) {
+                    // Remove course if no events were found.
+                    if (empty($courseevents->events)) {
+error_log("No events in course " . $courseevents->courseid);
+                        $indextoremove = array_search($courseevents->courseid, $courseids);
+                        unset($courses[$indextoremove]);
+                        unset($courseids[$indextoremove]);
+                    } else {
+                        //TODO test - remove this else
+error_log("Event found in course " . $courseevents->courseid);
+                    }
+                }
+
+                // Add the courses with events to the final list, and increment the offset.
+                $courseswithevents += $courses;
+                $offset += $nextoffset;
+
+                // If any courses were removed and there might be more, adjust the limit so we fetch as many as still required.
+                if (count($courseids) < $numcoursesfetched) {
+                    $limit -= count($courseswithevents);
+                } else {
+error_log("No more courses required");
+                    // If we have found as many courses as required or are available, no need to attempt fetching more.
+                    $morecoursestofetch = false;
+                }
+            } else {
+error_log("No more courses found");
+                $morecoursestofetch = false;
+            }
+        } while ($morecoursestofetch);
+
+        return [
+            'courses' => $courseswithevents,
+            'nextoffset' => $offset,
+        ];
+    }
+
+    /**
+     * Returns description of method result value
+     *
+     * @return external_description
+     */
+    public static function get_enrolled_courses_with_action_events_by_timeline_classification_returns() {
+        return new external_single_structure(
+            array(
+                'courses' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Course'),
+                'nextoffset' => new external_value(PARAM_INT, 'Offset for the next request')
+            )
+        );
+    }
+
+
+
+
+////////////////////////////////////
 
     /**
      * Returns description of method parameters
