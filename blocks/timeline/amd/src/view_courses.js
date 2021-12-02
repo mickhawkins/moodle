@@ -318,7 +318,7 @@ function(
         var courseIds = courses.map(function(course) {
             return course.id;
         });
-
+window.console.log("GET EVENTS LOAD");
         return getEventsForCourseIds(courseIds, startTime, COURSE_EVENT_LIMIT + 1, endTime, searchValue);
     };
 
@@ -459,6 +459,7 @@ function(
         setEventReloadTime(root, startReloadTime);
 
         // Load all of the events for the given courses.
+window.console.log('GET EVENTS - RELOAD');
         return getEventsForCourseIds(courseIds, startTime, COURSE_EVENT_LIMIT + 1, endTime, searchValue)
             .then(function(eventsByCourse) {
                 if (hasReloadedEventsSince(root, startReloadTime)) {
