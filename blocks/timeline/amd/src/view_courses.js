@@ -401,19 +401,22 @@ window.console.log("GET EVENTS LOAD");
             endTime
         ).then(function(result, startTime, endTime) {
             var startEventLoadingTime = Date.now();
-            var courses = result.courses;
+            var coursesshow = result.courses.withevents;
+            var courseshide = result.courses.withoutevents;
             var nextOffset = result.nextoffset;
             var daysOffset = getDaysOffset(root);
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
-
+let test = '';
+courseshide.forEach((x) => {test += ", " + x.id;}, test);
+window.console.log("COURSES WITHOUT: " + test); // Xxxxxxx.
             // Record the next offset if we want to request more courses.
             setOffset(root, nextOffset);
             // Load the events for these courses.
-            var eventsPromise = loadEventsForCourses(courses, startTime, endTime, searchValue);
+            var eventsPromise = loadEventsForCourses(coursesshow, startTime, endTime, searchValue);
             // Render the courses in the DOM.
-            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit);
+            var renderPromise = updateDisplayFromCourses(coursesshow, root, midnight, daysOffset, daysLimit);
 
             return $.when(eventsPromise, renderPromise)
                 .then(function(eventsByCourse) {
@@ -424,7 +427,7 @@ window.console.log("GET EVENTS LOAD");
 
                     // When we've got all of the courses and events we can render the events in the
                     // correct course event list.
-                    courses.forEach(function(course) {
+                    coursesshow.forEach(function(course) {
                         var courseId = course.id;
                         var containerSelector = '[data-region="course-events-container"][data-course-id="' + courseId + '"]';
                         var courseEventsContainer = root.find(containerSelector);

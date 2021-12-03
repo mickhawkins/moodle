@@ -4037,6 +4037,7 @@ class core_course_external extends external_api {
         $eventsfrom = $params['eventsfrom'];
         $eventsto = $params['eventsto'];
         $courseswithevents = [];
+        $courseswithoutevents = [];
         $morecoursestofetch = true;
 
         do {
@@ -4066,6 +4067,8 @@ error_log("COURSE IDs: " . var_export($courseids,true));
                     if (empty($courseevents->events)) {
 error_log("No events in course " . $courseevents->courseid);
                         $indextoremove = array_search($courseevents->courseid, $courseids);
+                        $courses[$indextoremove]->hasevents = false;
+                        $courseswithoutevents[] = $courses[$indextoremove];
                         unset($courses[$indextoremove]);
                         unset($courseids[$indextoremove]);
                     } else {
@@ -4093,7 +4096,10 @@ error_log("No more courses found");
         } while ($morecoursestofetch);
 
         return [
-            'courses' => $courseswithevents,
+            'courses' => [
+                'withevents' => $courseswithevents,
+                'withoutevents' => $courseswithoutevents,
+            ],
             'nextoffset' => $offset,
         ];
     }
@@ -4105,10 +4111,13 @@ error_log("No more courses found");
      */
     public static function get_enrolled_courses_with_action_events_by_timeline_classification_returns() {
         return new external_single_structure(
-            array(
-                'courses' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Course'),
+            [
+                'courses' => new external_single_structure([
+                    'withevents' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Courses with events'),
+                    'withoutevents' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Courses without events'),
+                ]),
                 'nextoffset' => new external_value(PARAM_INT, 'Offset for the next request')
-            )
+            ]
         );
     }
 
