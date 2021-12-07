@@ -4053,6 +4053,7 @@ error_log("Fetching courses ... limit $limit, offset $offset.");
             // Remove any courses without action events, then fetch more until we reach the required limit.
 
             $courseids = array_column($courses, 'id');
+            $courses = array_combine($courseids, $courses);
 
             if (!empty($courseids)) {
                 // Need to check this to know how many are expected (since it is possible for this to be less than the limit).
@@ -4063,16 +4064,17 @@ error_log("COURSE IDs: " . var_export($courseids,true));
                     $searchvalue);
 
                 foreach ($events->groupedbycourse as $courseevents) {
+                    $courseid = $courseevents->courseid;
+
                     // Remove course if no events were found.
                     if (empty($courseevents->events)) {
-error_log("No events in course " . $courseevents->courseid);
-                        $indextoremove = array_search($courseevents->courseid, $courseids);
-                        $courses[$indextoremove]->hasevents = false;
-                        $courseswithoutevents[] = $courses[$indextoremove];
-                        unset($courses[$indextoremove]);
-                        unset($courseids[$indextoremove]);
+error_log("No events in course " . $courseid);
+                        $courses[$courseid]->hasevents = false; //TODO: This is causing errors because it's not defined in the return stuff
+                        $courseswithoutevents[] = $courses[$courseid];
+                        unset($courses[$courseid]);
+                        unset($courseids[$courseid]);
                     } else {
-                        //TODO test - remove this else
+                        $courses[$courseid]->hasevents = true;
 error_log("Event found in course " . $courseevents->courseid);
                     }
                 }
@@ -4082,8 +4084,9 @@ error_log("Event found in course " . $courseevents->courseid);
                 $offset += $nextoffset;
 
                 // If any courses were removed and there might be more, adjust the limit so we fetch as many as still required.
-                if (count($courseids) < $numcoursesfetched) {
-                    $limit -= count($courseswithevents);
+                $numcoursesadded = count($courses);
+                if ($numcoursesadded < $numcoursesfetched) {
+                    $limit -= $numcoursesadded;
                 } else {
 error_log("No more courses required");
                     // If we have found as many courses as required or are available, no need to attempt fetching more.
@@ -4094,7 +4097,7 @@ error_log("No more courses found");
                 $morecoursestofetch = false;
             }
         } while ($morecoursestofetch);
-
+error_log(var_export($courseswithevents, true));
         return [
             'courses' => [
                 'withevents' => $courseswithevents,
@@ -4110,6 +4113,8 @@ error_log("No more courses found");
      * @return external_description
      */
     public static function get_enrolled_courses_with_action_events_by_timeline_classification_returns() {
+
+error_log(var_export(course_summary_exporter::get_read_structure(),true));
         return new external_single_structure(
             [
                 'courses' => new external_single_structure([

@@ -408,8 +408,16 @@ window.console.log("GET EVENTS LOAD");
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
-let test = '';
-courseshide.forEach((x) => {test += ", " + x.id;}, test);
+
+window.console.log("WITH EVENTS:");
+window.console.log(JSON.stringify(coursesshow));
+window.console.log("NO EVENTS:");
+window.console.log(JSON.stringify(courseshide));
+            let test = '';
+coursesshow.forEach((x) => {
+    window.console.log(JSON.stringify(x));
+    test += ", " + x.id + "(has events: " + (x.hasevents ? 'YES' : 'NO') + ")";
+}, test);
 window.console.log("COURSES WITHOUT: " + test); // Xxxxxxx.
             // Record the next offset if we want to request more courses.
             setOffset(root, nextOffset);

@@ -165,7 +165,12 @@ class course_summary_exporter extends \core\external\exporter {
             ),
             'coursecategory' => array(
                 'type' => PARAM_TEXT
-            )
+            ),
+            'hasevents' => array(
+                'type' => PARAM_BOOL,
+                'optional' => true,
+                'default' => false,
+            ),
         );
     }
 
