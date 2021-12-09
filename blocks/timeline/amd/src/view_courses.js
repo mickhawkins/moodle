@@ -432,6 +432,7 @@ courses.forEach(x => {
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
+            const morecoursesavailable = result.morecoursesavailable;
 
             // Record the next offset if we want to request more courses.
             setOffset(root, nextOffset);
@@ -467,7 +468,7 @@ window.console.log(`Course ${courseId} has events`);
 window.console.log(`Course ${courseId} has NO events`);
 window.console.log(document.querySelector(containerSelector));
                         }
-
+//xxxxxxx
                         EventList.init(eventListRoot, additionalConfig);
                     });
 
@@ -476,6 +477,12 @@ window.console.log(document.querySelector(containerSelector));
                     if (!foundCourseWithEvents) {
                         showNoCoursesWithEventsMessage(root);
                         hideMoreCoursesButton(root);
+                    } else if (!morecoursesavailable) {
+                        // If no more courses with events matching the current filtering exist, hide the more courses button.
+                        hideMoreCoursesButton(root);
+                    } else {
+                        // If more courses exist with events matching the current filtering, show the more courses button.
+                        showMoreCoursesButton(root);
                     }
 
                     return eventsByCourse;
@@ -506,7 +513,7 @@ window.console.log(document.querySelector(containerSelector));
         // Load all of the events for the given courses.
 window.console.log('GET EVENTS - RELOAD');
         return getEventsForCourseIds(courseIds, startTime, COURSE_EVENT_LIMIT + 1, endTime, searchValue)
-            .then(function(eventsByCourse) {
+            .then(function(eventsByCourse) {//yyyyy
                 if (hasReloadedEventsSince(root, startReloadTime)) {
                     // A new reload has begun so ignore our results.
                     return eventsByCourse;
@@ -525,6 +532,7 @@ window.console.log('GET EVENTS - RELOAD');
                 // Show or hide the no events message depending whether any courses fetched have events.
                 if (coursesWithEvents.length > 0) {
                     hideNoCoursesWithEventsMessage(root);
+                    showMoreCoursesButton(root);
                 } else {
                     showNoCoursesWithEventsMessage(root);
                     hideMoreCoursesButton(root);
@@ -534,27 +542,16 @@ window.console.log('GET EVENTS - RELOAD');
                     const rawContainer = container;
                     container = $(container);
                     var eventListContainer = rawContainer.querySelector(EventList.rootSelector);
-window.console.log("Raw:");
-window.console.log(rawContainer);
-window.console.log(EventList.rootSelector);
 
                     // If this course has events to show, initialise and ensure it is visible.
                     if (coursesWithEvents.includes(parseInt(eventListContainer.dataset.courseId))) {
                         EventList.init(eventListContainer, additionalConfig);
                         eventListContainer.parentElement.classList.remove('hidden');
                         eventListContainer.closest('li').classList.remove('hidden');
-                        //eventListContainer.parent().show();
-                        //eventListContainer.closest('li').show();
                     } else {
                     // If no events to show in this course, hide the course (we retain it in case filter changes require it).
                         eventListContainer.parentElement.classList.add('hidden');
                         eventListContainer.closest('li').classList.add('hidden');
-                        //eventListContainer.parent().hide();
-                        //eventListContainer.closest('li').hide();
-window.console.log("Parent:");
-window.console.log(eventListContainer.parentElement);
-window.console.log("LI:");
-window.console.log(eventListContainer.closest('li'));
                     }
                 });
 
