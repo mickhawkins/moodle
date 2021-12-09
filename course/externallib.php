@@ -4036,15 +4036,14 @@ class core_course_external extends external_api {
         $searchvalue = $params['searchvalue'];
         $eventsfrom = $params['eventsfrom'];
         $eventsto = $params['eventsto'];
-        $courseswithevents = [];
-        $courseswithoutevents = [];
         $morecoursestofetch = true;
+        $coursesfinal = [];
 
         do {
 error_log("Fetching courses ... limit $limit, offset $offset.");
             // Fetch courses.
             [
-                'courses' => $courses,
+                'courses' => $coursesfetched,
                 'nextoffset' => $nextoffset,
             ] = self::get_enrolled_courses_by_timeline_classification($classification, $limit,
                     $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue);
@@ -4052,12 +4051,14 @@ error_log("Fetching courses ... limit $limit, offset $offset.");
             // Only interested in courses with action events, check the courses for those.
             // Remove any courses without action events, then fetch more until we reach the required limit.
 
-            $courseids = array_column($courses, 'id');
-            $courses = array_combine($courseids, $courses);
+            $courseids = array_column($coursesfetched, 'id');
+            $coursesfetched = array_combine($courseids, $coursesfetched);
 
             if (!empty($courseids)) {
                 // Need to check this to know how many are expected (since it is possible for this to be less than the limit).
                 $numcoursesfetched = count($courseids);
+                $numfetchedwithevents = 0;
+
 error_log("COURSE IDs: " . var_export($courseids,true));
                 // Try to fetch one action event within the time/search parameters for each course, to confirm it should be included.
                 $events = core_calendar_external::get_calendar_action_events_by_courses($courseids, $eventsfrom, $eventsto, 1,
@@ -4069,24 +4070,21 @@ error_log("COURSE IDs: " . var_export($courseids,true));
                     // Remove course if no events were found.
                     if (empty($courseevents->events)) {
 error_log("No events in course " . $courseid);
-                        $courses[$courseid]->hasevents = false; //TODO: This is causing errors because it's not defined in the return stuff
-                        $courseswithoutevents[] = $courses[$courseid];
-                        unset($courses[$courseid]);
-                        unset($courseids[$courseid]);
+                        $coursesfetched[$courseid]->hasevents = false;
                     } else {
-                        $courses[$courseid]->hasevents = true;
+                        $coursesfetched[$courseid]->hasevents = true;
+                        $numfetchedwithevents++;
 error_log("Event found in course " . $courseevents->courseid);
                     }
                 }
 
-                // Add the courses with events to the final list, and increment the offset.
-                $courseswithevents += $courses;
+                // Add the courses to the final list, and increment the offset.
+                $coursesfinal += $coursesfetched;
                 $offset += $nextoffset;
 
-                // If any courses were removed and there might be more, adjust the limit so we fetch as many as still required.
-                $numcoursesadded = count($courses);
-                if ($numcoursesadded < $numcoursesfetched) {
-                    $limit -= $numcoursesadded;
+                // If any courses did not have events and there might be more, adjust the limit so we fetch as many as still required.
+                if ($numfetchedwithevents < $numcoursesfetched) {
+                    $limit -= $numfetchedwithevents;
                 } else {
 error_log("No more courses required");
                     // If we have found as many courses as required or are available, no need to attempt fetching more.
@@ -4097,12 +4095,9 @@ error_log("No more courses found");
                 $morecoursestofetch = false;
             }
         } while ($morecoursestofetch);
-error_log(var_export($courseswithevents, true));
+
         return [
-            'courses' => [
-                'withevents' => $courseswithevents,
-                'withoutevents' => $courseswithoutevents,
-            ],
+            'courses' => $coursesfinal,
             'nextoffset' => $offset,
         ];
     }
@@ -4117,10 +4112,7 @@ error_log(var_export($courseswithevents, true));
 error_log(var_export(course_summary_exporter::get_read_structure(),true));
         return new external_single_structure(
             [
-                'courses' => new external_single_structure([
-                    'withevents' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Courses with events'),
-                    'withoutevents' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Courses without events'),
-                ]),
+                'courses' => new external_multiple_structure(course_summary_exporter::get_read_structure(), 'Course'),
                 'nextoffset' => new external_value(PARAM_INT, 'Offset for the next request')
             ]
         );

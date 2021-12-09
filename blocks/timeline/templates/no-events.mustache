@@ -15,22 +15,21 @@
     along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 {{!
-    @template block_timeline/course-item
+    @template block_timeline/event-list
 
-    This template renders the each course block containing a summary and calendar events.
+    This template renders a list of events for the timeline block.
 
     Example context (json):
     {
-        "shortname": "course 3",
-        "viewurl": "https://www.google.com",
-        "summary": "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout."
     }
 }}
-<li class="list-group-item mt-3 p-0 border-0">
-    <div data-region="course-events-container" id="course-events-container-{{id}}" data-course-id="{{id}}" class="px-2">
-        <h4 class="h5 font-weight-bold">{{{fullnamedisplay}}}</h4>
-        {{< block_timeline/event-list }}
-            {{$courseid}}{{id}}{{/courseid}}
-        {{/ block_timeline/event-list }}
-    </div>
-</li>
+{{#urls.noevents}}
+<div class="hidden text-xs-center text-center mt-3" data-region="empty-message">
+    <img
+        src="{{urls.noevents}}"
+        alt=""
+        style="height: 70px; width: 70px"
+    >
+    <p class="text-muted mt-1">{{#str}} noevents, block_timeline {{/str}}</p>
+</div>
+{{/urls.noevents}}

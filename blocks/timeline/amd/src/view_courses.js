@@ -44,6 +44,7 @@ function(
         MORE_COURSES_BUTTON: '[data-action="more-courses"]',
         MORE_COURSES_BUTTON_CONTAINER: '[data-region="more-courses-button-container"]',
         NO_COURSES_EMPTY_MESSAGE: '[data-region="no-courses-empty-message"]',
+        NO_COURSES_WITH_EVENTS_MESSAGE: '[data-region="empty-message"]',
         COURSES_LIST: '[data-region="courses-list"]',
         COURSE_ITEMS_LOADING_PLACEHOLDER: '[data-region="course-items-loading-placeholder"]',
         COURSE_EVENTS_CONTAINER: '[data-region="course-events-container"]',
@@ -130,6 +131,24 @@ function(
      */
     var showNoCoursesEmptyMessage = function(root) {
         root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).removeClass('hidden');
+    };
+
+    /**
+     * Display the message for when courses have no events available (within the current filtering).
+     *
+     * @param {object} root The rool element.
+     */
+     var showNoCoursesWithEventsMessage = function(root) {
+        root.find(SELECTORS.NO_COURSES_WITH_EVENTS_MESSAGE).removeClass('hidden');
+    };
+
+    /**
+     * Hide the message for when courses have no events available (within the current filtering).
+     *
+     * @param {object} root The rool element.
+     */
+     var hideNoCoursesWithEventsMessage = function(root) {
+        root.find(SELECTORS.NO_COURSES_WITH_EVENTS_MESSAGE).addClass('hidden');
     };
 
     /**
@@ -333,6 +352,11 @@ window.console.log("GET EVENTS LOAD");
      * @return {object} jQuery promise resolved after rendering is complete.
      */
     var updateDisplayFromCourses = function(courses, root, midnight, daysOffset, daysLimit) {
+courses.forEach(x => {
+    var doesit = x.hasevents ? '' : 'no';
+    window.console.log('Course ' + x.id + ' has ' + doesit + ' events');
+});
+
         // Render the courses template.
         return Templates.render(TEMPLATES.COURSE_ITEMS, {
             courses: courses,
@@ -391,7 +415,8 @@ window.console.log("GET EVENTS LOAD");
         var endTime = getEndTime(root);
 
         // Start loading the next set of courses.
-        // Only loads courses with at least one action event, so we omit any that have nothing to show in the timeline.
+        // Fetch up to limit number of courses with at least one action event in the time filtering specified.
+        // Courses without events will also be fetched, but hidden in case they have events in other timespans.
         return CourseRepository.getEnrolledCoursesWithEventsByTimelineClassification(
             COURSE_CLASSIFICATION,
             limit,
@@ -401,30 +426,19 @@ window.console.log("GET EVENTS LOAD");
             endTime
         ).then(function(result, startTime, endTime) {
             var startEventLoadingTime = Date.now();
-            var coursesshow = result.courses.withevents;
-            var courseshide = result.courses.withoutevents;
+            var courses = result.courses;
             var nextOffset = result.nextoffset;
             var daysOffset = getDaysOffset(root);
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
             const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
 
-window.console.log("WITH EVENTS:");
-window.console.log(JSON.stringify(coursesshow));
-window.console.log("NO EVENTS:");
-window.console.log(JSON.stringify(courseshide));
-            let test = '';
-coursesshow.forEach((x) => {
-    window.console.log(JSON.stringify(x));
-    test += ", " + x.id + "(has events: " + (x.hasevents ? 'YES' : 'NO') + ")";
-}, test);
-window.console.log("COURSES WITHOUT: " + test); // Xxxxxxx.
             // Record the next offset if we want to request more courses.
             setOffset(root, nextOffset);
             // Load the events for these courses.
-            var eventsPromise = loadEventsForCourses(coursesshow, startTime, endTime, searchValue);
+            var eventsPromise = loadEventsForCourses(courses, startTime, endTime, searchValue);
             // Render the courses in the DOM.
-            var renderPromise = updateDisplayFromCourses(coursesshow, root, midnight, daysOffset, daysLimit);
+            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit);
 
             return $.when(eventsPromise, renderPromise)
                 .then(function(eventsByCourse) {
@@ -433,16 +447,36 @@ window.console.log("COURSES WITHOUT: " + test); // Xxxxxxx.
                         return eventsByCourse;
                     }
 
+                    // Keep track of whether any of the courses contain events to display in the current filtering.
+                    let foundCourseWithEvents = false;
+
                     // When we've got all of the courses and events we can render the events in the
                     // correct course event list.
-                    coursesshow.forEach(function(course) {
+                    courses.forEach(function(course) {
                         var courseId = course.id;
                         var containerSelector = '[data-region="course-events-container"][data-course-id="' + courseId + '"]';
                         var courseEventsContainer = root.find(containerSelector);
                         var eventListRoot = courseEventsContainer.find(EventList.rootSelector);
 
+                        if (course.hasevents) {
+                            foundCourseWithEvents = true;
+window.console.log(`Course ${courseId} has events`);
+                        } else {
+                            document.querySelector(containerSelector).classList.add('hidden');
+                            document.querySelector(containerSelector).closest('li').classList.add('hidden');
+window.console.log(`Course ${courseId} has NO events`);
+window.console.log(document.querySelector(containerSelector));
+                        }
+
                         EventList.init(eventListRoot, additionalConfig);
                     });
+
+                    // Check whether any courses contained events for the current filtering.
+                    // If not, show the no events message and hide the more courses button since there are no more to fetch.
+                    if (!foundCourseWithEvents) {
+                        showNoCoursesWithEventsMessage(root);
+                        hideMoreCoursesButton(root);
+                    }
 
                     return eventsByCourse;
                 });
@@ -478,11 +512,50 @@ window.console.log('GET EVENTS - RELOAD');
                     return eventsByCourse;
                 }
 
-                courseEventsContainers.each(function(index, container) {
-                    container = $(container);
-                    var eventListContainer = container.find(EventList.rootSelector);
+                let coursesWithEvents = [];
 
-                    EventList.init(eventListContainer, additionalConfig);
+                if (eventsByCourse.groupedbycourse != undefined) {
+                    eventsByCourse.groupedbycourse.forEach(courseEvents => {
+                        if (courseEvents.events.length > 0) {
+                            coursesWithEvents.push(courseEvents.courseid);
+                        }
+                    });
+                }
+
+                // Show or hide the no events message depending whether any courses fetched have events.
+                if (coursesWithEvents.length > 0) {
+                    hideNoCoursesWithEventsMessage(root);
+                } else {
+                    showNoCoursesWithEventsMessage(root);
+                    hideMoreCoursesButton(root);
+                }
+
+                courseEventsContainers.each(function(index, container) {
+                    const rawContainer = container;
+                    container = $(container);
+                    var eventListContainer = rawContainer.querySelector(EventList.rootSelector);
+window.console.log("Raw:");
+window.console.log(rawContainer);
+window.console.log(EventList.rootSelector);
+
+                    // If this course has events to show, initialise and ensure it is visible.
+                    if (coursesWithEvents.includes(parseInt(eventListContainer.dataset.courseId))) {
+                        EventList.init(eventListContainer, additionalConfig);
+                        eventListContainer.parentElement.classList.remove('hidden');
+                        eventListContainer.closest('li').classList.remove('hidden');
+                        //eventListContainer.parent().show();
+                        //eventListContainer.closest('li').show();
+                    } else {
+                    // If no events to show in this course, hide the course (we retain it in case filter changes require it).
+                        eventListContainer.parentElement.classList.add('hidden');
+                        eventListContainer.closest('li').classList.add('hidden');
+                        //eventListContainer.parent().hide();
+                        //eventListContainer.closest('li').hide();
+window.console.log("Parent:");
+window.console.log(eventListContainer.parentElement);
+window.console.log("LI:");
+window.console.log(eventListContainer.closest('li'));
+                    }
                 });
 
                 return eventsByCourse;
