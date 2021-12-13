@@ -260,7 +260,7 @@ function(
     var getEndTime = function(root) {
         var midnight = getMidnight(root);
         var daysLimit = getDaysLimit(root);
-        return daysLimit != undefined ? midnight + (daysLimit * SECONDS_IN_DAY) : false;
+        return daysLimit != undefined ? midnight + (daysLimit * SECONDS_IN_DAY) : null;
     };
 
     /**
@@ -475,7 +475,11 @@ window.console.log(document.querySelector(containerSelector));
                     // Check whether any courses contained events for the current filtering.
                     // If not, show the no events message and hide the more courses button since there are no more to fetch.
                     if (!foundCourseWithEvents) {
-                        showNoCoursesWithEventsMessage(root);
+                        // Only show message if no courses have been loaded / displayed.
+                        if (offset == 0) {
+                            showNoCoursesWithEventsMessage(root);
+                        }
+
                         hideMoreCoursesButton(root);
                     } else if (!morecoursesavailable) {
                         // If no more courses with events matching the current filtering exist, hide the more courses button.

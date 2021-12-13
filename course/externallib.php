@@ -4023,9 +4023,7 @@ class core_course_external extends external_api {
 
         $classification = $params['classification'];
         // Request one more, so we know whether there are more courses available.
-        $limit = $params['limit'] + 1;
-        $requestedlimit = $params['limit'];
-        $totalwithevents = 0;
+        $limit = $params['limit'];
         $offset = $params['offset'];
         $sort = $params['sort'];
         $customfieldvalue = $params['customfieldvalue'];
@@ -4064,14 +4062,13 @@ class core_course_external extends external_api {
                     } else {
                         $coursesfetched[$courseid]->hasevents = true;
                         $numfetchedwithevents++;
-                        $totalwithevents++;
                     }
                 }
-error_log("Prev offset = $offset next offset = $nextoffset");
+
                 // Add the courses to the final list, and increment the offset.
                 $coursesfinal += $coursesfetched;
                 $offset += $nextoffset;
-error_log("Updated offset = $offset");
+
                 // If any courses did not have events, adjust the limit so we can attempt to fetch as many as are still required.
                 if ($numfetchedwithevents < $numcoursesfetched) {
                     $limit -= $numfetchedwithevents;
@@ -4084,18 +4081,24 @@ error_log("Updated offset = $offset");
             }
         } while ($morecoursestofetch);
 
-        // If more courses were fetched than required, we know more are available for future requests.
-        // If this is the case, we don't need to return the final course, so remove it from the results and offset.
-        if ($totalwithevents > $requestedlimit) {
-            $test = array_pop($coursesfinal);
-error_log("###There are more: {$test->id}, {$test->fullname}###");
-error_log("Current offset = $offset");
-            $offset -= $nextoffset;
-error_log("Offset minus $nextoffset = $offset");
-            $morecoursesavailable = true;
-        } else {
-            $morecoursesavailable = false;
-error_log("###No more found###");
+        static $isrecursivecall = false;
+        $morecoursesavailable = false;
+
+        // Recursively call this method to check if at least one more course is available.
+        if (!$isrecursivecall) {
+            // Prevent infinite recursion.
+            $isrecursivecall = true;
+
+            $additionalcourses = self::get_enrolled_courses_with_action_events_by_timeline_classification(
+                $classification, 1, $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue, $eventsfrom, $eventsto
+            );
+
+            foreach ($additionalcourses['courses'] as $course) {
+                if ($course->hasevents) {
+                    $morecoursesavailable = true;
+                    break;
+                }
+            }
         }
 
         return [
