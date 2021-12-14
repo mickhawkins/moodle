@@ -134,20 +134,15 @@ function(
     };
 
     /**
-     * Display the message for when there are no courses available.
-     *
-     * @param {object} root The rool element.
-     */
-    var showNoCoursesEmptyMessage = function(root) {
-        root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).removeClass('hidden');
-    };
-
-    /**
      * Display the message for when courses have no events available (within the current filtering).
      *
      * @param {object} root The rool element.
      */
      var showNoCoursesWithEventsMessage = function(root) {
+        // Remove any course list contents, since we will display the no events message.
+        var container = root.find(SELECTORS.COURSES_LIST);
+        Templates.replaceNodeContents(container, '', '');
+//xxx
         root.find(SELECTORS.NO_COURSES_WITH_EVENTS_MESSAGE).removeClass('hidden');
     };
 
@@ -176,16 +171,6 @@ function(
         } else {
             Templates.replaceNodeContents(container, html, '');
         }
-    };
-
-    /**
-     * Check if any courses have been loaded.
-     *
-     * @param {object} root The rool element.
-     * @return {bool}
-     */
-    var hasLoadedCourses = function(root) {
-        return root.find(SELECTORS.COURSE_EVENTS_CONTAINER).length > 0;
     };
 
     /**
@@ -386,12 +371,6 @@ window.console.log("GET EVENTS LOAD");
                 // Template rendering is complete and we have the HTML so we can
                 // add it to the DOM.
                 renderCourseItemsHTML(root, html, append);
-            } else {
-                if (!hasLoadedCourses(root)) {
-                    // There were no courses to render so show the empty placeholder
-                    // message for the user to tell them.
-                    showNoCoursesEmptyMessage(root);
-                }
             }
 
             return html;
@@ -462,7 +441,7 @@ window.console.log("GET EVENTS LOAD");
                         return eventsByCourse;
                     }
 
-                    if (courses.length() > 0) {
+                    if (courses.length > 0) {
                         // Render the events in the correct course event list.
                         courses.forEach(function(course) {
                             var courseId = course.id;
@@ -606,15 +585,18 @@ enableMoreCoursesButtonLoading(root);
     var init = function(root) {
         root = $(root);
 
-        setEventReloadTime(root, Date.now());
+        // Only need to handle course loading if the user is actively enrolled in a course.
+        if (!root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).length) {
+            setEventReloadTime(root, Date.now());
 
-        if (root.hasClass('active')) {
-            // Only load if this is active otherwise it will be lazy loaded later.
-            loadMoreCourses(root);
-            root.attr('data-seen', true);
+            if (root.hasClass('active')) {
+                // Only load if this is active otherwise it will be lazy loaded later.
+                loadMoreCourses(root);
+                root.attr('data-seen', true);
+            }
+
+            registerEventListeners(root);
         }
-
-        registerEventListeners(root);
     };
 
     /**
@@ -625,11 +607,11 @@ enableMoreCoursesButtonLoading(root);
      */
     var reset = function(root) {
 
-setOffset(root, 0);
-showLoadingPlaceholder(root);
-hideNoCoursesWithEventsMessage(root);
-
+        setOffset(root, 0);
+        showLoadingPlaceholder(root);
+        hideNoCoursesWithEventsMessage(root);
         root.removeAttr('data-seen');
+
         if (root.hasClass('active')) {
             shown(root);
         }

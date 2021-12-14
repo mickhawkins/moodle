@@ -4058,7 +4058,7 @@ class core_course_external extends external_api {
 
                     // Only include courses which contain at least one event.
                     if (!empty($courseevents->events)) {
-                        $coursesfinal += $coursesfetched[$courseid];
+                        $coursesfinal[] = $coursesfetched[$courseid];
                         $numfetchedwithevents++;
                     }
                 }
