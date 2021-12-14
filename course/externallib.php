@@ -3993,7 +3993,7 @@ class core_course_external extends external_api {
      * @param  string $searchvalue.
      * @param  int $eventsfrom The start timestamp (inclusive) to search from for action events in the course.
      * @param  int $eventsto The end timestamp (inclusive) to search to for action events in the course.
-     * @return array list of courses, whether they contain action events, and any warnings.
+     * @return array list of courses and any warnings.
      * @throws invalid_parameter_exception
      */
     public static function get_enrolled_courses_with_action_events_by_timeline_classification(
@@ -4056,17 +4056,14 @@ class core_course_external extends external_api {
                 foreach ($events->groupedbycourse as $courseevents) {
                     $courseid = $courseevents->courseid;
 
-                    // Flag which courses do and do not contain at least one event.
-                    if (empty($courseevents->events)) {
-                        $coursesfetched[$courseid]->hasevents = false;
-                    } else {
-                        $coursesfetched[$courseid]->hasevents = true;
+                    // Only include courses which contain at least one event.
+                    if (!empty($courseevents->events)) {
+                        $coursesfinal += $coursesfetched[$courseid];
                         $numfetchedwithevents++;
                     }
                 }
 
-                // Add the courses to the final list, and increment the offset.
-                $coursesfinal += $coursesfetched;
+                // Increment the offset.
                 $offset += $nextoffset;
 
                 // If any courses did not have events, adjust the limit so we can attempt to fetch as many as are still required.

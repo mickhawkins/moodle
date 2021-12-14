@@ -77,6 +77,15 @@ function(
     };
 
     /**
+     * Show the loading placeholder elements.
+     *
+     * @param {object} root The rool element.
+     */
+     var showLoadingPlaceholder = function(root) {
+        root.find(SELECTORS.COURSE_ITEMS_LOADING_PLACEHOLDER).removeClass('hidden');
+    };
+
+    /**
      * Hide the "more courses" button.
      *
      * @param {object} root The rool element.
@@ -156,10 +165,17 @@ function(
      *
      * @param {object} root The rool element.
      * @param {string} html The course items HTML to render.
+     * @param {boolean} append Whether the HTML should be appended (eg pressed "show more courses").
+     *                         Defaults to false - replaces the existing content (eg when modifying filter values).
      */
-    var renderCourseItemsHTML = function(root, html) {
+    var renderCourseItemsHTML = function(root, html, append = false) {
         var container = root.find(SELECTORS.COURSES_LIST);
-        Templates.appendNodeContents(container, html, '');
+
+        if (append) {
+            Templates.appendNodeContents(container, html, '');
+        } else {
+            Templates.replaceNodeContents(container, html, '');
+        }
     };
 
     /**
@@ -349,14 +365,10 @@ window.console.log("GET EVENTS LOAD");
      * @param {Number} midnight The midnight timestamp in the user's timezone.
      * @param {Number} daysOffset Number of days from today to offset the events.
      * @param {Number} daysLimit Number of days from today to limit the events to.
+     * @param {boolean} append Whether new content should be appended instead of replaced (eg "show more courses").
      * @return {object} jQuery promise resolved after rendering is complete.
      */
-    var updateDisplayFromCourses = function(courses, root, midnight, daysOffset, daysLimit) {
-courses.forEach(x => {
-    var doesit = x.hasevents ? '' : 'no';
-    window.console.log('Course ' + x.id + ' has ' + doesit + ' events');
-});
-
+    var updateDisplayFromCourses = function(courses, root, midnight, daysOffset, daysLimit, append) {
         // Render the courses template.
         return Templates.render(TEMPLATES.COURSE_ITEMS, {
             courses: courses,
@@ -373,7 +385,7 @@ courses.forEach(x => {
             if (html) {
                 // Template rendering is complete and we have the HTML so we can
                 // add it to the DOM.
-                renderCourseItemsHTML(root, html);
+                renderCourseItemsHTML(root, html, append);
             } else {
                 if (!hasLoadedCourses(root)) {
                     // There were no courses to render so show the empty placeholder
@@ -406,9 +418,11 @@ courses.forEach(x => {
      * list module to being loading the events for the course block.
      *
      * @param {object} root The root element for the timeline courses view.
+     * @param {boolean} append Whether new content should be appended instead of replaced (eg "show more courses").
      * @return {object} jQuery promise resolved with courses and events.
      */
-    var loadMoreCourses = function(root) {
+    var loadMoreCourses = function(root, append) {
+        window.console.log("HITTING LOAD MORE");
         var offset = getOffset(root);
         var limit = getLimit(root);
         var startTime = getStartTime(root);
@@ -439,7 +453,7 @@ courses.forEach(x => {
             // Load the events for these courses.
             var eventsPromise = loadEventsForCourses(courses, startTime, endTime, searchValue);
             // Render the courses in the DOM.
-            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit);
+            var renderPromise = updateDisplayFromCourses(courses, root, midnight, daysOffset, daysLimit, append);
 
             return $.when(eventsPromise, renderPromise)
                 .then(function(eventsByCourse) {
@@ -448,45 +462,32 @@ courses.forEach(x => {
                         return eventsByCourse;
                     }
 
-                    // Keep track of whether any of the courses contain events to display in the current filtering.
-                    let foundCourseWithEvents = false;
+                    if (courses.length() > 0) {
+                        // Render the events in the correct course event list.
+                        courses.forEach(function(course) {
+                            var courseId = course.id;
+                            var containerSelector = '[data-region="course-events-container"][data-course-id="' + courseId + '"]';
+                            var courseEventsContainer = root.find(containerSelector);
+                            var eventListRoot = courseEventsContainer.find(EventList.rootSelector);
 
-                    // When we've got all of the courses and events we can render the events in the
-                    // correct course event list.
-                    courses.forEach(function(course) {
-                        var courseId = course.id;
-                        var containerSelector = '[data-region="course-events-container"][data-course-id="' + courseId + '"]';
-                        var courseEventsContainer = root.find(containerSelector);
-                        var eventListRoot = courseEventsContainer.find(EventList.rootSelector);
+                            EventList.init(eventListRoot, additionalConfig);
+                        });
 
-                        if (course.hasevents) {
-                            foundCourseWithEvents = true;
-window.console.log(`Course ${courseId} has events`);
+                        if (!morecoursesavailable) {
+                            // If no more courses with events matching the current filtering exist, hide the more courses button.
+                            hideMoreCoursesButton(root);
                         } else {
-                            document.querySelector(containerSelector).classList.add('hidden');
-                            document.querySelector(containerSelector).closest('li').classList.add('hidden');
-window.console.log(`Course ${courseId} has NO events`);
-window.console.log(document.querySelector(containerSelector));
+                            // If more courses exist with events matching the current filtering, show the more courses button.
+                            showMoreCoursesButton(root);
                         }
-//xxxxxxx
-                        EventList.init(eventListRoot, additionalConfig);
-                    });
+                    } else {
+                        // No more courses to load, hide the more courses button.
+                        hideMoreCoursesButton(root);
 
-                    // Check whether any courses contained events for the current filtering.
-                    // If not, show the no events message and hide the more courses button since there are no more to fetch.
-                    if (!foundCourseWithEvents) {
-                        // Only show message if no courses have been loaded / displayed.
+                        // A zero offset means this was not loading "more courses", so we need to display the no results message.
                         if (offset == 0) {
                             showNoCoursesWithEventsMessage(root);
                         }
-
-                        hideMoreCoursesButton(root);
-                    } else if (!morecoursesavailable) {
-                        // If no more courses with events matching the current filtering exist, hide the more courses button.
-                        hideMoreCoursesButton(root);
-                    } else {
-                        // If more courses exist with events matching the current filtering, show the more courses button.
-                        showMoreCoursesButton(root);
                     }
 
                     return eventsByCourse;
@@ -500,7 +501,7 @@ window.console.log(document.querySelector(containerSelector));
      *
      * @param {object} root The root element.
      * @return {object} jQuery promise resolved with courses and events.
-     */
+     *
     var reloadCourseEvents = function(root) {
         var startReloadTime = Date.now();
         var startTime = getStartTime(root);
@@ -562,6 +563,7 @@ window.console.log('GET EVENTS - RELOAD');
                 return eventsByCourse;
             }).catch(Notification.exception);
     };
+    */
 
     /**
      * Add event listeners to load more courses for the courses view.
@@ -573,9 +575,9 @@ window.console.log('GET EVENTS - RELOAD');
         // Show more courses and load their events when the user clicks the "more courses"
         // button.
         root.on(CustomEvents.events.activate, SELECTORS.MORE_COURSES_BUTTON, function(e, data) {
-            window.console.log('sdfsdfsdfsdfsdfsdfs');
+            window.console.log('Pressed more courses button');
 enableMoreCoursesButtonLoading(root);
-            loadMoreCourses(root)
+            loadMoreCourses(root, true)
                 .then(function() {
                     disableMoreCoursesButtonLoading(root);
                     return;
@@ -622,6 +624,11 @@ enableMoreCoursesButtonLoading(root);
      * @param {object} root The root element for the timeline courses view.
      */
     var reset = function(root) {
+
+setOffset(root, 0);
+showLoadingPlaceholder(root);
+hideNoCoursesWithEventsMessage(root);
+
         root.removeAttr('data-seen');
         if (root.hasClass('active')) {
             shown(root);
@@ -629,22 +636,13 @@ enableMoreCoursesButtonLoading(root);
     };
 
     /**
-     * If this is the first time this view has been displayed then begin loading
-     * the events.
+     * Begin loading the events.
      *
      * @param {object} root The root element for the timeline courses view.
      */
     var shown = function(root) {
         if (!root.attr('data-seen')) {
-            if (hasLoadedCourses(root)) {
-                // This isn't the first time this view is shown so just reload the
-                // events for the courses we've already loaded.
-                reloadCourseEvents(root);
-            } else {
-                // We haven't loaded any courses yet so do that now.
-                loadMoreCourses(root);
-            }
-
+            loadMoreCourses(root);
             root.attr('data-seen', true);
         }
     };
