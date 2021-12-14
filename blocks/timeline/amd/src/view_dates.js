@@ -36,6 +36,7 @@ function(
 
     var SELECTORS = {
         EVENT_LIST_CONTAINER: '[data-region="event-list-container"]',
+        NO_COURSES_EMPTY_MESSAGE: '[data-region="no-courses-empty-message"]',
     };
 
     /**
@@ -76,7 +77,9 @@ function(
      */
     var init = function(root) {
         root = $(root);
-        if (root.hasClass('active')) {
+
+        // Only need to handle events loading if the user is actively enrolled in a course and this view is active.
+        if (root.hasClass('active') && !root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).length) {
             load(root);
             root.attr('data-seen', true);
         }
