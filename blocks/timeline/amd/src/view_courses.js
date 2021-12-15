@@ -406,6 +406,7 @@ window.console.log("GET EVENTS LOAD");
         var limit = getLimit(root);
         var startTime = getStartTime(root);
         var endTime = getEndTime(root);
+        const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
 
         // Start loading the next set of courses.
         // Fetch up to limit number of courses with at least one action event in the time filtering specified.
@@ -415,6 +416,7 @@ window.console.log("GET EVENTS LOAD");
             limit,
             offset,
             COURSE_SORT,
+            searchValue,
             startTime,
             endTime
         ).then(function(result, startTime, endTime) {
@@ -424,7 +426,6 @@ window.console.log("GET EVENTS LOAD");
             var daysOffset = getDaysOffset(root);
             var daysLimit = getDaysLimit(root);
             var midnight = getMidnight(root);
-            const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
             const morecoursesavailable = result.morecoursesavailable;
 
             // Record the next offset if we want to request more courses.

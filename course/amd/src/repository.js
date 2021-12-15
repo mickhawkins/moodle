@@ -66,11 +66,14 @@ const getEnrolledCoursesByTimelineClassification = (classification, limit, offse
  * @param {int} limit Only return this many results
  * @param {int} offset Skip this many results from the start of the result set
  * @param {string} sort Column to sort by and direction, e.g. 'shortname asc'
+ * @param {string} searchValue Optional text search value
  * @param {int} eventsFrom Optional start timestamp (inclusive) that the course should have event(s) in
  * @param {int} eventsTo Optional end timestamp (inclusive) that the course should have event(s) in
  * @return {object} jQuery promise resolved with courses.
  */
- const getEnrolledCoursesWithEventsByTimelineClassification = (classification, limit, offset, sort, eventsFrom, eventsTo) => {
+ const getEnrolledCoursesWithEventsByTimelineClassification = (classification, limit, offset, sort, searchValue,
+        eventsFrom, eventsTo) => {
+
     const args = {
         classification: classification
     };
@@ -93,6 +96,10 @@ const getEnrolledCoursesByTimelineClassification = (classification, limit, offse
 
     if (typeof eventsTo !== 'undefined') {
         args.eventsto = eventsTo;
+    }
+
+    if (typeof searchValue !== 'undefined') {
+        args.searchvalue = searchValue;
     }
 
     const request = {
