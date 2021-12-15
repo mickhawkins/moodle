@@ -337,7 +337,7 @@ function(
         var courseIds = courses.map(function(course) {
             return course.id;
         });
-window.console.log("GET EVENTS LOAD");
+
         return getEventsForCourseIds(courseIds, startTime, COURSE_EVENT_LIMIT + 1, endTime, searchValue);
     };
 
@@ -401,7 +401,6 @@ window.console.log("GET EVENTS LOAD");
      * @return {object} jQuery promise resolved with courses and events.
      */
     var loadMoreCourses = function(root, append) {
-        window.console.log("HITTING LOAD MORE");
         var offset = getOffset(root);
         var limit = getLimit(root);
         var startTime = getStartTime(root);
@@ -476,87 +475,15 @@ window.console.log("GET EVENTS LOAD");
     };
 
     /**
-     * Reload the events for all of the visible courses. These events will be loaded
-     * in a single request to the server.
-     *
-     * @param {object} root The root element.
-     * @return {object} jQuery promise resolved with courses and events.
-     *
-    var reloadCourseEvents = function(root) {
-        var startReloadTime = Date.now();
-        var startTime = getStartTime(root);
-        var endTime = getEndTime(root);
-        var courseEventsContainers = root.find(SELECTORS.COURSE_EVENTS_CONTAINER);
-        var courseIds = courseEventsContainers.map(function() {
-            return $(this).attr('data-course-id');
-        }).get();
-        const searchValue = root.closest(SELECTORS.TIMELINE_BLOCK).find(SELECTORS.TIMELINE_SEARCH).val();
-
-        // Record when we started our request.
-        setEventReloadTime(root, startReloadTime);
-
-        // Load all of the events for the given courses.
-window.console.log('GET EVENTS - RELOAD');
-        return getEventsForCourseIds(courseIds, startTime, COURSE_EVENT_LIMIT + 1, endTime, searchValue)
-            .then(function(eventsByCourse) {//yyyyy
-                if (hasReloadedEventsSince(root, startReloadTime)) {
-                    // A new reload has begun so ignore our results.
-                    return eventsByCourse;
-                }
-
-                let coursesWithEvents = [];
-
-                if (eventsByCourse.groupedbycourse != undefined) {
-                    eventsByCourse.groupedbycourse.forEach(courseEvents => {
-                        if (courseEvents.events.length > 0) {
-                            coursesWithEvents.push(courseEvents.courseid);
-                        }
-                    });
-                }
-
-                // Show or hide the no events message depending whether any courses fetched have events.
-                if (coursesWithEvents.length > 0) {
-                    hideNoCoursesWithEventsMessage(root);
-                    showMoreCoursesButton(root);
-                } else {
-                    showNoCoursesWithEventsMessage(root);
-                    hideMoreCoursesButton(root);
-                }
-
-                courseEventsContainers.each(function(index, container) {
-                    const rawContainer = container;
-                    container = $(container);
-                    var eventListContainer = rawContainer.querySelector(EventList.rootSelector);
-
-                    // If this course has events to show, initialise and ensure it is visible.
-                    if (coursesWithEvents.includes(parseInt(eventListContainer.dataset.courseId))) {
-                        EventList.init(eventListContainer, additionalConfig);
-                        eventListContainer.parentElement.classList.remove('hidden');
-                        eventListContainer.closest('li').classList.remove('hidden');
-                    } else {
-                    // If no events to show in this course, hide the course (we retain it in case filter changes require it).
-                        eventListContainer.parentElement.classList.add('hidden');
-                        eventListContainer.closest('li').classList.add('hidden');
-                    }
-                });
-
-                return eventsByCourse;
-            }).catch(Notification.exception);
-    };
-    */
-
-    /**
      * Add event listeners to load more courses for the courses view.
      *
      * @param {object} root The root element for the timeline courses view.
      */
     var registerEventListeners = function(root) {
         CustomEvents.define(root, [CustomEvents.events.activate]);
-        // Show more courses and load their events when the user clicks the "more courses"
-        // button.
+        // Show more courses and load their events when the user clicks the "more courses" button.
         root.on(CustomEvents.events.activate, SELECTORS.MORE_COURSES_BUTTON, function(e, data) {
-            window.console.log('Pressed more courses button');
-enableMoreCoursesButtonLoading(root);
+            enableMoreCoursesButtonLoading(root);
             loadMoreCourses(root, true)
                 .then(function() {
                     disableMoreCoursesButtonLoading(root);
