@@ -3934,7 +3934,7 @@ class core_course_external extends external_api {
 
         return [
             'courses' => $formattedcourses,
-            'nextoffset' => $offset + $processedcount //TODO - does this need another value added from all the recursion stuff
+            'nextoffset' => $offset + $processedcount
         ];
     }
 
@@ -4037,7 +4037,7 @@ class core_course_external extends external_api {
             // Fetch courses.
             [
                 'courses' => $coursesfetched,
-                'nextoffset' => $nextoffset,
+                'nextoffset' => $offset,
             ] = self::get_enrolled_courses_by_timeline_classification($classification, $limit,
                     $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue);
 
@@ -4057,14 +4057,15 @@ class core_course_external extends external_api {
                     $courseid = $courseevents->courseid;
 
                     // Only include courses which contain at least one event.
-                    if (!empty($courseevents->events)) {
-                        $coursesfinal[] = $coursesfetched[$courseid];
+                    if (empty($courseevents->events)) {
+                        unset($coursesfetched[$courseid]);
+                    } else {
                         $numfetchedwithevents++;
                     }
                 }
 
-                // Increment the offset.
-                $offset += $nextoffset;
+                // Add courses with events to the final course list.
+                $coursesfinal = array_merge($coursesfinal, $coursesfetched);
 
                 // If any courses did not have events, adjust the limit so we can attempt to fetch as many as are still required.
                 if ($numfetchedwithevents < $numcoursesfetched) {
@@ -4076,6 +4077,7 @@ class core_course_external extends external_api {
             } else {
                 $morecoursestofetch = false;
             }
+
         } while ($morecoursestofetch);
 
         static $isrecursivecall = false;
@@ -4090,11 +4092,8 @@ class core_course_external extends external_api {
                 $classification, 1, $offset, $sort, $customfieldname, $customfieldvalue, $searchvalue, $eventsfrom, $eventsto
             );
 
-            foreach ($additionalcourses['courses'] as $course) {
-                if ($course->hasevents) {
-                    $morecoursesavailable = true;
-                    break;
-                }
+            if (!empty($additionalcourses['courses'])) {
+                $morecoursesavailable = true;
             }
         }
 
