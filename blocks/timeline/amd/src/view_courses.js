@@ -142,7 +142,6 @@ function(
         // Remove any course list contents, since we will display the no events message.
         var container = root.find(SELECTORS.COURSES_LIST);
         Templates.replaceNodeContents(container, '', '');
-//xxx
         root.find(SELECTORS.NO_COURSES_WITH_EVENTS_MESSAGE).removeClass('hidden');
     };
 
@@ -364,6 +363,7 @@ window.console.log("GET EVENTS LOAD");
             dayslimit: daysLimit,
             nodayslimit: daysLimit == undefined,
             courseview: true,
+            hascourses: true
         }).then(function(html) {
             hideLoadingPlaceholder(root);
 
@@ -618,12 +618,12 @@ enableMoreCoursesButtonLoading(root);
     };
 
     /**
-     * Begin loading the events.
+     * Begin loading the events unless we know there are no actively enrolled courses.
      *
      * @param {object} root The root element for the timeline courses view.
      */
     var shown = function(root) {
-        if (!root.attr('data-seen')) {
+        if (!root.attr('data-seen') && !root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).length) {
             loadMoreCourses(root);
             root.attr('data-seen', true);
         }
