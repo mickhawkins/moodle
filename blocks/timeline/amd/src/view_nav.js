@@ -46,7 +46,8 @@ function(
         DATA_DAYS_LIMIT: '[data-days-limit]',
         TIMELINE_SEARCH_INPUT: '[data-region="search-input"]',
         TIMELINE_SEARCH_CLEAR_ICON: '[data-region="clear-icon"]',
-        TIMELINE_SEARCH_SEARCH_ICON: '[data-region="search-icon"]'
+        TIMELINE_SEARCH_SEARCH_ICON: '[data-region="search-icon"]',
+        NO_COURSES_EMPTY_MESSAGE: '[data-region="no-courses-empty-message"]'
     };
 
     /**
@@ -208,9 +209,14 @@ function(
      */
     var init = function(root, timelineViewRoot) {
         root = $(root);
-        registerTimelineDaySelector(root, timelineViewRoot);
+
         registerViewSelector(root, timelineViewRoot);
-        registerSearch(root, timelineViewRoot);
+
+        // Only need to handle filtering if the user is actively enrolled in a course.
+        if (!root.find(SELECTORS.NO_COURSES_EMPTY_MESSAGE).length) {
+            registerTimelineDaySelector(root, timelineViewRoot);
+            registerSearch(root, timelineViewRoot);
+        }
     };
 
     return {
