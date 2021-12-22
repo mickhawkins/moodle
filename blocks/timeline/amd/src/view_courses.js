@@ -48,6 +48,7 @@ function(
         COURSES_LIST: '[data-region="courses-list"]',
         COURSE_ITEMS_LOADING_PLACEHOLDER: '[data-region="course-items-loading-placeholder"]',
         COURSE_EVENTS_CONTAINER: '[data-region="course-events-container"]',
+        COURSE_EVENT_LIST_CONTENT: '[data-region="courses-list"] [data-region="event-list-content"]',
         COURSE_NAME: '[data-region="course-name"]',
         LOADING_ICON: '.loading-icon',
         TIMELINE_BLOCK: '[data-region="timeline"]',
@@ -460,10 +461,10 @@ function(
                             showMoreCoursesButton(root);
                         }
 
-                        //TODO: This doesnt work yet because there's still an empty course container for some reason.
-                        //I must be removing the wrong element in event_list
-                        if (!root.find(`${SELECTORS.COURSES_LIST} ${SELECTORS.COURSE_EVENTS_CONTAINER}`)) {
-                            showNoCoursesWithEventsMessage(root);
+                        //TODO: This doesnt work yet because there's still an element when we reach here, it seems like
+                        //some weird ordering from promises means they exist here and the nare removed in event_list init later.
+                        if (!root.find(SELECTORS.COURSE_EVENT_LIST_CONTENT).length) {
+                            showNoCoursesWithEventsMessage(root);//xxx
                         }
                     } else {
                         // No more courses to load, hide the more courses button.

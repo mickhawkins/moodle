@@ -435,6 +435,7 @@ function(
             searchValue
         );
 
+
         eventsPromise.then(data => {
             if (data.calendarEvents.length) {
                 const renderPromise = render(data.calendarEvents);
