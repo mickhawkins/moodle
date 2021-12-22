@@ -459,6 +459,12 @@ function(
                             // If more courses exist with events matching the current filtering, show the more courses button.
                             showMoreCoursesButton(root);
                         }
+
+                        //TODO: This doesnt work yet because there's still an empty course container for some reason.
+                        //I must be removing the wrong element in event_list
+                        if (!root.find(`${SELECTORS.COURSES_LIST} ${SELECTORS.COURSE_EVENTS_CONTAINER}`)) {
+                            showNoCoursesWithEventsMessage(root);
+                        }
                     } else {
                         // No more courses to load, hide the more courses button.
                         hideMoreCoursesButton(root);

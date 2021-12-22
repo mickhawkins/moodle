@@ -254,8 +254,17 @@ function(
                 firstLoad.then(function(data) {
                     if (!data.hasContent) {
                         loadingPlaceholder.addClass('hidden');
-                        // If we didn't get any data then show the empty data message.
-                        return hideContent(root);
+
+                        // If we didn't get any data in courses view then remove the course.
+                        // This is relavant when filtering by overdue, where the events may be due later 'today'.
+                        if (courseview) {
+                            Templates.replaceNodeContents(root.closest('li'), '', '');
+                            return;
+                        }
+
+                        // If we didn't get any data in dates view then show the empty data message.
+                        hideContent(root);
+                        return;
                     }
 
                     html = $(html);
@@ -311,6 +320,7 @@ function(
      */
     const createLazyLoadingContent = (root, firstLoad, itemLimit, midnight, lastId,
         courseId, daysOffset, daysLimit, searchValue) => {
+
         return loadEventsForLazyLoading(
             root,
             itemLimit,
@@ -378,6 +388,7 @@ function(
                     const dayTimestamp = UserDate.getUserMidnightForTimestamp(event.timesort, midnight);
                     return dayTimestamp > midnight;
                 }
+
                 // When filtering by overdue, we fetch all events due today, in case any have elapsed already and are overdue.
                 // This means if filtering by overdue, some events fetched might not be required (eg if due later today).
                 return (!filterByOverdue || event.overdue);
@@ -423,6 +434,7 @@ function(
             daysLimit,
             searchValue
         );
+
         eventsPromise.then(data => {
             if (data.calendarEvents.length) {
                 const renderPromise = render(data.calendarEvents);
