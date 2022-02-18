@@ -21,7 +21,8 @@
 
     Example context (json):
     {
-        "supportemail": "<a href=\"mailto:support@mail.com\">support@mail.com</a>"
+        "supportemail": "<a href=\"mailto:support@mail.com\">support@mail.com</a>",
+        "supportform": "<input type='text' value='test'>"
     }
 }}
 <div class="card">
@@ -36,4 +37,7 @@
             </div>
         {{/supportemail}}
     </div>
+</div>
+<div class="py-1 pt-3">
+    {{{supportform}}}
 </div>
