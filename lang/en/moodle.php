@@ -1367,6 +1367,19 @@ $string['moodlenet:configoauthservice'] = 'Select a MoodleNet OAuth 2 service to
 $string['moodlenet:eventresourceexported'] = 'Resource exported';
 $string['moodlenet:outboundsettings'] = 'MoodleNet outbound settings';
 $string['moodlenet:sharetomoodlenet'] = 'Share to MoodleNet';
+$string['moodlenet:go_to_moodlenet'] = 'Go to MoodleNet drafts';
+$string['moodlenet:share_notice'] = 'You are sharing this to MoodleNet as a {$a}';
+$string['moodlenet:share_fail_title'] = 'Something went wrong';
+$string['moodlenet:share_fail_text'] = 'There was an error sharing your content to MoodleNet.<br>Please try again later.';
+$string['moodlenet:share_fail_text_with_site_support'] = 'There was an error sharing your content to MoodleNet.<br>Please try again later or <a href="{$a}">contact site support</a>.';
+$string['moodlenet:share_success_title'] = 'Saved to MoodleNet drafts';
+$string['moodlenet:share_success_text'] = "Almost done! Visit your draft in MoodleNet to finish sharing your content.";
+$string['moodlenet:share_to_moodlenet'] = 'Share to MoodleNet';
+$string['moodlenet:share_type_resource'] = 'resource';
+$string['moodlenet:sharing_status'] = 'Sharing to MoodleNet';
+$string['moodlenet:sharing_large_file'] = "Large files can take some time.";
+$string['moodlenet:sharing_to'] = 'Sharing to: ';
+$string['moodlenet:packagingandsending'] = 'Packaging your file and sending to MoodleNet...';
 $string['more'] = 'more';
 $string['morehelp'] = 'More help';
 $string['morehelpaboutmodule'] = 'More help about the {$a} activity';
@@ -1972,6 +1985,7 @@ $string['setmode'] = 'Set mode';
 $string['setpassword'] = 'Set password';
 $string['setpasswordinstructions'] = 'Please enter your new password below, then save changes.';
 $string['settings'] = 'Settings';
+$string['share'] = 'Share';
 $string['shortname'] = 'Short name'; /* @deprecated MDL-34652 - Use shortnamecourse or shortnameuser or some own context specific string. */
 $string['shortnamecollisionwarning'] = '[*] = This shortname is already in use by a course and will need to be changed upon approval';
 $string['shortnamecourse'] = 'Course short name';
