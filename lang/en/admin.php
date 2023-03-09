@@ -585,6 +585,7 @@ $string['enablepdfexportfont_desc'] = 'If your site has courses in different lan
 $string['enablerecordcache'] = 'Enable record cache';
 $string['enablerssfeeds'] = 'Enable RSS feeds';
 $string['enablesearchareas'] = 'Enable search areas';
+$string['enablesharingtomoodlenet'] = 'Enable sharing to MoodleNet';
 $string['enablestats'] = 'Enable statistics';
 $string['enabletrusttext'] = 'Enable trusted content';
 $string['enableuserfeedback'] = 'Enable feedback about this software';
