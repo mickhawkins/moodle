@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace tool_moodlenet\local;
+namespace core\moodlenet;
 
 use backup;
 use backup_controller;
@@ -24,14 +24,18 @@ use cm_info;
 require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 
 /**
- * Content packager using the existing Moodle backup functionality
+ * Packager to prepare appropriate backup of an activity to share to MoodleNet.
+ *
  * @copyright 2023 Raquel Ortega <raquel.ortega@moodle.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class content_packager {
+class activity_packager {
 
     /** @var cm_info $cminfo */
     protected $cminfo;
+
+    /** @var activity_resource $resourceinfo */
+    protected $resourceinfo;
 
     /** @var backup_controller $controller */
     protected $controller;
@@ -41,11 +45,14 @@ class content_packager {
 
     /**
      * Constructor
-     * 
-     * @param cm_info $cminfo
+     *
+     * @param activity_resource $resourceinfo Information about the resource being packaged.
      */
-    public function __construct(cm_info $cminfo) {
+    public function __construct(activity_resource $resourceinfo) {
         global $USER;
+
+        $cminfo = $resourceinfo->get_cm();
+        $this->resourceinfo = $resourceinfo;
 
         // Check backup/restore support.
         if (!plugin_supports('mod', $cminfo->modname , FEATURE_BACKUP_MOODLE2)) {
@@ -65,13 +72,12 @@ class content_packager {
         );
     }
 
-
     /**
-     * Returns the backup file with all the inforamtion.
-     *  
-     * @return array $package
+     * Prepare the backup file and return relevant information.
+     *
+     * @return array Array of relevant backup file information.
      */
-    public function get_package() {
+    public function get_package(): array {
 
         $alltasksettings = $this->get_all_task_settings();
 
@@ -90,7 +96,6 @@ class content_packager {
         return $this->package();
     }
 
-
     /**
      * Get all settings available for override.
      *
@@ -105,15 +110,15 @@ class content_packager {
         return $tasksettings;
     }
 
-
     /**
      * Overrides the given task setting with the given value
-     * 
-     * @param array $alltasksettings All tasks settings  
+     *
+     * @param array $alltasksettings All tasks settings
      * @param string $taskclassname Use the task class name to override the settting
      * @param int $settingvalue
+     * @return void
      */
-    protected function override_task_setting (array $alltasksettings, string $settingname, bool $settingvalue) {
+    protected function override_task_setting (array $alltasksettings, string $settingname, bool $settingvalue): void {
         if (empty($rootsettings = $alltasksettings[backup_root_task::class])) {
             return;
         }
@@ -128,7 +133,6 @@ class content_packager {
         }
     }
 
-
     /**
      * Package the activity identified by CMID.
      *
@@ -141,8 +145,7 @@ class content_packager {
         // Any setting dependent on a setting disabled this way will also be locked by reason of hierarchy, as would be
         // the case in regular interactive backups.
 
-
-        // Executes the backup 
+        // Executes the backup
         $this->controller->execute_plan();
 
         // Grab the result.
@@ -162,5 +165,4 @@ class content_packager {
 
         return $file;
     }
-
 }
