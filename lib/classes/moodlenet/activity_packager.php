@@ -60,7 +60,7 @@ class activity_packager {
         }
 
         $this->cminfo = $cminfo;
-        $this->overriddensettings = []; //What is this
+        $this->overriddensettings = [];
 
         $this->controller = new backup_controller (
             backup::TYPE_1ACTIVITY,
@@ -136,14 +136,13 @@ class activity_packager {
     /**
      * Package the activity identified by CMID.
      *
+     * Custom plan settings, where overrides the settings from a backup plan, by specifying them in the array.
+     * Any setting dependent on a setting disabled this way will also be locked by reason of hierarchy,
+     * as would be the case in regular interactive backups.
+     *
      * @return null|array the activity and file record information. E.g. [activity, filerecord]
      */
-    public function package(): ?array {
-        // Backup the activity.
-        // Custom plan settings - similar to what backup_ui_stage_initial::process() does with the settings form data.
-        // Here we can override the settings for a backup plan, by specifying them in the array.
-        // Any setting dependent on a setting disabled this way will also be locked by reason of hierarchy, as would be
-        // the case in regular interactive backups.
+    protected function package(): ?array {
 
         // Executes the backup
         $this->controller->execute_plan();
@@ -154,7 +153,7 @@ class activity_packager {
             throw new \moodle_exception('Failed to package activity.');
         }
 
-        // Have finished with the controller, let's destroy it, freeing mem and resources.
+        // Controller is not used anymore, freeing resources
         $this->controller->destroy();
 
         // Grab the filename.
@@ -163,6 +162,44 @@ class activity_packager {
             throw new \moodle_exception('Failed to package activity (invalid file).');
         }
 
-        return $file;
+        // Create the location we want to copy this file to.
+        $fr = array(
+            'contextid' => \context_course::instance($this->cminfo->course)->id,
+            'component' => 'tool_moodlenet',
+            'filearea' => 'moodlenet_activity',
+            'itemid' => $this->cminfo->id,
+            'timemodified' => time()
+        );
+
+        // Prepare the file array
+        $fs = get_file_storage();
+
+        // The script should generate a new backup file each time it is run.
+        $fs->delete_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
+
+        if (!$fs->create_file_from_storedfile($fr, $file)) {
+            throw new \moodle_exception("Failed to copy backup file to moodlenet_activity area.");
+        }
+
+        // Delete the old file.
+        $file->delete();
+
+        $areafiles = $fs->get_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
+        foreach ($areafiles as $file) {
+            if (!$file->is_directory()) {
+                $fr['file'] = $file;
+                $fileurl = \moodle_url::make_pluginfile_url(
+                    $file->get_contextid(),
+                    $file->get_component(),
+                    $file->get_filearea(),
+                    $file->get_itemid(),
+                    $file->get_filepath(),
+                    $file->get_filename(),
+                );
+                $fr['fileurl'] = $fileurl;
+            }
+        }
+
+        return $fr;
     }
 }
