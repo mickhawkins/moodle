@@ -62,7 +62,8 @@ class activity_sender {
      *               Format: ['responsecode' => 201, 'drafturl' => 'draft.url/here']
      */
     public static function share_activity(int $courseid, int $cmid, int $userid,
-        http_client $httpclient, client $oauthclient, int $shareformat = self::SHARE_FORMAT_BACKUP): array {
+            http_client $httpclient, client $oauthclient, int $shareformat = self::SHARE_FORMAT_BACKUP): array {
+        global $CFG;
 
         $accesstoken = '';
         $isfileshare = false;
@@ -74,8 +75,10 @@ class activity_sender {
         $coursecontext = \context_course::instance($courseid);
         require_capability('moodle/moodlenet:sendactivity', $coursecontext, $userid);
 
-        if (self::is_valid_instance($issuer) && $oauthclient->is_logged_in()) {
-            $accesstoken = $oauthclient->get_accesstoken();
+//TODO - temporarily bypassing the actual issuer checks here
+        if (1==1) {
+//        if ($CFG->enablesharingtomoodlenet && self::is_valid_instance($issuer) && $oauthclient->is_logged_in()) {
+            $accesstoken = 't0k3n'; //$oauthclient->get_accesstoken();
         } else {
             $responsecode = 404;
         }
@@ -87,24 +90,33 @@ class activity_sender {
 
             // Prepare file in requested format.
             $moodleneturl = $issuer->get('baseurl');
-            $resourcedata = self::prepare_share_contents($resourceinfo, $shareformat);
-            $isfileshare = array_key_exists('filehash', $resourcedata);
+            $filedata = self::prepare_share_contents($resourceinfo, $shareformat);
+            $isfileshare = !empty($filedata['file']);
             $apiurl = rtrim($moodleneturl, '/') . self::API_CREATE_URI;
-
-            // Avoid sending a file larger than the defined limit.
-            if (!empty($resourcedata['filesize']) && $resourcedata['filesize'] > self::MAX_FILESIZE) {
-                // "Payload too large" HTTP code.
-                $responsecode = 413;
-                self::log_event($coursecontext, $cmid, $resourceurl, $responsecode);
-
-                return [
-                    'responsecode' => $responsecode,
-                    'drafturl' => '',
-                ];
-            }
 
             // Multipart API request to MoodleNet if a file is being sent (eg a .mbz).
             if ($isfileshare) {
+
+                // Avoid sending a file larger than the defined limit.
+                if ($filedata['file']->get_filesize() > self::MAX_FILESIZE) {
+                    // "Payload too large" HTTP code.
+                    $responsecode = 413;
+                    self::log_event($coursecontext, $cmid, $resourceurl, $responsecode);
+                    $filedata['file']->delete();
+
+                    return [
+                        'responsecode' => $responsecode,
+                        'drafturl' => '',
+                    ];
+                }
+
+                $filecontents = '';
+                $fh = $filedata['file']->get_content_file_handle();
+                while($fileline = fgets($fh)) {
+                    $filecontents .= $fileline;
+                }
+                fclose($fh);
+
                 $requestdata = [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $accesstoken,
@@ -122,10 +134,10 @@ class activity_sender {
                         ],
                         [
                             'name' => 'filecontents',
-                            'contents' => $resourcedata['filecontents'],
+                            'contents' => $filecontents,
                             'headers' => [
-                                'Content-Disposition' => 'form-data; name=".resource"; filename="'. $resourcedata['filename'] . '"',
-                                'Content-Type' => $resourcedata['contenttype'],
+                                'Content-Disposition' => 'form-data; name=".resource"; filename="'. $filedata['file']->get_filename() . '"',
+                                'Content-Type' => $filedata['file']->get_mimetype(),
                                 'Content-Transfer-Encoding' => 'binary',
                             ],
                         ],
@@ -155,8 +167,7 @@ class activity_sender {
         if ($isfileshare && $shareformat === self::SHARE_FORMAT_BACKUP) {
             // If shared as a file, delete the file now it is no longer required.
             // Note: This is only valid behaviour when sharing is performed synchronously and no retries are performed on failure.
-            self::delete_resource_file($coursecontext, $shareformat, $resourcedata['itemid']);
-//TODO: Confirm item ID is available this way, otherwise everything in that context will be deleted
+            $filedata['file']->delete();
         }
 
         return [
@@ -172,6 +183,7 @@ class activity_sender {
      */
     protected static function is_valid_instance(issuer $issuer): bool {
         $issuerid = $issuer->get('id');
+//TODO: This is wrong:
         $allowedissuer = get_config('core', 'moodlenet/oauthservice');
 
         return ($issuerid == $allowedissuer && $issuer->get('enabled') && $issuer->get('servicetype') == 'moodlenet');
@@ -189,7 +201,8 @@ class activity_sender {
         switch ($shareformat) {
             case self::SHARE_FORMAT_BACKUP:
                 // If sharing the activity as a backup, prepare the packaged backup.
-                $filedata = self::package_activity_backup($resourceinfo);
+                $packager = new activity_packager($resourceinfo);
+                $filedata = $packager->get_package();
                 break;
             default:
                 $filedata = [];
@@ -197,28 +210,6 @@ class activity_sender {
         };
 
         return $filedata;
-    }
-
-    /**
-* TODO: Write this or remove the method if we can actually just do this in the calling code
-     *
-     * @param activity_resource $resourceinfo
-     * @return array
-     */
-    protected static function package_activity_backup(activity_resource $resourceinfo): array {
-
-// TODO: The packaging similar to the MDL-75320 PoC (no user data etc)
-        $packager = new activity_packager($resourceinfo);
-        $file = $packager->get_package();
-
-//TODO - remove this test response once the above packaging works.
-        // return [
-        //     'filecontents' => 'TODO contents',
-        //     'filename' => 'TODO filename',
-        //     'filesize' => '1', // TODO - is this availalble here? If convenient, include it, otherwise remove this and the related checks
-        //     'filehash' => 'TODO hash',
-        //     'contenttype' => 'Application/zip',
-        // ];
     }
 
     /**
@@ -242,20 +233,20 @@ class activity_sender {
         $event->trigger();
     }
 
-    /**
-     * Delete a resource when it is no longer required (eg it has been sent to MoodleNet).
-     *
-     * @param \context $coursecontext The course context where the file exists.
-     * @param int $shareformat The format the file was shared in.
-     * @param int $fileitemid The file item ID to identify which file to delete.
-     * @return void
-     */
-    protected static function delete_resource_file(\context $coursecontext, int $shareformat, string $fileitemid): void {
-        // If a file was created for sharing, delete it.
-        if (!empty($todofileid) && in_array($shareformat, [self::SHARE_FORMAT_BACKUP])) {
-            $fs = get_file_storage();
-            $fs->delete_area_files($coursecontext->id, 'core', 'MoodleNet', $fileitemid);
-            //^TODO: Check this is right - context ID, seems risky potentially deleing for "core'", need to make sure MN is the name used for the file are(or update this)
-        }
-    }
+//TODO: This probably isn't required    /**
+    //  * Delete a resource when it is no longer required (eg it has been sent to MoodleNet).
+    //  *
+    //  * @param \context $coursecontext The course context where the file exists.
+    //  * @param int $shareformat The format the file was shared in.
+    //  * @param int $fileitemid The file item ID to identify which file to delete.
+    //  * @return void
+    //  */
+    // protected static function delete_resource_file(\context $coursecontext, int $shareformat, string $fileitemid): void {
+    //     // If a file was created for sharing, delete it.
+    //     if (!empty($todofileid) && in_array($shareformat, [self::SHARE_FORMAT_BACKUP])) {
+    //         $fs = get_file_storage();
+    //         $fs->delete_area_files($coursecontext->id, 'core', 'MoodleNet', $fileitemid);
+    //         //^TODO: Check this is right - context ID, seems risky potentially deleing for "core'", need to make sure MN is the name used for the file are(or update this)
+    //     }
+    // }
 }
