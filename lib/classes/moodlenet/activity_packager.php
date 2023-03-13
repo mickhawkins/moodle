@@ -81,7 +81,7 @@ class activity_packager {
 
         $alltasksettings = $this->get_all_task_settings();
 
-        //Override and set to 0 all the root settings that are not required in Moodle Net
+        // Override relevant settings to remove user data when packaging to share to MoodleNet.
         $this->override_task_setting($alltasksettings, 'setting_root_anonymize', 1);
         $this->override_task_setting($alltasksettings, 'setting_root_users', 0);
         $this->override_task_setting($alltasksettings, 'setting_root_role_assignments', 0);
@@ -165,7 +165,7 @@ class activity_packager {
         // Create the location we want to copy this file to.
         $fr = array(
             'contextid' => \context_course::instance($this->cminfo->course)->id,
-            'component' => 'tool_moodlenet',
+            'component' => 'core',
             'filearea' => 'moodlenet_activity',
             'itemid' => $this->cminfo->id,
             'timemodified' => time()
