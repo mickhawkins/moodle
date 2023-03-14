@@ -18,8 +18,6 @@ namespace core\moodlenet;
 
 use cm_info;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class to store information about a single activity which is being shared to become a MoodleNet resource.
  *

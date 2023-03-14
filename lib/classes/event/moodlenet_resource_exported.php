@@ -15,7 +15,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace core\event;
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * MoodleNet send attempt event.

@@ -16,13 +16,11 @@
 
 namespace core\moodlenet;
 
-use Exception;
 use core\event\moodlenet_resource_exported;
 use core\http_client;
 use core\oauth2\client;
 use core\oauth2\issuer;
-
-defined('MOODLE_INTERNAL') || die();
+use Exception;
 
 /**
  * API for sharing Moodle LMS activities to MoodleNet instances.
@@ -33,7 +31,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 
 class activity_sender {
-
     /**
      * @var int Backup share format - the content is being shared as a Moodle backup file.
      */
@@ -59,7 +56,7 @@ class activity_sender {
      * @param \core\oauth2\client $oauthclient The OAuth 2 client for the MoodleNet instance.
      * @param int $shareformat The data format to share in. Defaults to a Moodle backup (SHARE_FORMAT_BACKUP).
      * @return array The HTTP response code from MoodleNet and the MoodleNet draft resource URL (URL empty string on fail).
-     *               Format: ['responsecode' => 201, 'drafturl' => 'draft.url/here']
+     *               Format: ['responsecode' => 201, 'drafturl' => 'https://draft.mnurl/here']
      */
     public static function share_activity(int $courseid, int $cmid, int $userid,
             http_client $httpclient, client $oauthclient, int $shareformat = self::SHARE_FORMAT_BACKUP): array {
@@ -68,16 +65,15 @@ class activity_sender {
         $accesstoken = '';
         $isfileshare = false;
         $issuer = $oauthclient->get_issuer();
-        $resourceurl = '';
+        $resourceurl = '#';
         $responsecode = 0;
 
         // Check user can share to the requested MoodleNet instance.
         $coursecontext = \context_course::instance($courseid);
-        require_capability('moodle/moodlenet:sendactivity', $coursecontext, $userid);
+        $userhascap = has_capability('moodle/moodlenet:sendactivity', $coursecontext, $userid);
 
-//TODO - temporarily bypassing the actual issuer checks here
-        if (1==1) {
-//        if ($CFG->enablesharingtomoodlenet && self::is_valid_instance($issuer) && $oauthclient->is_logged_in()) {
+//TODO - temporarily bypassing the actual token checks here >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>vvvvvv
+        if ($userhascap && $CFG->enablesharingtomoodlenet && self::is_valid_instance($issuer)) {// && $oauthclient->is_logged_in()) {
             $accesstoken = 't0k3n'; //$oauthclient->get_accesstoken();
         } else {
             $responsecode = 404;
@@ -94,7 +90,7 @@ class activity_sender {
             $isfileshare = !empty($filedata['file']);
             $apiurl = rtrim($moodleneturl, '/') . self::API_CREATE_URI;
 
-            // Multipart API request to MoodleNet if a file is being sent (eg a .mbz).
+            // Multipart API request to MoodleNet if a file is being sent (eg .mbz).
             if ($isfileshare) {
 
                 // Avoid sending a file larger than the defined limit.
@@ -110,65 +106,30 @@ class activity_sender {
                     ];
                 }
 
-                $filecontents = '';
-                $fh = $filedata['file']->get_content_file_handle();
-                while($fileline = fgets($fh)) {
-                    $filecontents .= $fileline;
+                try {
+                    $requestdata = self::prepare_file_share_request_data($accesstoken, $filedata, $resourceinfo);
+                    $response = $httpclient->request('POST', $apiurl, $requestdata);
+                    $responsecode = $response->getStatusCode();
+                } catch(Exception $e) {
+                    // Something went wrong - set a known fail response.
+                    $responsecode = 401;
+                };
+
+                if ($responsecode == 201) {
+                    $responsebody = json_decode($response->getBody());
+                    $resourceurl = $responsebody->homepage;
+
+                    // TODO: Store consumable information about completed share - to be completed in MDL-77296.
                 }
-                fclose($fh);
 
-                $requestdata = [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . $accesstoken,
-                    ],
-                    'multipart' => [
-                        [
-                            'name' => 'metadata',
-                            'contents' => json_encode([
-                                'name' => $resourceinfo->get_name(),
-                                'description' => $resourceinfo->get_description(),
-                            ]),
-                            'headers' => [
-                                'Content-Disposition' => 'form-data; name="."',
-                            ],
-                        ],
-                        [
-                            'name' => 'filecontents',
-                            'contents' => $filecontents,
-                            'headers' => [
-                                'Content-Disposition' => 'form-data; name=".resource"; filename="'. $filedata['file']->get_filename() . '"',
-                                'Content-Type' => $filedata['file']->get_mimetype(),
-                                'Content-Transfer-Encoding' => 'binary',
-                            ],
-                        ],
-                    ],
-                ];
-            }
-
-            try {
-                $response = $httpclient->request('POST', $apiurl, $requestdata);
-                $responsecode = $response->getStatusCode();
-            } catch(Exception $e) {
-                // Something went wrong - set a known fail response.
-                $responsecode = 401;
-            };
-
-            if ($responsecode == 201) {
-                $responsebody = json_decode($response->getBody());
-                $resourceurl = $responsebody->homepage;
-
-                // TODO: Store consumable information about completed share - to be completed in MDL-77296.
+                // Delete the generated file now it is no longer required.
+                // (It has either been sent, or failed - retries not currently supported).
+                $filedata['file']->delete();
             }
         }
 
-        // Log attempt to share (and whether or not it was successful).
+        // Log every attempt to share (and whether or not it was successful).
         self::log_event($coursecontext, $cmid, $resourceurl, $responsecode);
-
-        if ($isfileshare && $shareformat === self::SHARE_FORMAT_BACKUP) {
-            // If shared as a file, delete the file now it is no longer required.
-            // Note: This is only valid behaviour when sharing is performed synchronously and no retries are performed on failure.
-            $filedata['file']->delete();
-        }
 
         return [
             'responsecode' => $responsecode,
@@ -183,8 +144,7 @@ class activity_sender {
      */
     protected static function is_valid_instance(issuer $issuer): bool {
         $issuerid = $issuer->get('id');
-//TODO: This is wrong:
-        $allowedissuer = get_config('core', 'moodlenet/oauthservice');
+        $allowedissuer = get_config('moodlenet', 'oauthservice');
 
         return ($issuerid == $allowedissuer && $issuer->get('enabled') && $issuer->get('servicetype') == 'moodlenet');
     }
@@ -194,7 +154,7 @@ class activity_sender {
      *
      * @param activity_resource $resourceinfo Information about the resource being shared.
      * @param int $shareformat The share format to prepare (eg SHARE_FORMAT_BACKUP).
-     * @return array Array of metadata about the file, as well as the contents itself. TODO - outline content format
+     * @return array Array of metadata about the file, as well as a stored_file object for the file.
      */
     protected static function prepare_share_contents(activity_resource $resourceinfo, int $shareformat): array {
 
@@ -208,8 +168,56 @@ class activity_sender {
                 $filedata = [];
                 break;
         };
-
+var_dump($filedata);
         return $filedata;
+    }
+
+    /**
+     * Prepare the request data required for sharing a file to MoodleNet.
+     * This creates an array in the format used by \core\httpclient options to send a multipart request.
+     *
+     * @param string $accesstoken The user's OAuth 2 provider access token.
+     * @param array $filedata An array of data relating to the file being shared (as prepared by ::prepare_share_contents).
+     * @param activity_resource $resourceinfo Information about the resource being shared.
+     * @return array Data in the format required to send a file to MoodleNet using \core\httpclient.
+     */
+    protected static function prepare_file_share_request_data(string $accesstoken, array $filedata,
+            activity_resource $resourceinfo): array {
+
+//TODO: Is there a better way, and/or is this correct?
+        $filecontents = '';
+        $fh = $filedata['file']->get_content_file_handle();
+        while($fileline = fgets($fh)) {
+            $filecontents .= $fileline;
+        }
+        fclose($fh);
+
+        return [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $accesstoken,
+            ],
+            'multipart' => [
+                [
+                    'name' => 'metadata',
+                    'contents' => json_encode([
+                        'name' => $resourceinfo->get_name(),
+                        'description' => $resourceinfo->get_description(),
+                    ]),
+                    'headers' => [
+                        'Content-Disposition' => 'form-data; name="."',
+                    ],
+                ],
+                [
+                    'name' => 'filecontents',
+                    'contents' => $filecontents,
+                    'headers' => [
+                        'Content-Disposition' => 'form-data; name=".resource"; filename="'. $filedata['file']->get_filename() . '"',
+                        'Content-Type' => $filedata['file']->get_mimetype(),
+                        'Content-Transfer-Encoding' => 'binary',
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**
@@ -232,21 +240,4 @@ class activity_sender {
         ]);
         $event->trigger();
     }
-
-//TODO: This probably isn't required    /**
-    //  * Delete a resource when it is no longer required (eg it has been sent to MoodleNet).
-    //  *
-    //  * @param \context $coursecontext The course context where the file exists.
-    //  * @param int $shareformat The format the file was shared in.
-    //  * @param int $fileitemid The file item ID to identify which file to delete.
-    //  * @return void
-    //  */
-    // protected static function delete_resource_file(\context $coursecontext, int $shareformat, string $fileitemid): void {
-    //     // If a file was created for sharing, delete it.
-    //     if (!empty($todofileid) && in_array($shareformat, [self::SHARE_FORMAT_BACKUP])) {
-    //         $fs = get_file_storage();
-    //         $fs->delete_area_files($coursecontext->id, 'core', 'MoodleNet', $fileitemid);
-    //         //^TODO: Check this is right - context ID, seems risky potentially deleing for "core'", need to make sure MN is the name used for the file are(or update this)
-    //     }
-    // }
 }
