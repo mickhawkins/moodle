@@ -40,11 +40,8 @@ class activity_packager {
     /** @var backup_controller $controller */
     protected $controller;
 
-    /** @var array $overriddensettings */
-    protected $overriddensettings;
-
     /**
-     * Constructor
+     * Constructor.
      *
      * @param activity_resource $resourceinfo Information about the resource being packaged.
      */
@@ -60,8 +57,6 @@ class activity_packager {
         }
 
         $this->cminfo = $cminfo;
-        $this->overriddensettings = [];
-
         $this->controller = new backup_controller (
             backup::TYPE_1ACTIVITY,
             $cminfo->id,
@@ -73,9 +68,10 @@ class activity_packager {
     }
 
     /**
-     * Prepare the backup file and return relevant information.
+     * Prepare the backup file using appropriate setting overrides and return relevant information.
      *
-     * @return array Array of relevant backup file information.
+     * @return array Array containing packaged file and stored_file object describing it.
+     *               Array in the format [storedfile => stored_file object, filecontents => raw file].
      */
     public function get_package(): array {
 
@@ -97,9 +93,9 @@ class activity_packager {
     }
 
     /**
-     * Get all settings available for override.
+     * Get all backup settings available for override.
      *
-     * @return array the associative array of taskclass => settings instances
+     * @return array the associative array of taskclass => settings instances.
      */
     protected function get_all_task_settings(): array {
         $tasksettings = [];
@@ -111,11 +107,11 @@ class activity_packager {
     }
 
     /**
-     * Overrides the given task setting with the given value
+     * Override a backup task setting with a given value.
      *
-     * @param array $alltasksettings All tasks settings
-     * @param string $taskclassname Use the task class name to override the settting
-     * @param int $settingvalue
+     * @param array $alltasksettings All task settings.
+     * @param string $taskclassname Use the task class name to override the setting.
+     * @param int $settingvalue Value to be given to the setting.
      * @return void
      */
     protected function override_task_setting (array $alltasksettings, string $settingname, bool $settingvalue): void {
@@ -127,7 +123,6 @@ class activity_packager {
             $name = $setting->get_ui_name();
             if ($name == $settingname && $settingvalue != $setting->get_value()) {
                 $setting->set_value($settingvalue);
-                $this->overriddensettings[$settingname] = $settingvalue;
                 return;
             }
         }
@@ -136,71 +131,64 @@ class activity_packager {
     /**
      * Package the activity identified by CMID.
      *
-     * Custom plan settings, where overrides the settings from a backup plan, by specifying them in the array.
-     * Any setting dependent on a setting disabled this way will also be locked by reason of hierarchy,
-     * as would be the case in regular interactive backups.
-     *
-     * @return null|array the activity and file record information. E.g. [activity, filerecord]
+     * @return array Array containing packaged file and stored_file object describing it.
+     *               Array in the format [storedfile => stored_file object, filecontents => raw file].
+     * @throws \moodle_exception.
      */
-    protected function package(): ?array {
+    protected function package(): array {
 
-        // Executes the backup
+        // Execute the backup and fetch the result.
         $this->controller->execute_plan();
-
-        // Grab the result.
         $result = $this->controller->get_results();
+        // Controller no longer required.
+        $this->controller->destroy();
+
         if (!isset($result['backup_destination'])) {
             throw new \moodle_exception('Failed to package activity.');
         }
 
-        // Controller is not used anymore, freeing resources
-        $this->controller->destroy();
+        $backupfile = $result['backup_destination'];
 
-        // Grab the filename.
-        $file = $result['backup_destination'];
-        if (!$file->get_contenthash()) {
+        if (!$backupfile->get_contenthash()) {
             throw new \moodle_exception('Failed to package activity (invalid file).');
         }
 
         // Create the location we want to copy this file to.
-        $fr = array(
+        $time = time();
+        $fr = [
             'contextid' => \context_course::instance($this->cminfo->course)->id,
             'component' => 'core',
-            'filearea' => 'moodlenet_activity',
-            'itemid' => $this->cminfo->id,
-            'timemodified' => time()
-        );
+            'filearea' => 'moodlenet_resource',
+            'filename' => $this->cminfo->modname . '_backup.mbz',
+            // Add timestamp to itemid to make it unique, to avoid any collisions.
+            'itemid' => $this->cminfo->id . $time,
+            'timemodified' => $time,
+        ];
 
-        // Prepare the file array
+        // Create the local file based on the backup.
         $fs = get_file_storage();
+        $packagedfiledata = [
+            'storedfile' => $fs->create_file_from_storedfile($fr, $backupfile),
+        ];
 
-        // The script should generate a new backup file each time it is run.
-        $fs->delete_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
-//TODO: Is this right? ^^^ or was this part of the PoC because we only needed a single file. We need to support there being multiple shared
-
-        if (!$fs->create_file_from_storedfile($fr, $file)) {
+        if (!$packagedfiledata['storedfile']) {
             throw new \moodle_exception("Failed to copy backup file to moodlenet_activity area.");
         }
 
-        // Delete the old file.
-        //$file->delete();
+        // Delete the backup now it has been created in the file area.
+        $backupfile->delete();
 
-        $areafiles = $fs->get_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
-        foreach ($areafiles as $file) {
-            if (!$file->is_directory()) {
-                $fr['file'] = $file;
-                $fileurl = \moodle_url::make_pluginfile_url(
-                    $file->get_contextid(),
-                    $file->get_component(),
-                    $file->get_filearea(),
-                    $file->get_itemid(),
-                    $file->get_filepath(),
-                    $file->get_filename(),
-                );
-                $fr['fileurl'] = $fileurl;
-            }
-        }
+        // Fetch the raw file content and return it along with the stored_file object data.
+//        $areafiles = $fs->get_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid'], '', false);
+//        $packagedfiledata = [
+//            'storedfile' => reset($areafiles),
+//        ];
 
-        return $fr;
+        ob_start();
+        $fs->get_file_system()->readfile($packagedfiledata['storedfile']);
+        $packagedfiledata['filecontents'] = ob_get_contents();
+        ob_end_clean();
+
+        return $packagedfiledata;
     }
 }

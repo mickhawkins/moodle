@@ -87,18 +87,18 @@ class activity_sender {
             // Prepare file in requested format.
             $moodleneturl = $issuer->get('baseurl');
             $filedata = self::prepare_share_contents($resourceinfo, $shareformat);
-            $isfileshare = !empty($filedata['file']);
+            $isfileshare = !empty($filedata['storedfile']);
             $apiurl = rtrim($moodleneturl, '/') . self::API_CREATE_URI;
 
             // Multipart API request to MoodleNet if a file is being sent (eg .mbz).
             if ($isfileshare) {
 
                 // Avoid sending a file larger than the defined limit.
-                if ($filedata['file']->get_filesize() > self::MAX_FILESIZE) {
+                if ($filedata['storedfile']->get_filesize() > self::MAX_FILESIZE) {
                     // "Payload too large" HTTP code.
                     $responsecode = 413;
                     self::log_event($coursecontext, $cmid, $resourceurl, $responsecode);
-                    $filedata['file']->delete();
+                    $filedata['storedfile']->delete();
 
                     return [
                         'responsecode' => $responsecode,
@@ -124,7 +124,7 @@ class activity_sender {
 
                 // Delete the generated file now it is no longer required.
                 // (It has either been sent, or failed - retries not currently supported).
-                $filedata['file']->delete();
+                $filedata['storedfile']->delete();
             }
         }
 
@@ -142,7 +142,7 @@ class activity_sender {
      *
      * @return bool true if the issuer is enabled and available to share to.
      */
-    protected static function is_valid_instance(issuer $issuer): bool {
+    public static function is_valid_instance(issuer $issuer): bool {
         $issuerid = $issuer->get('id');
         $allowedissuer = get_config('moodlenet', 'oauthservice');
 
@@ -168,7 +168,7 @@ class activity_sender {
                 $filedata = [];
                 break;
         };
-//var_dump($filedata); xxx
+
         return $filedata;
     }
 
@@ -184,25 +184,6 @@ class activity_sender {
     protected static function prepare_file_share_request_data(string $accesstoken, array $filedata,
             activity_resource $resourceinfo): array {
 
-//TODO: Is there a better way, and/or is this correct?
-        $filecontents = '';
-        $fh = $filedata['file']->get_content_file_handle();
-        echo '<pre>' . var_export($filedata['file'], true) . '</pre>';
-        echo "File URL: " . $filedata['fileurl'];
-        $filecontents = file_get_contents($filedata['fileurl']);
-        var_dump($filecontents);
-        exit;
-//This is potentially the format for the URL to be able to get contents?
-//$baseurl = "$CFG->wwwroot/pluginfile.php/$results->contextid/$results->component/$results->filearea/$results->itemid/$filename";
-//http://localhost/stable_master/pluginfile.php/1838/core/moodlenet_activity/500/backup.mbz
-//$filecontents = file_get_contents($fh);
-        
-        // while($fileline = fgets($fh)) {
-        //     $filecontents .= $fileline;
-        // }
-        fclose($fh);
-
-        var_dump($filecontents);exit;
         return [
             'headers' => [
                 'Authorization' => 'Bearer ' . $accesstoken,
@@ -220,10 +201,10 @@ class activity_sender {
                 ],
                 [
                     'name' => 'filecontents',
-                    'contents' => $filecontents,
+                    'contents' => $filedata['filecontents'],
                     'headers' => [
-                        'Content-Disposition' => 'form-data; name=".resource"; filename="'. $filedata['file']->get_filename() . '"',
-                        'Content-Type' => $filedata['file']->get_mimetype(),
+                        'Content-Disposition' => 'form-data; name=".resource"; filename="'. $filedata['storedfile']->get_filename() . '"',
+                        'Content-Type' => $filedata['storedfile']->get_mimetype(),
                         'Content-Transfer-Encoding' => 'binary',
                     ],
                 ],
