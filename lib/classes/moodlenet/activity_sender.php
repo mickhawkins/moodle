@@ -168,7 +168,7 @@ class activity_sender {
                 $filedata = [];
                 break;
         };
-var_dump($filedata);
+//var_dump($filedata); xxx
         return $filedata;
     }
 
@@ -187,11 +187,22 @@ var_dump($filedata);
 //TODO: Is there a better way, and/or is this correct?
         $filecontents = '';
         $fh = $filedata['file']->get_content_file_handle();
-        while($fileline = fgets($fh)) {
-            $filecontents .= $fileline;
-        }
+        echo '<pre>' . var_export($filedata['file'], true) . '</pre>';
+        echo "File URL: " . $filedata['fileurl'];
+        $filecontents = file_get_contents($filedata['fileurl']);
+        var_dump($filecontents);
+        exit;
+//This is potentially the format for the URL to be able to get contents?
+//$baseurl = "$CFG->wwwroot/pluginfile.php/$results->contextid/$results->component/$results->filearea/$results->itemid/$filename";
+//http://localhost/stable_master/pluginfile.php/1838/core/moodlenet_activity/500/backup.mbz
+//$filecontents = file_get_contents($fh);
+        
+        // while($fileline = fgets($fh)) {
+        //     $filecontents .= $fileline;
+        // }
         fclose($fh);
 
+        var_dump($filecontents);exit;
         return [
             'headers' => [
                 'Authorization' => 'Bearer ' . $accesstoken,

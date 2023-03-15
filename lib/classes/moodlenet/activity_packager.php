@@ -176,13 +176,14 @@ class activity_packager {
 
         // The script should generate a new backup file each time it is run.
         $fs->delete_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
+//TODO: Is this right? ^^^ or was this part of the PoC because we only needed a single file. We need to support there being multiple shared
 
         if (!$fs->create_file_from_storedfile($fr, $file)) {
             throw new \moodle_exception("Failed to copy backup file to moodlenet_activity area.");
         }
 
         // Delete the old file.
-        $file->delete();
+        //$file->delete();
 
         $areafiles = $fs->get_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid']);
         foreach ($areafiles as $file) {
