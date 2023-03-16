@@ -75,9 +75,8 @@ class activity_sender {
         $coursecontext = \context_course::instance($courseid);
         $userhascap = has_capability('moodle/moodlenet:sendactivity', $coursecontext, $userid);
 
-//TODO - temporarily bypassing the actual token checks here >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>vvvvvv
-        if ($userhascap && $CFG->enablesharingtomoodlenet && self::is_valid_instance($issuer)) {// && $oauthclient->is_logged_in()) {
-            $accesstoken = 't0k3n'; //$oauthclient->get_accesstoken();
+        if ($userhascap && $CFG->enablesharingtomoodlenet && self::is_valid_instance($issuer) && $oauthclient->is_logged_in()) {
+            $accesstoken = $oauthclient->get_accesstoken();
         } else {
             $responsecode = 404;
         }
