@@ -171,23 +171,18 @@ class activity_packager {
             'storedfile' => $fs->create_file_from_storedfile($fr, $backupfile),
         ];
 
+        // Delete the backup now it has been created in the file area.
+        $backupfile->delete();
+
         if (!$packagedfiledata['storedfile']) {
             throw new \moodle_exception("Failed to copy backup file to moodlenet_activity area.");
         }
 
-        // Delete the backup now it has been created in the file area.
-        $backupfile->delete();
+        // Ensure we can handle files at the upper end of the limit.
+         raise_memory_limit((string) activity_sender::MAX_FILESIZE);
 
-        // Fetch the raw file content and return it along with the stored_file object data.
-//        $areafiles = $fs->get_area_files($fr['contextid'], $fr['component'], $fr['filearea'], $fr['itemid'], '', false);
-//        $packagedfiledata = [
-//            'storedfile' => reset($areafiles),
-//        ];
-
-        ob_start();
-        $fs->get_file_system()->readfile($packagedfiledata['storedfile']);
-        $packagedfiledata['filecontents'] = ob_get_contents();
-        ob_end_clean();
+        // Get the actual file content.
+        $packagedfiledata['filecontents'] = $packagedfiledata['storedfile']->get_content();
 
         return $packagedfiledata;
     }

@@ -32,9 +32,10 @@ list ($course, $cm) = get_course_and_cm_from_cmid($id, 'assign');
 require_login($course, true, $cm);
 
 /////////////TEST/////////////
+
 /** Test the MN activity sender */
 $courseid = $course->id;
-$cmid = $cm->id;
+$cmid = 569; //large file $cm->id; //
 $userid = 2;
 $httpclient = new \core\http_client();
 $issuerid = 14;
@@ -45,15 +46,26 @@ $oauthclient =  \core\oauth2\api::get_user_oauth_client($issuer, new moodle_url(
 $shareformat = \core\moodlenet\activity_sender::SHARE_FORMAT_BACKUP;
 $result = \core\moodlenet\activity_sender::share_activity($courseid, $cmid, $userid, $httpclient, $oauthclient, $shareformat);
 
-echo "<pre>" . var_export($result, true) . "</pre>";exit;
+echo "<pre>" . var_export($result, true) . "</pre>";
 
-/** Test file stuff */
-// $resourceinfo = new \core\moodlenet\activity_resource($course->id, $cm->id);
+exit();
 
-// $packager = new \core\moodlenet\activity_packager($resourceinfo);
-// $file = $packager->get_package();
+/** Test file packaging stuff only */
+//  $resourceinfo = new \core\moodlenet\activity_resource($course->id, $cm->id);
+
+//  $packager = new \core\moodlenet\activity_packager($resourceinfo);
+//  $filedata = $packager->get_package();
 
 //echo "<pre>" . var_export($file, true) . "</pre>";exit;
+
+ // Use this to test what is being downloaded.
+ header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
+ header("Content-Type: application/zip");
+ header("Content-Transfer-Encoding: Binary");
+ header("Content-Length:". $filedata['storedfile']->get_filesize());
+ header("Content-Disposition: attachment; filename=" . $filedata['storedfile']->get_filename());
+ echo $filedata['filecontents'];
+ die();
 
 /////////////END TEST/////////////
 

@@ -44,7 +44,7 @@ class activity_sender {
     /**
      * @var int Maximum upload file size (1.07 GB).
      */
-    protected const MAX_FILESIZE = 1070000000;
+    public const MAX_FILESIZE = 1070000000;
 
     /**
      * Share an activity/resource to MoodleNet.
@@ -61,6 +61,9 @@ class activity_sender {
     public static function share_activity(int $courseid, int $cmid, int $userid,
             http_client $httpclient, client $oauthclient, int $shareformat = self::SHARE_FORMAT_BACKUP): array {
         global $CFG;
+
+        // This may take a long time if a lot of data is being shared.
+        \core_php_time_limit::raise();
 
         $accesstoken = '';
         $isfileshare = false;
