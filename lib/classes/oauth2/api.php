@@ -76,7 +76,7 @@ class api {
     /**
      * Create one of the standard issuers.
      *
-     * @param string $type One of google, facebook, microsoft, nextcloud or imsobv2p1
+     * @param string $type One of google, facebook, microsoft, MoodleNet, nextcloud or imsobv2p1
      * @param string|false $baseurl Baseurl (only required for nextcloud and imsobv2p1)
      * @return \core\oauth2\issuer
      */
@@ -95,6 +95,7 @@ class api {
             case 'google':
             case 'facebook':
             case 'microsoft':
+            case 'moodlenet':
                 $classname = self::get_service_classname($type);
                 $issuer = $classname::init();
                 if ($baseurl) {
