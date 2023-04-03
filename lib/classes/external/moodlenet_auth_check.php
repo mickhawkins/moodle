@@ -36,9 +36,9 @@ use moodle_url;
 class moodlenet_auth_check extends external_api {
 
     /** @var int MoodleNet authorization window's height. */
-    const MOODLENET_WINDOW_HEIGHT = 400;
+    const MOODLENET_WINDOW_HEIGHT = 550;
     /** @var int MoodleNet authorization window's width. */
-    const MOODLENET_WINDOW_WIDTH = 500;
+    const MOODLENET_WINDOW_WIDTH = 550;
 
     /**
      * Returns description of parameters.
