@@ -32,26 +32,19 @@ require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
  */
 class activity_packager {
 
-    /** @var cm_info $cminfo */
-    protected $cminfo;
-
-    /** @var activity_resource $resourceinfo */
-    protected $resourceinfo;
-
     /** @var backup_controller $controller */
     protected $controller;
 
     /**
      * Constructor.
      *
-     * @param activity_resource $resourceinfo Information about the resource being packaged.
+     * @param cm_info $cminfo context module information about the resource being packaged.
+     * @param int $userid The ID of the user performing the packaging.
      */
-    public function __construct(activity_resource $resourceinfo) {
-        global $USER;
-
-        $cminfo = $resourceinfo->get_cm();
-        $this->resourceinfo = $resourceinfo;
-
+    public function __construct(
+        protected cm_info $cminfo,
+        protected int $userid
+    ) {
         // Check backup/restore support.
         if (!plugin_supports('mod', $cminfo->modname , FEATURE_BACKUP_MOODLE2)) {
             throw new \coding_exception("Cannot backup module $cminfo->modname. This module doesn't support the backup feature.");
@@ -64,7 +57,7 @@ class activity_packager {
             backup::FORMAT_MOODLE,
             backup::INTERACTIVE_NO,
             backup::MODE_GENERAL,
-            $USER->id
+            $userid
         );
     }
 

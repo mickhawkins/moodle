@@ -37,7 +37,7 @@ class activity_packager_test extends \advanced_testcase {
      * @return void
      */
     public function test_override_task_setting() {
-        $this->resetAfterTest(true);
+        $this->resetAfterTest();
         $this->setAdminUser();
 
         $generator = $this->getDataGenerator();

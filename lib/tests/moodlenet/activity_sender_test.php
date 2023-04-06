@@ -265,12 +265,12 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
         $this->assertTrue(activity_sender::can_user_share($this->coursecontext, $manager1->id));
 
         // Teacher who has the capabilities can share the activity.
-        assign_capability('moodle/moodlenet:sendactivity', CAP_ALLOW, $teacherrole->id, $this->coursecontext);
+        assign_capability('moodle/moodlenet:shareactivity', CAP_ALLOW, $teacherrole->id, $this->coursecontext);
         assign_capability('moodle/backup:backupactivity', CAP_ALLOW, $teacherrole->id, $this->coursecontext);
         $this->assertTrue(activity_sender::can_user_share($this->coursecontext, $teacher1->id));
 
         // Editing-teacher who does not have the capabilities can not share the activity.
-        assign_capability('moodle/moodlenet:sendactivity', CAP_PROHIBIT, $editingteacherrole->id, $this->coursecontext);
+        assign_capability('moodle/moodlenet:shareactivity', CAP_PROHIBIT, $editingteacherrole->id, $this->coursecontext);
         $this->assertFalse(activity_sender::can_user_share($this->coursecontext, $teacher2->id));
     }
 
