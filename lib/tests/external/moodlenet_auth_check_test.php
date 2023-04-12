@@ -62,12 +62,10 @@ class moodlenet_auth_check_test extends externallib_advanced_testcase {
             'loginparamsoffline' => '',
             'showonloginpage' => issuer::SERVICEONLY,
             'servicetype' => 'moodlenet',
+            'enabled' => 0,
         ];
         $issuer = new issuer(0, $record);
         $issuer->create();
-        $issuer->set('enabled', 0);
-        $irecord = $issuer->to_record();
-        api::update_issuer($irecord);
 
         // Test with the user does not have permission.
         $this->setUser($user);

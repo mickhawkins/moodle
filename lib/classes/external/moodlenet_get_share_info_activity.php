@@ -102,15 +102,10 @@ class moodlenet_get_share_info_activity extends external_api {
             return self::return_errors($issuerid, 'errorissuernotenabled', get_string('moodlenet:issuerisnotenabled', 'moodle'));
         }
 
-        // Get activity information.
-        $status = true;
-        $activitytype = get_string('modulename', $coursemodule->modname);
-        $activityname = $coursemodule->name;
-
         return [
-            'status' => $status,
-            'name' => $activityname,
-            'type' => $activitytype,
+            'status' => true,
+            'name' => $coursemodule->name,
+            'type' => get_string('modulename', $coursemodule->modname),
             'server' => $issuer->get_display_name(),
             'supportpageurl' => $supporturl,
             'issuerid' => $issuerid,

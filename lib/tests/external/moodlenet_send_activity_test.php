@@ -65,12 +65,10 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
             'loginparamsoffline' => '',
             'showonloginpage' => issuer::SERVICEONLY,
             'servicetype' => 'moodlenet',
+            'enabled' => 0,
         ];
         $issuer = new issuer(0, $record);
         $issuer->create();
-        $issuer->set('enabled', 0);
-        $irecord = $issuer->to_record();
-        api::update_issuer($irecord);
 
         // Test with the experimental flag off.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
@@ -116,7 +114,7 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
         $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
 
         set_config('oauthservice', $issuer->get('id'), 'moodlenet');
-        // Test with the issuer is not authorized yet.
+        // Test with the issuer not yet authorized.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
         $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);

@@ -81,7 +81,7 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $this->assertEquals('errorissuernotset', $result['warnings'][0]['warningcode']);
         $this->assertEquals(get_string('moodlenet:issuerisnotset', 'moodle'), $result['warnings'][0]['message']);
 
-        // Test the 1st activity with OAuth2 is disabled.
+        // Test the 1st activity with OAuth2 disabled.
         set_config('oauthservice', $issuer->get('id'), 'moodlenet');
         $issuer->set('enabled', 0);
         $irecord = $issuer->to_record();

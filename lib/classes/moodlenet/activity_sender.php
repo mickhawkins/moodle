@@ -108,7 +108,10 @@ class activity_sender {
                         ]);
                 }
 
-                $resourcedescription = $DB->get_field($this->cminfo->modname, 'intro', ['id' => $this->cminfo->instance]);
+                $resourcedescription = format_text(
+                    $DB->get_field($this->cminfo->modname, 'intro', ['id' => $this->cminfo->instance]),
+                    FORMAT_PLAIN
+                );
                 $moodlenetclient = new moodlenet_client($this->httpclient, $this->oauthclient, $this->cminfo->name, $resourcedescription);
                 $response = $moodlenetclient->create_resource_from_file($filedata);
                 $responsecode = $response->getStatusCode();

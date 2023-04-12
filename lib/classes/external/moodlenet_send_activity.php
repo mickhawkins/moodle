@@ -78,8 +78,6 @@ class moodlenet_send_activity extends external_api {
             'shareformat' => $shareformat,
         ]);
 
-        $warnings = [];
-
         // Check capability.
         $coursecontext = context_course::instance($courseid);
         $usercanshare = utilities::can_user_share($coursecontext, $USER->id);
@@ -122,16 +120,14 @@ class moodlenet_send_activity extends external_api {
                 return self::return_errors($result['responsecode'], 'errorsendingactivity',
                     get_string('moodlenet:cannotconnecttoserver', 'moodle'));
             }
-            $status = true;
-            $resourceurl = $result['drafturl'];
         } catch(\moodle_exception $e) {
             return self::return_errors(0, 'errorsendingactivity', $e->getMessage());
         }
 
         return [
-            'status' => $status,
-            'resourceurl' => $resourceurl,
-            'warnings' => $warnings,
+            'status' => true,
+            'resourceurl' => $result['drafturl'],
+            'warnings' => [],
         ];
     }
 
