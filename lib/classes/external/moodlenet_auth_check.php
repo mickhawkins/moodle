@@ -17,7 +17,8 @@
 namespace core\external;
 
 use context_course;
-use core\moodlenet\activity_sender;
+use core\moodlenet\moodlenet_client;
+use core\moodlenet\utilities;
 use core\oauth2\api;
 use core_external\external_api;
 use core_external\external_function_parameters;
@@ -34,11 +35,6 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class moodlenet_auth_check extends external_api {
-
-    /** @var int MoodleNet authorization window's height. */
-    const MOODLENET_WINDOW_HEIGHT = 400;
-    /** @var int MoodleNet authorization window's width. */
-    const MOODLENET_WINDOW_WIDTH = 500;
 
     /**
      * Returns description of parameters.
@@ -73,27 +69,27 @@ class moodlenet_auth_check extends external_api {
 
         // Check capability.
         $coursecontext = context_course::instance($courseid);
-        $usercanshare = activity_sender::can_user_share($coursecontext, $USER->id);
+        $usercanshare = utilities::can_user_share($coursecontext, $USER->id);
         if (!$usercanshare) {
             return self::return_errors($courseid, 'errorpermission',
-                get_string('nopermissions', 'error', get_string('moodlenet:share_to_moodlenet', 'moodle')));
+                get_string('nopermissions', 'error', get_string('moodlenet:sharetomoodlenet', 'moodle')));
         }
 
         // Get the issuer.
         $issuer = api::get_issuer($issuerid);
         // Validate the issuer and check if it is enabled or not.
-        if (!activity_sender::is_valid_instance($issuer)) {
-            return self::return_errors($issuerid, 'errorissuernotenabled', get_string('invalidparameter', 'error'));
+        if (!utilities::is_valid_instance($issuer)) {
+            return self::return_errors($issuerid, 'errorissuernotenabled', get_string('invalidparameter', 'debug'));
         }
 
-        $returnurl = new moodle_url('/lib/classes/moodlenet/callback.php');
+        $returnurl = new moodle_url('/admin/moodlenet_oauth2_callback.php');
         $returnurl->param('issuerid', $issuerid);
         $returnurl->param('callback', 'yes');
         $returnurl->param('sesskey', sesskey());
 
         // Get the OAuth Client.
-        if (!$oauthclient = api::get_user_oauth_client($issuer, $returnurl, activity_sender::API_SCOPE_CREATE, true)) {
-            return self::return_errors($issuerid, 'erroroauthclient', get_string('invalidparameter', 'error'));
+        if (!$oauthclient = api::get_user_oauth_client($issuer, $returnurl, moodlenet_client::API_SCOPE_CREATE, true)) {
+            return self::return_errors($issuerid, 'erroroauthclient', get_string('invalidparameter', 'debug'));
         }
 
         $status = false;
@@ -106,12 +102,9 @@ class moodlenet_auth_check extends external_api {
             $status = true;
         }
 
-
         return [
             'status' => $status,
             'loginurl' => $loginurl,
-            'windowsizeheight' => self::MOODLENET_WINDOW_HEIGHT,
-            'windowsizewidth' => self::MOODLENET_WINDOW_WIDTH,
             'warnings' => $warnings,
         ];
     }
@@ -126,8 +119,6 @@ class moodlenet_auth_check extends external_api {
         return new external_single_structure([
             'loginurl' => new external_value(PARAM_RAW, 'Login url'),
             'status' => new external_value(PARAM_BOOL, 'status: true if success'),
-            'windowsizeheight' => new external_value(PARAM_INT, 'MoodleNet authorization window\'s height'),
-            'windowsizewidth' => new external_value(PARAM_INT, 'MoodleNet authorization window\'s width'),
             'warnings' => new external_warnings(),
         ]);
     }
@@ -150,8 +141,6 @@ class moodlenet_auth_check extends external_api {
         return [
             'status' => false,
             'loginurl' => '',
-            'windowsizeheight' => self::MOODLENET_WINDOW_HEIGHT,
-            'windowsizewidth' => self::MOODLENET_WINDOW_WIDTH,
             'warnings' => $warnings,
         ];
     }

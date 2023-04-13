@@ -45,14 +45,14 @@ Feature: MoodleNet outbound send activity
   Scenario: Share to MoodleNet menu only be available for user that has capability only
     Given the following "permission overrides" exist:
       | capability                    | permission | role           | contextlevel | reference |
-      | moodle/moodlenet:sendactivity | Prohibit   | editingteacher | Course       | C1        |
+      | moodle/moodlenet:shareactivity | Prohibit   | editingteacher | Course       | C1        |
     When I am on the "Test Assignment 1" "assign activity" page logged in as teacher1
     Then "Share to MoodleNet" "link" should not exist in current page administration
     And I am on the "Test Assignment 1" "assign activity" page logged in as manager1
     And "Share to MoodleNet" "link" should exist in current page administration
     And the following "permission overrides" exist:
       | capability                    | permission | role    | contextlevel | reference |
-      | moodle/moodlenet:sendactivity | Prohibit   | manager | Course       | C1        |
+      | moodle/moodlenet:shareactivity | Prohibit   | manager | Course       | C1        |
     And I am on the "Test Assignment 1" "assign activity" page logged in as manager1
     And "Share to MoodleNet" "link" should not exist in current page administration
 

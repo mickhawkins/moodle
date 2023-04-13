@@ -17,7 +17,7 @@
 namespace core\external;
 
 use context_course;
-use core\moodlenet\activity_sender;
+use core\moodlenet\utilities;
 use core\oauth2\api;
 use core_external\external_api;
 use core_external\external_function_parameters;
@@ -62,30 +62,29 @@ class moodlenet_get_share_info_activity extends external_api {
             'cmid' => $cmid
         ]);
 
-        $status = false;
-        $warnings = [];
-        $activitytype = '';
-        $activityname = '';
-        $supporturl = '';
-        $issuerid = get_config('moodlenet', 'oauthservice');
-
-        if ($coursemodule = get_coursemodule_from_id(false, $cmid)) {
-            $status = true;
-            $activitytype = get_string('modulename', $coursemodule->modname);
-            $activityname = $coursemodule->name;
-        } else {
+        // Get course module.
+        $coursemodule = get_coursemodule_from_id(false, $cmid);
+        if (!$coursemodule) {
             return self::return_errors($cmid, 'errorgettingactivityinformation', get_string('invalidcoursemodule', 'error'));
         }
 
         // Get course.
-        [$course, $cm] = get_course_and_cm_from_cmid($cmid);
+        $course = get_course($coursemodule->course);
 
         // Check capability.
         $coursecontext = context_course::instance($course->id);
-        $usercanshare = activity_sender::can_user_share($coursecontext, $USER->id);
+        $usercanshare = utilities::can_user_share($coursecontext, $USER->id);
         if (!$usercanshare) {
             return self::return_errors($cmid, 'errorpermission',
-                get_string('nopermissions', 'error', get_string('moodlenet:share_to_moodlenet', 'moodle')));
+                get_string('nopermissions', 'error', get_string('moodlenet:sharetomoodlenet', 'moodle')));
+        }
+
+        $warnings = [];
+        $supporturl = '';
+        $issuerid = get_config('moodlenet', 'oauthservice');
+
+        if (empty($issuerid)) {
+            return self::return_errors(0, 'errorissuernotset', get_string('moodlenet:issuerisnotset', 'moodle'));
         }
 
         if ($CFG->supportavailability && $CFG->supportavailability != CONTACT_SUPPORT_DISABLED) {
@@ -99,14 +98,14 @@ class moodlenet_get_share_info_activity extends external_api {
         // Get the issuer.
         $issuer = api::get_issuer($issuerid);
         // Validate the issuer and check if it is enabled or not.
-        if (!activity_sender::is_valid_instance($issuer)) {
-            return self::return_errors($issuerid, 'errorissuernotenabled', get_string('invalidparameter', 'debug'));
+        if (!utilities::is_valid_instance($issuer)) {
+            return self::return_errors($issuerid, 'errorissuernotenabled', get_string('moodlenet:issuerisnotenabled', 'moodle'));
         }
 
         return [
-            'status' => $status,
-            'name' => $activityname,
-            'type' => $activitytype,
+            'status' => true,
+            'name' => $coursemodule->name,
+            'type' => get_string('modulename', $coursemodule->modname),
             'server' => $issuer->get_display_name(),
             'supportpageurl' => $supporturl,
             'issuerid' => $issuerid,
@@ -135,12 +134,13 @@ class moodlenet_get_share_info_activity extends external_api {
     /**
      * Handle return error.
      *
-     * @param int $itemid Item id
-     * @param string $warningcode Warning code
-     * @param string $message Message
+     * @param int $itemid Item id.
+     * @param string $warningcode Warning code.
+     * @param string $message Message.
+     * @param int $issuerid Issuer id.
      * @return array
      */
-    protected static function return_errors(int $itemid, string $warningcode, string $message): array {
+    protected static function return_errors(int $itemid, string $warningcode, string $message, int $issuerid = 0): array {
         $warnings[] = [
             'item' => $itemid,
             'warningcode' => $warningcode,
@@ -153,7 +153,7 @@ class moodlenet_get_share_info_activity extends external_api {
             'type' => '',
             'server' => '',
             'supportpageurl' => '',
-            'issuerid' => '',
+            'issuerid' => $issuerid,
             'warnings' => $warnings
         ];
     }

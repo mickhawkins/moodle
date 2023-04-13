@@ -17,12 +17,15 @@
 namespace core\external;
 
 use core\oauth2\api;
+use core\oauth2\issuer;
+use core_external\external_api;
 use externallib_advanced_testcase;
+
+defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
-require_once($CFG->dirroot . '/user/profile/lib.php');
 
 /**
  * External functions test for moodlenet_get_share_info_activity.
@@ -51,8 +54,23 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $activity2 = $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'name' => 'Assign activity']);
         $activity3 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'name' => 'Quiz activity']);
 
+        // Create dummy issuer.
+        $record = (object) [
+            'name' => 'MoodleNet',
+            'image' => 'https://moodle.net/favicon.ico',
+            'baseurl' => '',
+            'loginscopes' => '',
+            'loginscopesoffline' => '',
+            'loginparamsoffline' => '',
+            'showonloginpage' => issuer::SERVICEONLY,
+            'servicetype' => 'moodlenet',
+        ];
+        $issuer = new issuer(0, $record);
+        $issuer->create();
+
         // Test the 1st activity with no OAuth2 setup yet.
         $result = moodlenet_get_share_info_activity::execute($activity1->cmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertEmpty($result['name']);
         $this->assertEmpty($result['type']);
@@ -60,22 +78,35 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $this->assertEmpty($result['supportpageurl']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals(0, $result['warnings'][0]['item']);
-        $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
-        $this->assertEquals(get_string('invalidparameter', 'debug'), $result['warnings'][0]['message']);
+        $this->assertEquals('errorissuernotset', $result['warnings'][0]['warningcode']);
+        $this->assertEquals(get_string('moodlenet:issuerisnotset', 'moodle'), $result['warnings'][0]['message']);
 
-        // Create dummy issuer.
-        $issuer = api::create_standard_issuer('google');
-        $issuer->set('enabled', 1);
-        $issuer->set('servicetype', 'moodlenet');
-        $issuer->set('name', 'MoodleNet Local');
-        $issuer->set('baseurl', 'https://moodlenet.example.com');
+        // Test the 1st activity with OAuth2 disabled.
         set_config('oauthservice', $issuer->get('id'), 'moodlenet');
+        $issuer->set('enabled', 0);
         $irecord = $issuer->to_record();
         api::update_issuer($irecord);
 
+        $result = moodlenet_get_share_info_activity::execute($activity1->cmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
+        $this->assertFalse($result['status']);
+        $this->assertEmpty($result['name']);
+        $this->assertEmpty($result['type']);
+        $this->assertEmpty($result['server']);
+        $this->assertEmpty($result['supportpageurl']);
+        $this->assertNotEmpty($result['warnings']);
+        $this->assertEquals($issuer->get('id'), $result['warnings'][0]['item']);
+        $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
+        $this->assertEquals(get_string('moodlenet:issuerisnotenabled', 'moodle'), $result['warnings'][0]['message']);
+
         // Test the 1st activity with support url is set to the internal contact site support page.
+        $issuer->set('enabled', 1);
+        $irecord = $issuer->to_record();
+        api::update_issuer($irecord);
+
         $expectedsupporturl = $CFG->wwwroot . '/user/contactsitesupport.php';
         $result = moodlenet_get_share_info_activity::execute($activity1->cmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
         $this->assertTrue($result['status']);
         $this->assertEquals($activity1->name, $result['name']);
         $this->assertEquals(get_string('modulename', 'mod_chat'), $result['type']);
@@ -86,6 +117,7 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $expectedsupporturl = 'https://moodle.org/';
         $CFG->supportpage = $expectedsupporturl;
         $result = moodlenet_get_share_info_activity::execute($activity2->cmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
         $this->assertTrue($result['status']);
         $this->assertEquals($activity2->name, $result['name']);
         $this->assertEquals(get_string('modulename', 'mod_assign'), $result['type']);
@@ -94,6 +126,7 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         // Test the 3rd activity with contact site support is disabled.
         $CFG->supportavailability = CONTACT_SUPPORT_DISABLED;
         $result = moodlenet_get_share_info_activity::execute($activity3->cmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
         $this->assertTrue($result['status']);
         $this->assertEquals($activity3->name, $result['name']);
         $this->assertEquals(get_string('modulename', 'mod_quiz'), $result['type']);
@@ -104,8 +137,9 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $cmids = [$activity1->cmid, $activity2->cmid, $activity3->cmid];
         do {
             $randomcmid = random_int(5, 25);
-        } while(in_array($randomcmid, $cmids));
+        } while (in_array($randomcmid, $cmids));
         $result = moodlenet_get_share_info_activity::execute($randomcmid);
+        $result = external_api::clean_returnvalue(moodlenet_get_share_info_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertEmpty($result['name']);
         $this->assertEmpty($result['type']);

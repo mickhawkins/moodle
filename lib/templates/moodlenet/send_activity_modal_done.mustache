@@ -32,24 +32,24 @@
         </span>
         <span class="status-text font-weight-bold h5 pt-5">
             {{#success}}
-                {{#str}} moodlenet:share_success_title, moodle {{/str}}
+                {{#str}} moodlenet:sharesuccesstitle, moodle {{/str}}
             {{/success}}
             {{^success}}
-                {{#str}} moodlenet:share_fail_title, moodle {{/str}}
+                {{#str}} moodlenet:sharefailtitle, moodle {{/str}}
             {{/success}}
         </span>
     </div>
     <div class="result pt-2">
         <span class="d-block h6 font-weight-normal pt-1 result-text">
             {{#success}}
-                {{#str}} moodlenet:share_success_text, moodle {{/str}}
+                {{#str}} moodlenet:sharesuccesstext, moodle {{/str}}
             {{/success}}
             {{^success}}
                 {{#sitesupporturl}}
-                    {{#str}} moodlenet:share_fail_text_with_site_support, moodle, {{sitesupporturl}} {{/str}}
+                    {{#str}} moodlenet:sharefailtextwithsitesupport, moodle, {{sitesupporturl}} {{/str}}
                 {{/sitesupporturl}}
                 {{^sitesupporturl}}
-                    {{#str}} moodlenet:share_fail_text, moodle {{/str}}
+                    {{#str}} moodlenet:sharefailtext, moodle {{/str}}
                 {{/sitesupporturl}}
             {{/success}}
         </span>
