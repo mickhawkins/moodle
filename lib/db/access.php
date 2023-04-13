@@ -2682,8 +2682,8 @@ $capabilities = array(
         'archetypes' => [],
     ],
 
-    // Allow users to send activity to MoodleNet.
-    'moodle/moodlenet:sendactivity' => [
+    // Allow users to share activities to MoodleNet.
+    'moodle/moodlenet:shareactivity' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
