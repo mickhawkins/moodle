@@ -16,10 +16,14 @@
 
 namespace core\external;
 
-global $CFG;
-
 use core\oauth2\api;
+use core\oauth2\issuer;
+use core_external\external_api;
 use externallib_advanced_testcase;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
 
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 
@@ -40,10 +44,6 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
      * @covers ::execute
      */
     public function test_moodlenet_send_activity() {
-        if (!defined('TEST_MOODLENET_MOCK_SERVER')) {
-            $this->markTestSkipped('TEST_MOODLENET_MOCK_SERVER is not defined');
-        }
-
         global $CFG;
         $this->resetAfterTest();
         $this->setAdminUser();
@@ -54,11 +54,25 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
         $moduleinstance = $generator->create_module('assign', ['course' => $course->id]);
         $user = $generator->create_user();
         $generator->enrol_user($user->id, $course->id, 'student');
-        $issuer = api::create_standard_issuer('moodlenet', TEST_MOODLENET_MOCK_SERVER);
-        $issuer->set('enabled', 0);
+
+        // Create dummy issuer.
+        $record = (object) [
+            'name' => 'MoodleNet',
+            'image' => 'https://moodle.net/favicon.ico',
+            'baseurl' => '',
+            'loginscopes' => '',
+            'loginscopesoffline' => '',
+            'loginparamsoffline' => '',
+            'showonloginpage' => issuer::SERVICEONLY,
+            'servicetype' => 'moodlenet',
+            'enabled' => 0,
+        ];
+        $issuer = new issuer(0, $record);
+        $issuer->create();
 
         // Test with the experimental flag off.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
@@ -67,6 +81,7 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
 
         // Test with invalid format.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 5);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals('errorinvalidformat', $result['warnings'][0]['warningcode']);
@@ -74,6 +89,7 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
         // Test with the user does not have permission.
         $this->setUser($user);
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals('errorpermission', $result['warnings'][0]['warningcode']);
@@ -82,25 +98,29 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
 
         // Test with the issuer is not enabled.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
 
         // Test with the issuer is enabled but not set in the MN Outbound setting.
         $issuer->set('enabled', 1);
+        $irecord = $issuer->to_record();
+        api::update_issuer($irecord);
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
         $this->assertEquals('errorissuernotenabled', $result['warnings'][0]['warningcode']);
 
         set_config('oauthservice', $issuer->get('id'), 'moodlenet');
-        // Test cannot communicate with the MN server.
+        // Test with the issuer not yet authorized.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
+        $result = external_api::clean_returnvalue(moodlenet_send_activity::execute_returns(), $result);
         $this->assertFalse($result['status']);
         $this->assertNotEmpty($result['warnings']);
-        $this->assertEquals('errorsendingactivity', $result['warnings'][0]['warningcode']);
-        $this->assertEquals(404, $result['warnings'][0]['item']);
-
-        // TODO: Test the response when we can mock the authorization token..
+        $this->assertEquals('erroroauthclient', $result['warnings'][0]['warningcode']);
+        $this->assertEquals($issuer->get('id'), $result['warnings'][0]['item']);
+        $this->assertEquals(get_string('moodlenet:issuerisnotauthorized', 'moodle'), $result['warnings'][0]['message']);
     }
 }
