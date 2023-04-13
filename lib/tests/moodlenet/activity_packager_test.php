@@ -16,8 +16,6 @@
 
 namespace core\moodlenet;
 
-use function PHPUnit\Framework\assertTrue;
-
 /**
  * Unit tests for {@see activity_packager}.
  *
@@ -37,7 +35,8 @@ class activity_packager_test extends \advanced_testcase {
      * @return void
      */
     public function test_override_task_setting() {
-        $this->resetAfterTest(true);
+        global $USER;
+        $this->resetAfterTest();
         $this->setAdminUser();
 
         $generator = $this->getDataGenerator();
@@ -48,8 +47,8 @@ class activity_packager_test extends \advanced_testcase {
             'intro' => 'A great assignment to share',
         ];
         $assign = $generator->create_module('assign', $assigndata);
-        $resourceinfo = new activity_resource($course->id, $assign->cmid);
-        $packager = new activity_packager($resourceinfo);
+        $cminfo = get_fast_modinfo($course->id)->get_cm($assign->cmid);
+        $packager = new activity_packager($cminfo, $USER->id);
 
         // Fetch all backup task settings.
         $rc = new \ReflectionClass(activity_packager::class);
@@ -103,7 +102,8 @@ class activity_packager_test extends \advanced_testcase {
      * @return void
      */
     public function test_get_package() {
-        $this->resetAfterTest(true);
+        global $USER;
+        $this->resetAfterTest();
         $this->setAdminUser();
 
         $currenttime = time();
@@ -117,8 +117,8 @@ class activity_packager_test extends \advanced_testcase {
             'intro' => 'A great assignment to share',
         ];
         $assign = $generator->create_module('assign', $assigndata);
-        $resourceinfo = new activity_resource($course->id, $assign->cmid);
-        $packager = new activity_packager($resourceinfo);
+        $cminfo = get_fast_modinfo($course->id)->get_cm($assign->cmid);
+        $packager = new activity_packager($cminfo, $USER->id);
         $package = $packager->get_package();
 
         $this->assertEquals(2, count($package));
