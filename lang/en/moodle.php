@@ -1380,6 +1380,7 @@ $string['moodlenet:sharing_status'] = 'Sharing to MoodleNet';
 $string['moodlenet:sharing_large_file'] = "Large files can take some time.";
 $string['moodlenet:sharing_to'] = 'Sharing to: ';
 $string['moodlenet:packagingandsending'] = 'Packaging your file and sending to MoodleNet...';
+$string['moodlenet:usernotconfigured'] = 'You do not have permission to share content to MoodleNet, or your account is incorrectly configured.';
 $string['more'] = 'more';
 $string['morehelp'] = 'More help';
 $string['morehelpaboutmodule'] = 'More help about the {$a} activity';

@@ -18,9 +18,12 @@ namespace core\moodlenet;
 
 use context_course;
 use core\http_client;
+use core\oauth2\issuer;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionMethod;
 use stdClass;
@@ -29,12 +32,12 @@ use testing_data_generator;
 /**
  * Unit tests for {@see activity_sender}.
  *
- * @coversDefaultClass activity_sender
+ * @coversDefaultClass \core\moodlenet\activity_sender
  * @package core
  * @copyright 2023 Huong Nguyen <huongnv13@gmail.com>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class moodlenet_activity_sender_test extends \advanced_testcase {
+class activity_sender_test extends \advanced_testcase {
 
     /** @var testing_data_generator Data generator. */
     private testing_data_generator $generator;
@@ -44,6 +47,10 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
     private stdClass $moduleinstance;
     /** @var context_course Course context instance. */
     private context_course $coursecontext;
+    /** @var issuer $issuer Dummy issuer. */
+    private issuer $issuer;
+    /** @var MockObject $mockoauthclient Mock OAuth client. */
+    private MockObject $mockoauthclient;
 
     /**
      * Set up function for tests.
@@ -52,10 +59,90 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
         parent::setUp();
 
         $this->resetAfterTest();
+        // Get data generator.
         $this->generator = $this->getDataGenerator();
+        // Create course.
         $this->course = $this->generator->create_course();
         $this->moduleinstance = $this->generator->create_module('assign', ['course' => $this->course->id]);
         $this->coursecontext = context_course::instance($this->course->id);
+        // Create dummy issuer.
+        $this->issuer = new issuer(0);
+        $this->issuer->set('enabled', 1);
+        $this->issuer->set('servicetype', 'moodlenet');
+        $this->issuer->set('baseurl', 'https://moodlenet.example.com');
+        // Create mock builder for OAuth2 client.
+        $mockbuilder = $this->getMockBuilder('core\oauth2\client');
+        $mockbuilder->onlyMethods(['get_issuer', 'is_logged_in', 'get_accesstoken']);
+        $mockbuilder->setConstructorArgs([$this->issuer, '', '']);
+        // Get the OAuth2 client mock.
+        $this->mockoauthclient = $mockbuilder->getMock();
+    }
+
+    /**
+     * Test prepare_share_contents method.
+     *
+     * @covers ::prepare_share_contents
+     * @return void
+     */
+    public function test_prepare_share_contents() {
+        global $USER;
+        $this->setAdminUser();
+
+        // Set get_file method accessibility.
+        $method = new ReflectionMethod(activity_sender::class, 'prepare_share_contents');
+        $method->setAccessible(true);
+
+        // Test with invalid share format.
+        $package = $method->invoke(new activity_sender(
+            $this->course->id,
+            $this->moduleinstance->cmid,
+            $USER->id,
+            new http_client(),
+            $this->mockoauthclient,
+            random_int(5, 30)
+        ));
+        $this->assertEmpty($package);
+
+        // Test with valid share format and invalid course.
+        $this->expectException('dml_missing_record_exception');
+        $package = $method->invoke(new activity_sender(
+            random_int(1, 30),
+            $this->moduleinstance->cmid,
+            $USER->id,
+            new http_client(),
+            $this->mockoauthclient,
+            activity_sender::SHARE_FORMAT_BACKUP
+        ));
+        $this->assertEmpty($package);
+
+        // Test with valid share format, valid course and invalid course module.
+        $package = $method->invoke(new activity_sender(
+            $this->course->id,
+            random_int(5, 30),
+            $USER->id,
+            new http_client(),
+            $this->mockoauthclient,
+            activity_sender::SHARE_FORMAT_BACKUP
+        ));
+        $this->assertEmpty($package);
+
+        // Test with valid share format, valid course and valid course module.
+        $package = $method->invoke(new activity_sender(
+            $this->course->id,
+            $this->moduleinstance->cmid,
+            $USER->id,
+            new http_client(),
+            $this->mockoauthclient,
+            activity_sender::SHARE_FORMAT_BACKUP
+        ));
+        $this->assertNotEmpty($package);
+        // Confirm there are backup file contents returned.
+        $this->assertTrue(array_key_exists('filecontents', $package));
+        $this->assertNotEmpty($package['filecontents']);
+
+        // Confirm the expected stored_file object is returned.
+        $this->assertTrue(array_key_exists('storedfile', $package));
+        $this->assertInstanceOf(\stored_file::class, $package['storedfile']);
     }
 
     /**
@@ -64,6 +151,10 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
      * @dataProvider share_activity_provider
      * @covers ::share_activity
      * @covers ::log_event
+     * @covers \core\moodlenet\moodlenet_client::create_resource_from_file
+     * @covers \core\moodlenet\moodlenet_client::prepare_file_share_request_data
+     * @param ResponseInterface $httpresponse
+     * @param array $expected
      * @return void
      */
     public function test_share_activity(ResponseInterface $httpresponse, array $expected) {
@@ -73,42 +164,42 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
         // Enable the experimental flag.
         $CFG->enablesharingtomoodlenet = true;
 
-        // Create dummy issuer.
-        $issuer = new \core\oauth2\issuer(0);
-        $issuer->set('enabled', 1);
-        $issuer->set('servicetype', 'moodlenet');
-        $issuer->set('baseurl', 'https://moodlenet.example.com');
-
         // Set OAuth 2 service in the outbound setting to the dummy issuer.
-        set_config('oauthservice', $issuer->get('id'), 'moodlenet');
+        set_config('oauthservice', $this->issuer->get('id'), 'moodlenet');
 
         // Generate access token for the mock.
         $accesstoken = new stdClass();
         $accesstoken->token = random_string(64);
 
-        // Create mock builder for OAuth2 client.
-        $mockbuilder = $this->getMockBuilder('core\oauth2\client');
-        $mockbuilder->onlyMethods(['get_issuer', 'is_logged_in', 'get_accesstoken']);
-        $mockbuilder->setConstructorArgs([$issuer, "", ""]);
-
         // Get the OAuth2 client mock and set the return value for necessary methods.
-        $mockOauthClient = $mockbuilder->getMock();
-        $mockOauthClient->method('get_issuer')->will($this->returnValue($issuer));
-        $mockOauthClient->method('is_logged_in')->will($this->returnValue(true));
-        $mockOauthClient->method('get_accesstoken')->will($this->returnValue($accesstoken));
+        $this->mockoauthclient->method('get_issuer')->will($this->returnValue($this->issuer));
+        $this->mockoauthclient->method('is_logged_in')->will($this->returnValue(true));
+        $this->mockoauthclient->method('get_accesstoken')->will($this->returnValue($accesstoken));
 
         // Create Guzzle mock.
-        $mockGuzzleHandler = new MockHandler([$httpresponse]);
-        $handlerstack = HandlerStack::create($mockGuzzleHandler);
+        $mockguzzlehandler = new MockHandler([$httpresponse]);
+        $handlerstack = HandlerStack::create($mockguzzlehandler);
         $httpclient = new http_client(['handler' => $handlerstack]);
 
         // Create events sink.
         $sink = $this->redirectEvents();
 
+        // Create activity sender.
+        $activitysender = new activity_sender(
+            $this->course->id,
+            $this->moduleinstance->cmid,
+            $USER->id,
+            $httpclient,
+            $this->mockoauthclient,
+            activity_sender::SHARE_FORMAT_BACKUP
+        );
+
+        if (isset($expected['exception'])) {
+            $this->expectException(ClientException::class);
+            $this->expectExceptionMessage($expected['exception']);
+        }
         // Call the API.
-        $result = activity_sender::share_activity($this->course->id, $this->moduleinstance->cmid, $USER->id, $httpclient,
-            $mockOauthClient,
-            activity_sender::SHARE_FORMAT_BACKUP);
+        $result = $activitysender->share_activity();
 
         // Verify the result.
         $this->assertEquals($expected['response_code'], $result['responsecode']);
@@ -160,149 +251,33 @@ class moodlenet_activity_sender_test extends \advanced_testcase {
                 ),
                 'expected' => [
                     'response_code' => 200,
-                    'resource_url' => '#',
+                    'resource_url' => 'https://moodlenet.example.com/drafts/view/activity_backup_2.mbz',
                 ],
             ],
             'Fail with 401 status code' => [
                 'http_response' => new Response(
                     401,
-                    ['Content-Type' => 'application/json'],
-                    json_encode([
-                        'homepage' => 'https://moodlenet.example.com/drafts/view/activity_backup_3.mbz',
-                    ]),
                 ),
                 'expected' => [
                     'response_code' => 401,
-                    'resource_url' => '#',
+                    'resource_url' => '',
+                    'exception' => 'Client error: ' .
+                        '`POST https://moodlenet.example.com/.pkg/@moodlenet/ed-resource/basic/v1/create` ' .
+                        'resulted in a `401 Unauthorized` response',
                 ],
             ],
             'Fail with 404 status code' => [
                 'http_response' => new Response(
                     404,
-                    ['Content-Type' => 'application/json'],
-                    json_encode([
-                        'homepage' => '',
-                    ]),
                 ),
                 'expected' => [
-                    'response_code' => 401,
-                    'resource_url' => '#',
+                    'response_code' => 404,
+                    'resource_url' => '',
+                    'exception' => 'Client error: '.
+                        '`POST https://moodlenet.example.com/.pkg/@moodlenet/ed-resource/basic/v1/create` ' .
+                        'resulted in a `404 Not Found` response',
                 ],
             ],
         ];
-    }
-
-    /**
-     * Test is_valid_instance method.
-     *
-     * @covers ::is_valid_instance
-     * @return void
-     */
-    public function test_is_valid_instance() {
-        global $CFG;
-        $this->setAdminUser();
-
-        // Create dummy issuer.
-        $issuer = new \core\oauth2\issuer(0);
-        $issuer->set('enabled', 0);
-        $issuer->set('servicetype', 'google');
-
-        // Can not share if the experimental flag it set to false.
-        $CFG->enablesharingtomoodlenet = false;
-        $this->assertFalse(activity_sender::is_valid_instance($issuer));
-
-        // Enable the experimental flag.
-        $CFG->enablesharingtomoodlenet = true;
-
-        // Can not share if the OAuth 2 service in the outbound setting is not matched the given one.
-        set_config('oauthservice', random_int(1, 30), 'moodlenet');
-        $this->assertFalse(activity_sender::is_valid_instance($issuer));
-
-        // Can not share if the OAuth 2 service in the outbound setting is not enabled.
-        set_config('oauthservice', $issuer->get('id'), 'moodlenet');
-        $this->assertFalse(activity_sender::is_valid_instance($issuer));
-
-        // Can not share if the OAuth 2 service type is not moodlenet.
-        $issuer->set('enabled', 1);
-        $this->assertFalse(activity_sender::is_valid_instance($issuer));
-
-        // All good now.
-        $issuer->set('servicetype', 'moodlenet');
-        $this->assertTrue(activity_sender::is_valid_instance($issuer));
-    }
-
-    /**
-     * Test can_user_share method.
-     *
-     * @covers ::can_user_share
-     * @return void
-     */
-    public function test_can_user_share() {
-        global $DB;
-
-        // Generate data.
-        $student1 = $this->generator->create_user();
-        $teacher1 = $this->generator->create_user();
-        $teacher2 = $this->generator->create_user();
-        $manager1 = $this->generator->create_user();
-
-        // Enrol users.
-        $this->generator->enrol_user($student1->id, $this->course->id, 'student');
-        $this->generator->enrol_user($teacher1->id, $this->course->id, 'teacher');
-        $this->generator->enrol_user($teacher2->id, $this->course->id, 'editingteacher');
-        $this->generator->enrol_user($manager1->id, $this->course->id, 'manager');
-
-        // Get roles.
-        $teacherrole = $DB->get_record('role', ['shortname' => 'teacher'], 'id', MUST_EXIST);
-        $editingteacherrole = $DB->get_record('role', ['shortname' => 'editingteacher'], 'id', MUST_EXIST);
-
-        // Test with default settings.
-        // Student and Teacher cannot share the activity.
-        $this->assertFalse(activity_sender::can_user_share($this->coursecontext, $student1->id));
-        $this->assertFalse(activity_sender::can_user_share($this->coursecontext, $teacher1->id));
-        // Editing-teacher and Manager can share the activity.
-        $this->assertTrue(activity_sender::can_user_share($this->coursecontext, $teacher2->id));
-        $this->assertTrue(activity_sender::can_user_share($this->coursecontext, $manager1->id));
-
-        // Teacher who has the capabilities can share the activity.
-        assign_capability('moodle/moodlenet:sendactivity', CAP_ALLOW, $teacherrole->id, $this->coursecontext);
-        assign_capability('moodle/backup:backupactivity', CAP_ALLOW, $teacherrole->id, $this->coursecontext);
-        $this->assertTrue(activity_sender::can_user_share($this->coursecontext, $teacher1->id));
-
-        // Editing-teacher who does not have the capabilities can not share the activity.
-        assign_capability('moodle/moodlenet:sendactivity', CAP_PROHIBIT, $editingteacherrole->id, $this->coursecontext);
-        $this->assertFalse(activity_sender::can_user_share($this->coursecontext, $teacher2->id));
-    }
-
-    /**
-     * Test prepare_share_contents method.
-     *
-     * @covers ::prepare_share_contents
-     * @return void
-     */
-    public function test_prepare_share_contents() {
-        $this->setAdminUser();
-
-        // Get activity resource.
-        $resourceinfo = new activity_resource($this->course->id, $this->moduleinstance->cmid);
-
-        // Set get_file method accessibility.
-        $method = new ReflectionMethod(activity_sender::class, 'prepare_share_contents');
-        $method->setAccessible(true);
-
-        // Test with invalid share format.
-        $package = $method->invoke(new activity_sender(), $resourceinfo, random_int(1, 30));
-        $this->assertEmpty($package);
-
-        // Test with valid share format.
-        $package = $method->invoke(new activity_sender(), $resourceinfo, activity_sender::SHARE_FORMAT_BACKUP);
-        $this->assertNotEmpty($package);
-        // Confirm there are backup file contents returned.
-        $this->assertTrue(array_key_exists('filecontents', $package));
-        $this->assertNotEmpty($package['filecontents']);
-
-        // Confirm the expected stored_file object is returned.
-        $this->assertTrue(array_key_exists('storedfile', $package));
-        $this->assertInstanceOf(\stored_file::class, $package['storedfile']);
     }
 }
