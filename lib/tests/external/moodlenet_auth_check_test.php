@@ -19,11 +19,12 @@ namespace core\external;
 defined('MOODLE_INTERNAL') || die();
 
 use core\oauth2\api;
-use core\oauth2\issuer;
 use core_external\external_api;
 use externallib_advanced_testcase;
 
 global $CFG;
+
+require_once($CFG->dirroot . '/lib/tests/moodlenet/helpers.php');
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 
 /**
@@ -55,19 +56,7 @@ class moodlenet_auth_check_test extends externallib_advanced_testcase {
         $generator->enrol_user($user->id, $course->id, 'student');
 
         // Create dummy issuer.
-        $record = (object) [
-            'name' => 'MoodleNet',
-            'image' => 'https://moodle.net/favicon.ico',
-            'baseurl' => '',
-            'loginscopes' => '',
-            'loginscopesoffline' => '',
-            'loginparamsoffline' => '',
-            'showonloginpage' => issuer::SERVICEONLY,
-            'servicetype' => 'moodlenet',
-            'enabled' => 0,
-        ];
-        $issuer = new issuer(0, $record);
-        $issuer->create();
+        $issuer = \core\moodlenet\helpers::get_mock_issuer(0);
 
         // Test with the user does not have permission.
         $this->setUser($user);

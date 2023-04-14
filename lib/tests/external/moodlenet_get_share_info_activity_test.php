@@ -17,7 +17,6 @@
 namespace core\external;
 
 use core\oauth2\api;
-use core\oauth2\issuer;
 use core_external\external_api;
 use externallib_advanced_testcase;
 
@@ -25,6 +24,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 
+require_once($CFG->dirroot . '/lib/tests/moodlenet/helpers.php');
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 
 /**
@@ -54,19 +54,8 @@ class moodlenet_get_share_info_activity_test extends externallib_advanced_testca
         $activity2 = $this->getDataGenerator()->create_module('assign', ['course' => $course->id, 'name' => 'Assign activity']);
         $activity3 = $this->getDataGenerator()->create_module('quiz', ['course' => $course->id, 'name' => 'Quiz activity']);
 
-        // Create dummy issuer.
-        $record = (object) [
-            'name' => 'MoodleNet',
-            'image' => 'https://moodle.net/favicon.ico',
-            'baseurl' => '',
-            'loginscopes' => '',
-            'loginscopesoffline' => '',
-            'loginparamsoffline' => '',
-            'showonloginpage' => issuer::SERVICEONLY,
-            'servicetype' => 'moodlenet',
-        ];
-        $issuer = new issuer(0, $record);
-        $issuer->create();
+        // Create dummy enabled issuer.
+        $issuer = \core\moodlenet\helpers::get_mock_issuer(1);
 
         // Test the 1st activity with no OAuth2 setup yet.
         $result = moodlenet_get_share_info_activity::execute($activity1->cmid);
