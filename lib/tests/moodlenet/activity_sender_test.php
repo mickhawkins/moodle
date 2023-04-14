@@ -29,6 +29,12 @@ use ReflectionMethod;
 use stdClass;
 use testing_data_generator;
 
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+
+require_once('helpers.php');
+
 /**
  * Unit tests for {@see activity_sender}.
  *
@@ -65,11 +71,8 @@ class activity_sender_test extends \advanced_testcase {
         $this->course = $this->generator->create_course();
         $this->moduleinstance = $this->generator->create_module('assign', ['course' => $this->course->id]);
         $this->coursecontext = context_course::instance($this->course->id);
-        // Create dummy issuer.
-        $this->issuer = new issuer(0);
-        $this->issuer->set('enabled', 1);
-        $this->issuer->set('servicetype', 'moodlenet');
-        $this->issuer->set('baseurl', 'https://moodlenet.example.com');
+        // Create mock issuer.
+        $this->issuer = \core\moodlenet\helpers::get_mock_issuer(1);
         // Create mock builder for OAuth2 client.
         $mockbuilder = $this->getMockBuilder('core\oauth2\client');
         $mockbuilder->onlyMethods(['get_issuer', 'is_logged_in', 'get_accesstoken']);
