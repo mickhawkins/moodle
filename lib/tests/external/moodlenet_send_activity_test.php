@@ -17,7 +17,6 @@
 namespace core\external;
 
 use core\oauth2\api;
-use core\oauth2\issuer;
 use core_external\external_api;
 use externallib_advanced_testcase;
 
@@ -25,6 +24,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 
+require_once($CFG->dirroot . '/lib/tests/moodlenet/helpers.php');
 require_once($CFG->dirroot . '/webservice/tests/helpers.php');
 
 /**
@@ -56,19 +56,7 @@ class moodlenet_send_activity_test extends externallib_advanced_testcase {
         $generator->enrol_user($user->id, $course->id, 'student');
 
         // Create dummy issuer.
-        $record = (object) [
-            'name' => 'MoodleNet',
-            'image' => 'https://moodle.net/favicon.ico',
-            'baseurl' => '',
-            'loginscopes' => '',
-            'loginscopesoffline' => '',
-            'loginparamsoffline' => '',
-            'showonloginpage' => issuer::SERVICEONLY,
-            'servicetype' => 'moodlenet',
-            'enabled' => 0,
-        ];
-        $issuer = new issuer(0, $record);
-        $issuer->create();
+        $issuer = \core\moodlenet\helpers::get_mock_issuer(0);
 
         // Test with the experimental flag off.
         $result = moodlenet_send_activity::execute($issuer->get('id'), $course->id, $moduleinstance->cmid, 0);
