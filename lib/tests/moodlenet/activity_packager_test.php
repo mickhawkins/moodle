@@ -31,7 +31,6 @@ class activity_packager_test extends \advanced_testcase {
      *
      * @covers ::override_task_setting
      * @covers ::get_all_task_settings
-     * @uses activity_resource
      * @return void
      */
     public function test_override_task_setting() {
@@ -98,7 +97,6 @@ class activity_packager_test extends \advanced_testcase {
      *
      * @covers ::get_package
      * @covers ::package
-     * @uses activity_resource
      * @return void
      */
     public function test_get_package() {
