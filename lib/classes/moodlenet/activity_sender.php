@@ -18,7 +18,6 @@ namespace core\moodlenet;
 
 use cm_info;
 use core\event\moodlenet_resource_exported;
-use core\http_client;
 use core\oauth2\client;
 use moodle_exception;
 
@@ -46,24 +45,33 @@ class activity_sender {
     protected cm_info $cminfo;
 
     /**
+     * @var int The course where the activity is located.
+     */
+    protected int $course;
+
+    /**
      * Class constructor.
      *
-     * @param int $courseid The course ID where the activity is located.
      * @param int $cmid The course module ID of the activity being shared.
      * @param int $userid The user ID who is sharing the activity.
-     * @param \core\http_client $httpclient the httpclient object being used to perform the share.
-     * @param \core\oauth2\client $oauthclient The OAuth 2 client for the MoodleNet instance.
+     * @param moodlenet_client $moodlenetclient The moodlenet_client object used to perform the share.
+     * @param client $oauthclient The OAuth 2 client for the MoodleNet instance.
      * @param int $shareformat The data format to share in. Defaults to a Moodle backup (SHARE_FORMAT_BACKUP).
+     * @throws moodle_exception
      */
     public function __construct(
-        protected int $courseid,
         int $cmid,
         protected int $userid,
-        protected http_client $httpclient,
+        protected moodlenet_client $moodlenetclient,
         protected client $oauthclient,
         protected int $shareformat = self::SHARE_FORMAT_BACKUP
     ) {
-        $this->cminfo = get_fast_modinfo($courseid)->get_cm($cmid);
+
+        [$this->course, $this->cminfo] = get_course_and_cm_from_cmid($cmid);
+
+        if (!in_array($shareformat, $this->get_allowed_share_formats())) {
+            throw new moodle_exception('moodlenet:invalidshareformat', 'core');
+        }
     }
 
     /**
@@ -81,7 +89,7 @@ class activity_sender {
         $issuer = $this->oauthclient->get_issuer();
 
         // Check user can share to the requested MoodleNet instance.
-        $coursecontext = \context_course::instance($this->courseid);
+        $coursecontext = \context_course::instance($this->course->id);
         $usercanshare = utilities::can_user_share($coursecontext, $this->userid);
 
         if ($usercanshare && utilities::is_valid_instance($issuer) && $this->oauthclient->is_logged_in()) {
@@ -121,13 +129,7 @@ class activity_sender {
                 ['context' => $coursecontext]
             );
 
-            $moodlenetclient = new moodlenet_client(
-                $this->httpclient,
-                $this->oauthclient,
-                $this->cminfo->name,
-                $resourcedescription
-            );
-            $response = $moodlenetclient->create_resource_from_file($filedata);
+            $response = $this->moodlenetclient->create_resource_from_file($filedata, $this->cminfo->name, $resourcedescription);
             $responsecode = $response->getStatusCode();
 
             $responsebody = json_decode($response->getBody());
@@ -158,12 +160,10 @@ class activity_sender {
 
         switch ($this->shareformat) {
             case self::SHARE_FORMAT_BACKUP:
+            default:
                 // If sharing the activity as a backup, prepare the packaged backup.
                 $packager = new activity_packager($this->cminfo, $this->userid);
                 $filedata = $packager->get_package();
-                break;
-            default:
-                $filedata = [];
                 break;
         };
 
@@ -194,5 +194,17 @@ class activity_sender {
             ],
         ]);
         $event->trigger();
+    }
+
+    /**
+     * Return the list of supported share formats.
+     *
+     * @return array Array of supported share format values.
+     */
+    protected function get_allowed_share_formats(): array {
+
+        return [
+            self::SHARE_FORMAT_BACKUP,
+        ];
     }
 }
