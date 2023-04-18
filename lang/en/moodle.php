@@ -1367,7 +1367,6 @@ $string['moodlenet:cannotconnecttoserver'] = 'Cannot connect to MoodleNet server
 $string['moodlenet:configoauthservice'] = 'Select a MoodleNet OAuth 2 service to enable sharing to that MoodleNet site. If the service doesn\'t exist yet, you will need to <a href="{$a}">create</a> it.';
 $string['moodlenet:eventresourceexported'] = 'Resource exported';
 $string['moodlenet:gotomoodlenet'] = 'Go to MoodleNet drafts';
-$string['moodlenet:invalidshareformat'] = 'Invalid MoodleNet share format';
 $string['moodlenet:issuerisnotauthorized'] = 'MoodleNet issuer is not authorized';
 $string['moodlenet:issuerisnotenabled'] = 'MoodleNet issuer is not enabled';
 $string['moodlenet:issuerisnotset'] = 'MoodleNet issuer is not set at site administration';
@@ -1385,7 +1384,6 @@ $string['moodlenet:sharingstatus'] = 'Sharing to MoodleNet';
 $string['moodlenet:sharinglargefile'] = "Large files can take some time.";
 $string['moodlenet:sharingto'] = 'Sharing to: ';
 $string['moodlenet:packagingandsending'] = 'Packaging your file and sending to MoodleNet...';
-$string['moodlenet:usernotconfigured'] = 'You do not have permission to share content to MoodleNet, or your account is incorrectly configured.';
 $string['more'] = 'more';
 $string['morehelp'] = 'More help';
 $string['morehelpaboutmodule'] = 'More help about the {$a} activity';

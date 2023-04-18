@@ -20,6 +20,7 @@ use cm_info;
 use core\event\moodlenet_resource_exported;
 use core\oauth2\client;
 use moodle_exception;
+use stdClass;
 
 /**
  * API for sharing Moodle LMS activities to MoodleNet instances.
@@ -45,9 +46,9 @@ class activity_sender {
     protected cm_info $cminfo;
 
     /**
-     * @var int The course where the activity is located.
+     * @var stdClass The course where the activity is located.
      */
-    protected int $course;
+    protected stdClass $course;
 
     /**
      * Class constructor.
@@ -70,7 +71,7 @@ class activity_sender {
         [$this->course, $this->cminfo] = get_course_and_cm_from_cmid($cmid);
 
         if (!in_array($shareformat, $this->get_allowed_share_formats())) {
-            throw new moodle_exception('moodlenet:invalidshareformat', 'core');
+            throw new moodle_exception('moodlenet:invalidshareformat');
         }
     }
 
@@ -98,7 +99,7 @@ class activity_sender {
 
         // Throw an exception if the user is not currently set up to be able to share to MoodleNet.
         if (!$accesstoken) {
-            throw new moodle_exception('moodlenet:usernotconfigured', 'core');
+            throw new moodle_exception('moodlenet:usernotconfigured');
         }
 
         // Attempt to prepare and send the resource if validation has passed and we have an OAuth 2 token.

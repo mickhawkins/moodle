@@ -97,6 +97,8 @@ class activity_sender_test extends \advanced_testcase {
         $method->setAccessible(true);
 
         // Test with invalid share format.
+        $this->expectException(\moodle_exception::class);
+        $this->expectExceptionMessage(get_string('moodlenet:invalidshareformat', 'error'));
         $package = $method->invoke(new activity_sender(
             $this->moduleinstance->cmid,
             $USER->id,
@@ -104,8 +106,6 @@ class activity_sender_test extends \advanced_testcase {
             $this->mockoauthclient,
             random_int(5, 30)
         ));
-        $this->expectException(\moodlenet_exception::class);
-        $this->expectExceptionMessage(get_string('moodlenet:invalidshareformat', core));
 
         // Test with valid share format and invalid course module.
         $package = $method->invoke(new activity_sender(
