@@ -20,6 +20,7 @@ use context_course;
 use core\http_client;
 use core\moodlenet\course_sender;
 use core\moodlenet\moodlenet_client;
+use core\moodlenet\share_recorder;
 use core\moodlenet\utilities;
 use core\oauth2\api;
 use core_external\external_api;
@@ -135,10 +136,16 @@ class moodlenet_send_course extends external_api {
 
         // Share course.
         try {
+            // Record course share progress.
+            $shareid = share_recorder::insert_share_progress(share_recorder::TYPE_COURSE, $USER->id, $course->id);
+
             $moodlenetclient = new moodlenet_client($client, $oauthclient);
             $coursesender = new course_sender($course->id, $USER->id, $moodlenetclient, $oauthclient, $shareformat);
             $result = $coursesender->share_resource();
             if (empty($result['drafturl'])) {
+
+                share_recorder::update_share_progress($shareid, share_recorder::STATUS_ERROR);
+
                 return self::return_errors(
                     $result['responsecode'],
                     'errorsendingcourse',
@@ -146,12 +153,17 @@ class moodlenet_send_course extends external_api {
                 );
             }
         } catch (\moodle_exception | \JsonException $e) {
+
+            share_recorder::update_share_progress($shareid, share_recorder::STATUS_ERROR);
+
             return self::return_errors(
                 0,
                 'errorsendingcourse',
                 $e->getMessage()
             );
         }
+
+        share_recorder::update_share_progress($shareid, share_recorder::STATUS_SENT, $result['drafturl']);
 
         return [
             'status' => true,
