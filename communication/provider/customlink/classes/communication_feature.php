@@ -21,14 +21,17 @@ use core_communication\processor;
 /**
  * class communication_feature to handle custom link specific actions.
  *
- * @package    communication_customlink
- * @copyright  2023 Michael Hawkins <michaelh@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   communication_customlink
+ * @copyright 2023 Michael Hawkins <michaelh@moodle.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class communication_feature implements
     \core_communication\communication_provider,
     \core_communication\room_chat_provider,
     \core_communication\form_provider {
+
+    /** @var \cache_application $cache The application cache for this provider. */
+    private $cache;
 
     /**
      * Load the communication provider for the communication API.
@@ -48,7 +51,7 @@ class communication_feature implements
     private function __construct(
         private \core_communication\processor $communication,
     ) {
-        // No specific initialisation required.
+        $this->cache = \cache::make('communication_customlink', 'customlink');
     }
 
     /**
@@ -81,19 +84,35 @@ class communication_feature implements
     /**
      * Fetch the URL for this custom link provider.
      *
-     * @return string The custom URL
+     * @return string|null The custom URL, or null if not found.
      */
     public function get_chat_room_url(): ?string {
         global $DB;
 
-//TODO: cache / look at abstracting out fetching etc like matrix_rooms does
-        $url = $DB->get_field(
-            'communication_customlink',
-            'url',
-            ['commid' => $this->communication->get_id()]
-        );
+        $commid = $this->communication->get_id();
 
-        $url = $url ?? null;
+        if (!empty($commid)) {
+            $cachekey = "link_url_{$commid}";
+
+            // Attempt to fetch the room URL from the cache.
+            if ($url = $this->cache->get($cachekey)) {
+                return $url;
+            }
+
+            // If not found in the cache, fetch the URL from the database.
+            $url = $DB->get_field(
+                'communication_customlink',
+                'url',
+                ['commid' => $commid],
+            );
+
+            $url = $url ?? null;
+
+            // Cache the URL.
+            $this->cache->set($cachekey, $url);
+        } else {
+            $url = null;
+        }
 
         return $url;
     }
@@ -104,6 +123,9 @@ class communication_feature implements
         $tablename = 'communication_customlink';
         $commid = $this->communication->get_id();
 
+        $dbrecord = new \stdClass();
+        $dbrecord->url = $instance->customlink ?? null; //TODO - is null ever relevant /accepted here or in DB?
+
         $rowid = $DB->get_field(
             $tablename,
             'id',
@@ -112,26 +134,22 @@ class communication_feature implements
 
         if ($rowid !== false) {
             // Update record.
-            $dbrecord = new \stdClass();
             $dbrecord->id = $rowid;
-            $dbrecord->url = $instance->customlink;
             $DB->update_record($tablename, $dbrecord);
         } else {
             // Create the record.
-            $dbrecord = new \stdClass();
             $dbrecord->commid = $commid;
-//$dbrecord->roomid = $this->matrixrooms->get_matrix_room_id(),
-            $dbrecord->url = $instance->customlink ?? null; //TODO - Null probably currently not accepted
             $dbrecord = $DB->insert_record($tablename, $dbrecord);
-
         }
+
+        // Cache the URL.
+        $this->cache->set("link_url_{$commid}", $dbrecord->url);
     }
 
     public function set_form_data(\stdClass $instance): void {
-//TODO
-        // if (!empty($instance->id) && !empty($this->communication->get_id())) {
-        //     $instance->url = $this->matrixrooms->get_customlink_url();
-        // }
+        if (!empty($instance->id) && !empty($this->communication->get_id())) {
+            $instance->customlink = $this->get_chat_room_url();
+        }
     }
 
     public static function set_form_definition(\MoodleQuickForm $mform): void {
@@ -141,5 +159,9 @@ class communication_feature implements
             'maxlength="255" size="20"'), 'addcommunicationoptionshere');
         $mform->addHelpButton('customlink', 'customlink', 'communication_customlink');
         $mform->setType('customlink', PARAM_TEXT);
+        $mform->addRule('customlink', get_string('required'), 'required', null, 'client');
+        $mform->addRule('customlink', get_string('required'), 'required', null, 'server');
+        $mform->addRule('customlink', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
+        $mform->addRule('customlink', get_string('maximumchars', '', 255), 'maxlength', 255, 'server');
     }
 }

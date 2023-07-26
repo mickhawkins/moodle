@@ -15,16 +15,21 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for communication_customlink.
+ * Defined caches used internally by the provider.
  *
- * @package    communication_customlink
- * @copyright  2023 Michael Hawkins <michaelh@moodle.com>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   communication_customlink
+ * @copyright 2023 Michael Hawkins <michaelh@moodle.com>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+declare(strict_types=1);
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'communication_customlink';
-$plugin->version = 2023072700;
-$plugin->requires = 2023070700;
-$plugin->maturity = MATURITY_ALPHA;
+$definitions = [
+    'customlink' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+    ],
+];

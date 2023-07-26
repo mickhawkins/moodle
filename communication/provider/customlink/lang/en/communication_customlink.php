@@ -35,6 +35,7 @@ $string['matrixelementurl'] = 'Element web URL';
 $string['matrixelementurl_desc'] = 'The URL to Element Web instance.';
 $string['matrixroomtopic'] = 'Room topic';
 //DONE
+$string['cachedef_customlink'] = 'Custom link data';
 $string['customlink'] = 'Custom link';
 $string['customlink_help'] = 'The URL of an existing room/channel set up for this course in a messaging or other communication service you would like to link to.';
 $string['pluginname'] = 'Custom link';
