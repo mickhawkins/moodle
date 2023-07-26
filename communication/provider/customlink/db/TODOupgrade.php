@@ -29,11 +29,12 @@
  */
 function xmldb_communication_customlink_upgrade($oldversion) {
     global $DB;
-//TODO - generate properly
+//TODO - generate properly / correct version
+//Also seems like the table would need to be created as well
     $dbman = $DB->get_manager();
     if ($oldversion < 2023071800) {
         $table = new xmldb_table('communication_customlink');
-        $field = new xmldb_field('url', XMLDB_TYPE_CHAR, '255', null, false, false, null, 'roomid');
+        $field = new xmldb_field('url', XMLDB_TYPE_CHAR, '255', null, false, false, null, 'roomid'); //TODO roomid doesn't exist
 
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);

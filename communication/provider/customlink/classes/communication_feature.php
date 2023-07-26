@@ -27,9 +27,7 @@ use core_communication\processor;
  */
 class communication_feature implements
     \core_communication\communication_provider,
-    \core_communication\user_provider,
     \core_communication\room_chat_provider,
-    \core_communication\room_user_provider,
     \core_communication\form_provider {
 
     /**
@@ -51,61 +49,6 @@ class communication_feature implements
         private \core_communication\processor $communication,
     ) {
         // No specific initialisation required.
-    }
-
-    /**
-     * Create members - member management not required for custom links.
-     *
-     * @param array $userids The Moodle user ids to create
-     */
-    public function create_members(array $userids): void {
-
-//TODO - TBC- are these sync calls required in relevant methods?
-
-        // Mark then users as synced for the added members.
-        $this->communication->mark_users_as_synced($userids);
-    }
-
-    /**
-     * Add members to a room  - member management not required for custom links.
-     *
-     * @param array $userids The user ids to add
-     */
-    public function add_members_to_room(array $userids): void {
-
-        // Mark then users as synced for the added members.
-        $this->communication->mark_users_as_synced($userids);
-    }
-
-    /**
-     * Remove members from a room  - member management not required for custom links.
-     *
-     * @param array $userids The Moodle user ids to remove
-     */
-    public function remove_members_from_room(array $userids): void {
-//TODO - call required?
-        $this->communication->delete_instance_user_mapping($userids);
-    }
-
-    /**
-     * Check if a user exists - always returns true for custom links.
-     *
-     * @param string $matrixuserid The Matrix user id to check
-     * @return bool
-     */
-    public function check_user_exists(string $matrixuserid): bool {
-//TODO - requyired?
-        return true;
-    }
-
-    /**
-     * Check if a user is a member of a room - member management not required for custom links.
-     *
-     * @param string $matrixuserid The Matrix user id to check
-     * @return bool
-     */
-    public function check_room_membership(string $matrixuserid): bool {
-        return true;
     }
 
     /**
@@ -141,32 +84,54 @@ class communication_feature implements
      * @return string The custom URL
      */
     public function get_chat_room_url(): ?string {
+        global $DB;
 
-        //TODO - fetch the custom field for this provider
-        //Can look at how this->matrixrooms is set up
-        return 'TODO';
+//TODO: cache / look at abstracting out fetching etc like matrix_rooms does
+        $url = $DB->get_field(
+            'communication_customlink',
+            'url',
+            ['commid' => $this->communication->get_id()]
+        );
+
+        $url = $url ?? null;
+
+        return $url;
     }
 
     public function save_form_data(\stdClass $instance): void {
-//TODO
-        $matrixroomtopic = $instance->matrixroomtopic ?? null;
-        if ($this->matrixrooms->room_record_exists()) {
-            $this->matrixrooms->update_matrix_room_record($this->matrixrooms->get_matrix_room_id(), $matrixroomtopic);
+        global $DB;
+
+        $tablename = 'communication_customlink';
+        $commid = $this->communication->get_id();
+
+        $rowid = $DB->get_field(
+            $tablename,
+            'id',
+            ['commid' => $commid]
+        );
+
+        if ($rowid !== false) {
+            // Update record.
+            $dbrecord = new \stdClass();
+            $dbrecord->id = $rowid;
+            $dbrecord->url = $instance->customlink;
+            $DB->update_record($tablename, $dbrecord);
         } else {
-            // Create the record with empty room id as we don't have it yet.
-            $this->matrixrooms->create_matrix_room_record(
-                $this->communication->get_id(),
-                $this->matrixrooms->get_matrix_room_id(),
-                $matrixroomtopic,
-            );
+            // Create the record.
+            $dbrecord = new \stdClass();
+            $dbrecord->commid = $commid;
+//$dbrecord->roomid = $this->matrixrooms->get_matrix_room_id(),
+            $dbrecord->url = $instance->customlink ?? null; //TODO - Null probably currently not accepted
+            $dbrecord = $DB->insert_record($tablename, $dbrecord);
+
         }
     }
 
     public function set_form_data(\stdClass $instance): void {
 //TODO
-        if (!empty($instance->id) && !empty($this->communication->get_id())) {
-            $instance->url = $this->matrixrooms->get_customlink_url();
-        }
+        // if (!empty($instance->id) && !empty($this->communication->get_id())) {
+        //     $instance->url = $this->matrixrooms->get_customlink_url();
+        // }
     }
 
     public static function set_form_definition(\MoodleQuickForm $mform): void {
