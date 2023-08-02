@@ -122,28 +122,33 @@ class communication_feature implements
 
         $tablename = 'communication_customlink';
         $commid = $this->communication->get_id();
+        $cachekey = "link_url_{$commid}";
 
-        $dbrecord = new \stdClass();
-        $dbrecord->url = $instance->customlink ?? null; //TODO - is null ever relevant /accepted here or in DB?
+        $newrecord = new \stdClass();
+        $newrecord->url = $instance->customlink ?? null; //TODO - is null ever relevant /accepted here or in DB?
 
-        $rowid = $DB->get_field(
+        $existingrecord = $DB->get_record(
             $tablename,
-            'id',
-            ['commid' => $commid]
+            ['commid' => $commid],
+            'id, url'
         );
 
-        if ($rowid !== false) {
-            // Update record.
-            $dbrecord->id = $rowid;
-            $DB->update_record($tablename, $dbrecord);
+        if (!$existingrecord) {
+            // Create the record if it does not exist.
+            $newrecord->commid = $commid;
+            $DB->insert_record($tablename, $newrecord);
+
+        } else if (strcasecmp($newrecord->url, $existingrecord->url) != 0) {
+            // Update record if the URL has changed.
+            $newrecord->id = $existingrecord->id;
+            $DB->update_record($tablename, $newrecord);
         } else {
-            // Create the record.
-            $dbrecord->commid = $commid;
-            $dbrecord = $DB->insert_record($tablename, $dbrecord);
+            // No change made.
+            return;
         }
 
-        // Cache the URL.
-        $this->cache->set("link_url_{$commid}", $dbrecord->url);
+        // Cache the new URL.
+        $this->cache->set($cachekey, $newrecord->url);
     }
 
     public function set_form_data(\stdClass $instance): void {
