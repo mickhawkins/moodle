@@ -125,7 +125,7 @@ class communication_feature implements
         $cachekey = "link_url_{$commid}";
 
         $newrecord = new \stdClass();
-        $newrecord->url = $instance->customlink ?? null; //TODO - is null ever relevant /accepted here or in DB?
+        $newrecord->url = $instance->customlink;
 
         $existingrecord = $DB->get_record(
             $tablename,

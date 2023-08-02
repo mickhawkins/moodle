@@ -22,19 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
- //TODO
-$string['matrixuserid'] = 'Matrix user ID';
-$string['matrixuserid_desc'] = 'The user ID to be used for Matrix';
-$string['matrixhomeserverurl'] = 'Home server URL';
-$string['matrixhomeserverurl_desc'] = 'The URL of the Synapse home server to connect to, for user and room creation.';
-$string['matrixaccesstoken'] = 'Access token';
-$string['matrixaccesstoken_desc'] = 'Admin access token to authenticate against the Synapse Home server.';
-$string['matrixrefreshtoken'] = 'Refresh token';
-$string['matrixrefreshtoken_desc'] = 'Admin refresh token to associated with the access token.';
-$string['matrixelementurl'] = 'Element web URL';
-$string['matrixelementurl_desc'] = 'The URL to Element Web instance.';
-$string['matrixroomtopic'] = 'Room topic';
-//DONE
 $string['cachedef_customlink'] = 'Custom link data';
 $string['customlink'] = 'Custom link';
 $string['customlink_help'] = 'The URL of an existing room/channel set up for this course in a messaging or other communication service you would like to link to.';
