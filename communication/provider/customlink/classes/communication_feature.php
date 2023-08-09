@@ -125,7 +125,7 @@ class communication_feature implements
         $cachekey = "link_url_{$commid}";
 
         $newrecord = new \stdClass();
-        $newrecord->url = $instance->customlink;
+        $newrecord->url = $instance->customlinkurl ?? null;
 
         $existingrecord = $DB->get_record(
             $tablename,
@@ -138,7 +138,7 @@ class communication_feature implements
             $newrecord->commid = $commid;
             $DB->insert_record($tablename, $newrecord);
 
-        } else if (strcasecmp($newrecord->url, $existingrecord->url) != 0) {
+        } else if (strcasecmp((string) $newrecord->url, (string) $existingrecord->url) != 0) {
             // Update record if the URL has changed.
             $newrecord->id = $existingrecord->id;
             $DB->update_record($tablename, $newrecord);
@@ -153,20 +153,20 @@ class communication_feature implements
 
     public function set_form_data(\stdClass $instance): void {
         if (!empty($instance->id) && !empty($this->communication->get_id())) {
-            $instance->customlink = $this->get_chat_room_url();
+            $instance->customlinkurl = $this->get_chat_room_url();
         }
     }
 
     public static function set_form_definition(\MoodleQuickForm $mform): void {
         // Custom link description for the communication provider.
-        $mform->insertElementBefore($mform->createElement('text', 'customlink',
-            get_string('customlink', 'communication_customlink'),
+        $mform->insertElementBefore($mform->createElement('text', 'customlinkurl',
+            get_string('customlinkurl', 'communication_customlink'),
             'maxlength="255" size="20"'), 'addcommunicationoptionshere');
-        $mform->addHelpButton('customlink', 'customlink', 'communication_customlink');
-        $mform->setType('customlink', PARAM_TEXT);
-        $mform->addRule('customlink', get_string('required'), 'required', null, 'client');
-        $mform->addRule('customlink', get_string('required'), 'required', null, 'server');
-        $mform->addRule('customlink', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
-        $mform->addRule('customlink', get_string('maximumchars', '', 255), 'maxlength', 255, 'server');
+        $mform->addHelpButton('customlinkurl', 'customlinkurl', 'communication_customlink');
+        $mform->setType('customlinkurl', PARAM_TEXT);
+        $mform->addRule('customlinkurl', get_string('required'), 'required', null, 'client');
+        $mform->addRule('customlinkurl', get_string('required'), 'required', null, 'server');
+        $mform->addRule('customlinkurl', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
+        $mform->addRule('customlinkurl', get_string('maximumchars', '', 255), 'maxlength', 255, 'server');
     }
 }

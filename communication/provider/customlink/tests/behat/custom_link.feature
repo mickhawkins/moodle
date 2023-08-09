@@ -9,6 +9,8 @@ Feature: Communication custom link
       | username | firstname | lastname | email                |
       | teacher1 | Teacher   | 1        | teacher1@example.com |
       | student1 | Student   | 1        | student1@example.com |
+    And the following config values are set as admin:
+      | enablecommunicationsubsystem | 1 |
 
   @mick
   Scenario: As a teacher I can configure and access a link to a custom communication provider
@@ -22,22 +24,24 @@ Feature: Communication custom link
 #TODO: Try to avoid CSS elements
     And ".btn-footer-communication" "css_element" should not be visible
     And I am on the "Course 1" "course editing" page
-    And I expand the "Communication" section
-    And the "Communication provider" select box should contain "Custom link"
+    And I expand all fieldsets
+    And the "Communication service" select box should contain "Custom link"
     And I should not see "Custom link URL"
-    And I set the "Communication provider" select box to "Custom link"
+    And I select "Custom link" from the "Communication service" singleselect
     And I should see "Custom link URL"
     # Simulate a custom link using the FQDN of an internal URL to avoid external dependency.
     And I set the following fields to these values:
-      | communicationroomname | Test URL       |
-      | customlink            | <sitehome>/my/ |
+      | communicationroomname | Test URL |
+      | customlinkurl         | /stable_master/my/      |
+#TODO: Have a better way to do a FQDN ^^
     And I press "Save and display"
-    Then I should see "Your Moodle community room is ready"
+    Then I should see "Your Custom link room is ready"
     And ".btn-footer-communication" "css_element" should be visible
-    And I click ".btn-footer-communication"
+    And I click on ".btn-footer-communication" "css_element"
     # Check the link hits the expected destination.
-    And I switch to "test_url" window
-    And I should see "Dashboard" in the "page-header" "region"
+    And I switch to a second window
+    #I switch to "test_url" window
+    And I should see "Welcome, Teacher" in the "page-header" "region"
     And I close all opened windows
 #And I log out
 #TODO: May need to run as admin
@@ -46,21 +50,22 @@ Feature: Communication custom link
     And I am on the "Course 1" course page
     #logged in as "student1"
     And ".btn-footer-communication" "css_element" should be visible
-    And I click ".btn-footer-communication"
-    And I switch to "test_url" window
+    And I click on ".btn-footer-communication" "css_element"
+    And I switch to a second window
+    #I switch to "test_url" window
     And I should see "Dashboard" in the "page-header" "region"
 
   Scenario: As a student I can access a link to a custom communication provider
     Given I am on the "Test course" "Course" page logged in as "student1"
     And ".btn-footer-communication" "css_element" should not be visible
     When the following "courses" exist:
-      | fullname    | shortname   | selectedcommunication    | customlink      |
-      | Test course | Test course | communication_customlink |  <sitehome>/my/ |
+      | fullname    | shortname   | selectedcommunication    | customlinkurl |
+      | Test course | Test course | communication_customlink | /stable_master/my/           |
     And the following "course enrolments" exist:
       | user     | course | role    |
       | student1 | C1     | student |
     And I am on the "Course 1" course page
     And ".btn-footer-communication" "css_element" should be visible
-    And I click ".btn-footer-communication"
+    And I click on ".btn-footer-communication" "css_element"
     And I switch to "test_url" window
-    And I should see "Dashboard" in the "page-header" "region"
+    And I should see "Welcome, Student" in the "page-header" "region"

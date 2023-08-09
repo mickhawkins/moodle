@@ -23,7 +23,7 @@
  */
 
 $string['cachedef_customlink'] = 'Custom link data';
-$string['customlink'] = 'Custom link';
-$string['customlink_help'] = 'The URL of an existing room/channel set up for this course in a messaging or other communication service you would like to link to.';
+$string['customlinkurl'] = 'Custom link URL';
+$string['customlinkurl_help'] = 'The URL of an existing room/channel set up for this course in a messaging or other communication service you would like to link to.';
 $string['pluginname'] = 'Custom link';
 $string['privacy:metadata'] = 'Custom link communication plugin does not store any personal data.';
