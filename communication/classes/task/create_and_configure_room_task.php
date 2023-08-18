@@ -46,8 +46,9 @@ class create_and_configure_room_task extends adhoc_task {
             return;
         }
 
-        // If the room is created successfully, add members to the room.
-        if ($communication->get_room_provider()->create_chat_room()) {
+        // If the room is created successfully, add members to the room if supported by the provider.
+        $provider = $communication->get_room_provider();
+        if ($provider->create_chat_room() && is_a($provider, 'room_user_provider')) {
             add_members_to_room_task::queue(
                 $communication
             );

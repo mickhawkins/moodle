@@ -421,8 +421,8 @@ class api {
             return;
         }
 
-        // No userids? don't bother doing anything.
-        if (empty($userids)) {
+        // No user IDs or this provider does not manage users? No action required.
+        if (empty($userids) || !is_a($this->communication->get_provider(), 'room_user_provider')) {
             return;
         }
 
@@ -449,12 +449,14 @@ class api {
             return;
         }
 
-        if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
+        $provider = $this->communication->get_provider();
+
+        if ($provider === processor::PROVIDER_NONE) {
             return;
         }
 
-        // No user ids? don't bother doing anything.
-        if (empty($userids)) {
+        // No user IDs or this provider does not manage users? No action required.
+        if (empty($userids) || !is_a($provider, 'room_user_provider')) {
             return;
         }
 
