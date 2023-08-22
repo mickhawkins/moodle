@@ -2476,71 +2476,10 @@ function update_course($data, $editoroptions = NULL) {
         $data->showcompletionconditions = null;
     }
 
-    // Check if provider is selected.
-    $provider = $data->selectedcommunication ?? null;
     // If the course moved to hidden category, set provider to none.
     if ($changesincoursecat && empty($data->visible)) {
+//TODO
         $provider = 'none';
-    }
-
-    // Attempt to get the communication provider if it wasn't provided in the data.
-    if (empty($provider) && core_communication\api::is_available()) {
-        $provider = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $data->id)->get_provider();
-    }
-
-    // Communication api call.
-    if (!empty($provider) && core_communication\api::is_available()) {
-        // Prepare the communication api data.
-        $courseimage = course_get_courseimage($data);
-
-        // This nasty logic is here because of hide course doesn't pass anything in the data object.
-        if (!empty($data->communicationroomname)) {
-            $communicationroomname = $data->communicationroomname;
-        } else {
-            $communicationroomname = $data->fullname ?? $oldcourse->fullname;
-        }
-
-        // Update communication room membership of enrolled users.
-        require_once($CFG->libdir . '/enrollib.php');
-        $courseusers = enrol_get_course_users($data->id);
-        $enrolledusers = [];
-
-        foreach ($courseusers as $user) {
-            $enrolledusers[] = $user->id;
-        }
-
-        $communication = \core_communication\api::load_by_instance(
-            'core_course',
-            'coursecommunication',
-            $data->id
-        );
-
-        $addafterupdate = false;
-        if ($provider !== $communication->get_provider()) {
-            // If provider set to none, remove all the members.
-            if ($provider === 'none') {
-                $communication->remove_members_from_room($enrolledusers);
-            } else if (
-                // If previous provider was not none and current provider is not none, but a different provider, remove members.
-                $communication->get_provider() !== '' &&
-                $communication->get_provider() !== 'none' &&
-                $provider !== $communication->get_provider()
-            ) {
-                $communication->remove_members_from_room($enrolledusers);
-                $addafterupdate = true;
-            } else if (
-                // If previous provider was none and current provider is not none, but a different provider, remove members.
-                ($communication->get_provider() === '' || $communication->get_provider() === 'none') &&
-                $provider !== $communication->get_provider()
-            ) {
-                $addafterupdate = true;
-            }
-        }
-
-        $communication->update_room($provider, $communicationroomname, $courseimage, $data);
-        if ($addafterupdate) {
-            $communication->add_members_to_room($enrolledusers, false);
-        }
     }
 
     // Update custom fields if there are any of them in the form.
@@ -5201,6 +5140,59 @@ function course_get_communication_instance_data(int $courseid): array {
  * @param stdClass $data The data to update the course with.
  */
 function course_update_communication_instance_data(stdClass $data): void {
-    $data->id = $data->instanceid; // For correct use in update_course.
-    update_course($data);
+    global $CFG;
+
+    $course = get_course($data->instanceid);
+    $provider = $data->selectedcommunication;
+
+    // Communication API call.
+    if (!empty($provider) && core_communication\api::is_available()) {
+        // Prepare the communication API data.
+        $courseimage = course_get_courseimage($course);
+        $communicationroomname = $data->communicationroomname ?? $course->fullname;
+
+        // Update communication room membership of enrolled users.
+        require_once($CFG->libdir . '/enrollib.php');
+        $courseusers = enrol_get_course_users($course->id);
+        $enrolledusers = [];
+
+        foreach ($courseusers as $user) {
+            $enrolledusers[] = $user->id;
+        }
+
+        $communication = \core_communication\api::load_by_instance(
+            'core_course',
+            'coursecommunication',
+            $course->id
+        );
+
+        $addafterupdate = false;
+        if ($provider !== $communication->get_provider()) {
+            // If provider set to none, remove all the members.
+            if ($provider === 'none') {
+                $communication->remove_members_from_room($enrolledusers);
+            } else if (
+                // If previous provider was not none and current provider is not none, but a different provider, remove members.
+                $communication->get_provider() !== '' &&
+                $communication->get_provider() !== 'none' &&
+                $provider !== $communication->get_provider()
+            ) {
+                $communication->remove_members_from_room($enrolledusers);
+                $addafterupdate = true;
+            } else if (
+                // If previous provider was none and current provider is not none, but a different provider, remove members.
+                ($communication->get_provider() === '' || $communication->get_provider() === 'none') &&
+                $provider !== $communication->get_provider()
+            ) {
+                $addafterupdate = true;
+            }
+        }
+
+        $communication->update_room($provider, $communicationroomname, $courseimage, $data);
+        if ($addafterupdate) {
+            $communication->add_members_to_room($enrolledusers, false);
+        }
+    }
+
+//TODO: Trigger event
 }
