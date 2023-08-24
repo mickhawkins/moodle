@@ -24,6 +24,7 @@
 
 $string['cachedef_customlink'] = 'Custom link data';
 $string['customlinkurl'] = 'Custom link URL';
-$string['customlinkurl_help'] = 'The URL of an existing room/channel set up for this course in a messaging or other communication service you would like to link to.';
+$string['customlinkurl_help'] = 'Provide a link to an existing room from any communication service you would like to make available to participants - such as Microsoft Teams, Slack or Matrix.';
+$string['customlinkurlinfo'] = 'The URL of an existing room already set up for this course.';
 $string['pluginname'] = 'Custom link';
 $string['privacy:metadata'] = 'Custom link communication plugin does not store any personal data.';

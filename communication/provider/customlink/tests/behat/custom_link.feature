@@ -23,18 +23,17 @@ Feature: Communication custom link
     When I am on the "Course 1" "Course" page logged in as "teacher1"
 #TODO: Try to avoid CSS elements
     And ".btn-footer-communication" "css_element" should not be visible
-    And I am on the "Course 1" "course editing" page
-    And I expand all fieldsets
+    And I navigate to "Communication" in current page administration
     And the "Communication service" select box should contain "Custom link"
     And I should not see "Custom link URL"
     And I select "Custom link" from the "Communication service" singleselect
     And I should see "Custom link URL"
     # Simulate a custom link using the FQDN of an internal URL to avoid external dependency.
     And I set the following fields to these values:
-      | communicationroomname | Test URL |
-      | customlinkurl         | /stable_master/my/      |
+      | communicationroomname | Test URL           |
+      | customlinkurl         | /stable_master/my/ |
 #TODO: Have a better way to do a FQDN ^^
-    And I press "Save and display"
+    And I press "Save changes"
     Then I should see "Your Custom link room is ready"
     And ".btn-footer-communication" "css_element" should be visible
     And I click on ".btn-footer-communication" "css_element"

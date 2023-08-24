@@ -168,5 +168,8 @@ class communication_feature implements
         $mform->addRule('customlinkurl', get_string('required'), 'required', null, 'server');
         $mform->addRule('customlinkurl', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addRule('customlinkurl', get_string('maximumchars', '', 255), 'maxlength', 255, 'server');
+        $mform->insertElementBefore($mform->createElement('static', 'customlinkurlinfo', '',
+            get_string('customlinkurlinfo', 'communication_customlink'),
+            'addcommunicationoptionshere'), 'addcommunicationoptionshere');
     }
 }
