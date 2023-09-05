@@ -278,6 +278,9 @@ function groups_create_group($data, $editform = false, $editoroptions = false) {
     $handler = \core_group\customfield\group_handler::create();
     $handler->instance_form_save($data, true);
 
+    // Communication api call for group.
+    core_group\communication\communication_helper::update_group_communication(course: $course, group: $data);
+
     if ($editform and $editoroptions) {
         // Update description from editor with fixed files
         $data = file_postupdate_standard_editor($data, 'description', $editoroptions, $context, 'group', 'description', $data->id);
@@ -454,6 +457,9 @@ function groups_update_group($data, $editform = false, $editoroptions = false) {
     $handler = \core_group\customfield\group_handler::create();
     $handler->instance_form_save($data);
 
+    // Communication api call for group.
+    core_group\communication\communication_helper::update_group_communication(course: get_course($data->courseid), group: $data);
+
     // Invalidate the group data.
     cache_helper::invalidate_by_definition('core', 'groupdata', array(), array($data->courseid));
     // Rebuild the coursehiddengroups cache for the course.
@@ -576,6 +582,10 @@ function groups_delete_group($grouporid) {
             return true;
         }
     }
+
+    // Communication api call to remove the group members from the room as well as potentially remove the room.
+    $communication = \core_group\communication\communication_helper::load_for_group_id($groupid);
+    $communication->delete_room();
 
     $context = context_course::instance($group->courseid);
 

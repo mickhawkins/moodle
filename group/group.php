@@ -111,7 +111,6 @@ if ($editform->is_cancelled()) {
         $id = groups_create_group($data, $editform, $editoroptions);
         $returnurl = $CFG->wwwroot.'/group/index.php?id='.$course->id.'&group='.$id;
     }
-
     redirect($returnurl);
 }
 

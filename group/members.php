@@ -50,6 +50,10 @@ if ($cancel) {
 $groupmembersselector = new group_members_selector('removeselect', array('groupid' => $groupid, 'courseid' => $course->id));
 $potentialmembersselector = new group_non_members_selector('addselect', array('groupid' => $groupid, 'courseid' => $course->id));
 
+// Communication api call to update the membership of the group rooms if any available.
+// No checking or validation required as the api will do it.
+$communication = \core_group\communication\communication_helper::load_for_group_id($groupid);
+
 if (optional_param('add', false, PARAM_BOOL) && confirm_sesskey()) {
     $userstoadd = $potentialmembersselector->get_selected_users();
     if (!empty($userstoadd)) {
@@ -60,6 +64,7 @@ if (optional_param('add', false, PARAM_BOOL) && confirm_sesskey()) {
             $groupmembersselector->invalidate_selected_users();
             $potentialmembersselector->invalidate_selected_users();
         }
+        $communication->add_members_to_room(\core_group\communication\communication_helper::get_usersids_from_users($userstoadd));
     }
 }
 
@@ -77,6 +82,7 @@ if (optional_param('remove', false, PARAM_BOOL) && confirm_sesskey()) {
             $groupmembersselector->invalidate_selected_users();
             $potentialmembersselector->invalidate_selected_users();
         }
+        $communication->remove_members_from_room(\core_group\communication\communication_helper::get_usersids_from_users($userstoremove));
     }
 }
 

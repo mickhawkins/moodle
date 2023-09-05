@@ -115,6 +115,91 @@ class communication_feature_test extends \advanced_testcase {
     }
 
     /**
+     * Test create or update spaces for matrix rooms.
+     *
+     * @covers ::update_space_for_all_rooms
+     * @covers ::update_room_space
+     */
+    public function test_enabling_group_mode_creates_space(): void {
+        // Create a course using groupmode enabled.
+        $course = $this->getDataGenerator()->create_course(['groupmode' => 2]);
+
+        // Run the adhoc task.
+        $this->run_all_adhoc_tasks();
+
+        $communication = \core_course\communication\communication_helper::load_for_course_id($course->id);
+
+        $provider = $communication->get_room_provider();
+        $this->assertInstanceOf(
+            communication_feature::class,
+            $provider,
+        );
+
+        $roomconfig = $provider->get_room_configuration();
+
+        $this->assertInstanceOf(
+            matrix_space::class,
+            $roomconfig,
+        );
+
+        $roomconfig->update_room_record(null, 'A fun topic');
+
+        $provider->update_chat_room();
+
+        // Fetch the back office space data.
+        $remoteroom = $this->backoffice_get_room();
+
+        // The roomid set in the database must match the one set on the remote server.
+        $this->assertEquals(
+            $remoteroom->room_id,
+            $provider->get_room_id(),
+        );
+
+        $this->assertEquals(
+            'A fun topic',
+            $roomconfig->get_topic(),
+        );
+        $this->assertEquals(
+            $remoteroom->topic,
+            $roomconfig->get_topic(),
+        );
+    }
+
+    /**
+     * Test creating a space adds the rooms to that space according to the course instance.
+     *
+     * @covers ::update_space_for_all_rooms
+     * @covers ::update_room_space
+     */
+    public function test_adding_room_to_space(): void {
+        // Create a course using groupmode enabled.
+        $course = $this->getDataGenerator()->create_course(['groupmode' => 2]);
+
+        $group = $this->getDataGenerator()->create_group(array('courseid' => $course->id));
+
+        $communication = \core_group\communication\communication_helper::load_for_group_id($group->id);
+
+        // Create the goup room first.
+        $provider = $communication->get_room_provider();
+        $provider->create_chat_room();
+
+        // Run the adhoc task to create the space.
+        $this->run_all_adhoc_tasks();
+
+        $communication->reload();
+        $provider = $communication->get_room_provider();
+        $roomconfig = $provider->get_room_configuration();
+
+        $this->assertInstanceOf(
+            matrix_room::class,
+            $roomconfig,
+        );
+
+        $this->assertNotSame($roomconfig->get_space_id(), 0);
+
+    }
+
+    /**
      * Test update of a chat room.
      *
      * @covers ::update_chat_room
@@ -412,7 +497,7 @@ class communication_feature_test extends \advanced_testcase {
         global $DB;
 
         // Create a new room.
-        $course = $this->getDataGenerator()->create_course();
+        $course = $this->get_course('Sampleroom', 'none');
         $user = $this->get_user();
 
         $communication = $this->create_room(
@@ -511,7 +596,7 @@ class communication_feature_test extends \advanced_testcase {
      */
     protected function create_room(
         ?string $component = 'communication_matrix',
-        ?string $itemtype = 'example',
+        ?string $itemtype = 'coursecommunication',
         ?int $itemid = 1,
         ?string $roomname = null,
         ?string $roomtopic = null,

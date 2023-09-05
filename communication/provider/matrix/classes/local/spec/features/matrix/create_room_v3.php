@@ -65,8 +65,12 @@ trait create_room_v3 {
             $params['initial_state'] = $initialstate;
         }
 
-        if (array_key_exists('topic', $options)) {
-            $params['topic'] = $options['topic'] ?? '';
+        if (array_key_exists('topic', $options) && $options['topic'] !== null) {
+            $params['topic'] = $options['topic'];
+        }
+
+        if (array_key_exists('creation_content', $options) && $options['creation_content'] !== []) {
+            $params['creation_content'] = $options['creation_content'];
         }
 
         return $this->execute(new command(

@@ -416,6 +416,10 @@ class course_edit_form extends moodleform {
         $mform->addElement('hidden', 'id', null);
         $mform->setType('id', PARAM_INT);
 
+        // Communication api call to set the communication data in the form for handling actions for group feature changes.
+        $communication = core_course\communication\communication_helper::load_for_course_id(empty($course->id) ? 0 : $course->id);
+        $communication->set_data($course);
+
         // Prepare custom fields data.
         $handler->instance_form_before_set_data($course);
         // Finally set the current form data

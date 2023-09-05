@@ -120,7 +120,7 @@ if ($canconfig and $action and confirm_sesskey()) {
                     }
                     // Update communication for instance and given action.
                     if (core_communication\api::is_available() && $instance->enrol !== 'guest') {
-                        $plugin->update_communication($instance->id, 'remove', $course->id);
+                        $plugin->update_communication($instance->id, 'remove_members_from_room', $course);
                     }
                     $plugin->delete_instance($instance);
                     redirect($PAGE->url);
@@ -174,7 +174,7 @@ if ($canconfig and $action and confirm_sesskey()) {
                     }
                     // Update communication for instance and given action.
                     if (core_communication\api::is_available() && $instance->enrol !== 'guest') {
-                        $plugin->update_communication($instance->id, 'remove', $course->id);
+                        $plugin->update_communication($instance->id, 'remove_members_from_room', $course);
                     }
                     $plugin->update_status($instance, ENROL_INSTANCE_DISABLED);
                     redirect($PAGE->url);
@@ -189,7 +189,7 @@ if ($canconfig and $action and confirm_sesskey()) {
                 if ($instance->status != ENROL_INSTANCE_ENABLED) {
                     // Update communication for instance and given action.
                     if (core_communication\api::is_available() && $instance->enrol !== 'guest') {
-                        $plugin->update_communication($instance->id, 'add', $course->id);
+                        $plugin->update_communication($instance->id, 'add_members_to_room', $course);
                     }
                     $plugin->update_status($instance, ENROL_INSTANCE_ENABLED);
                     redirect($PAGE->url);

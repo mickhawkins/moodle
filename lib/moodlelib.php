@@ -4095,17 +4095,7 @@ function delete_user(stdClass $user) {
     $usercontext = context_user::instance($user->id);
 
     // Remove user from communication rooms immediately.
-    if (core_communication\api::is_available()) {
-        foreach (enrol_get_users_courses($user->id) as $course) {
-            $communication = \core_communication\processor::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $course->id
-            );
-            $communication->get_room_user_provider()->remove_members_from_room([$user->id]);
-            $communication->delete_instance_user_mapping([$user->id]);
-        }
-    }
+    \core_user\communication\communication_helper::delete_user_room_membership($user);
 
     // Delete all grades - backup is kept in grade_grades_history table.
     grade_user_delete($user->id);
@@ -5025,6 +5015,9 @@ function delete_course($courseorid, $showfeedback = true) {
         return false;
     }
 
+    // Remove communication related data, membership etc.
+    core_course\communication\communication_helper::delete_course_communication($course);
+
     // Allow plugins to use this course before we completely delete it.
     if ($pluginsfunction = get_plugins_with_function('pre_course_delete')) {
         foreach ($pluginsfunction as $plugintype => $plugins) {
@@ -5046,26 +5039,6 @@ function delete_course($courseorid, $showfeedback = true) {
 
     // Delete the course and related context instance.
     context_helper::delete_instance(CONTEXT_COURSE, $courseid);
-
-    // Communication provider delete associated information.
-    $communication = \core_communication\api::load_by_instance(
-        'core_course',
-        'coursecommunication',
-        $course->id
-    );
-
-    // Update communication room membership of enrolled users.
-    require_once($CFG->libdir . '/enrollib.php');
-    $courseusers = enrol_get_course_users($courseid);
-    $enrolledusers = [];
-
-    foreach ($courseusers as $user) {
-        $enrolledusers[] = $user->id;
-    }
-
-    $communication->remove_members_from_room($enrolledusers);
-
-    $communication->delete_room();
 
     $DB->delete_records("course", array("id" => $courseid));
     $DB->delete_records("course_format_options", array("courseid" => $courseid));

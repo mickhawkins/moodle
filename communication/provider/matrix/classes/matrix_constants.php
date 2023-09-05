@@ -44,4 +44,14 @@ class matrix_constants {
      * User maximum power level for matrix. This is only associated to the token user to allow god mode actions.
      */
     public const POWER_LEVEL_MAXIMUM = 100;
+
+    /**
+     * The table name for matrix room.
+     */
+    public const TABLE_MATRIX_ROOM = 'matrix_room';
+
+    /**
+     * The table name for matrix space.
+     */
+    public const TABLE_MATRIX_SPACE = 'matrix_space';
 }

@@ -155,6 +155,9 @@ class user_groups_editable extends \core\output\inplace_editable {
             if (!isset($coursegroups[$groupid]->members[$userid])) {
                 // Add them.
                 groups_add_member($groupid, $userid);
+                // Communication api call to update the membership of the group rooms if any available.
+                $communication = \core_group\communication\communication_helper::load_for_group_id($groupid);
+                $communication->add_members_to_room([$userid]);
                 // Keep this variable in sync.
                 $coursegroups[$groupid]->members[$userid] = $userid;
             }
@@ -164,6 +167,9 @@ class user_groups_editable extends \core\output\inplace_editable {
         foreach ($coursegroups as $groupid => $group) {
             if (isset($group->members[$userid]) && !isset($groupids[$groupid])) {
                 if (groups_remove_member_allowed($groupid, $userid)) {
+                    // Communication api call to update the membership of the group rooms if any available.
+                    $communication = \core_group\communication\communication_helper::load_for_group_id($groupid);
+                    $communication->remove_members_from_room([$userid]);
                     groups_remove_member($groupid, $userid);
                     unset($coursegroups[$groupid]->members[$userid]);
                 } else {

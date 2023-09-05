@@ -31,6 +31,7 @@ function xmldb_communication_matrix_upgrade($oldversion) {
     global $DB;
 
     $dbman = $DB->get_manager();
+
     if ($oldversion < 2023060101) {
         $table = new xmldb_table('matrix_rooms');
         $field = new xmldb_field('topic', XMLDB_TYPE_CHAR, '255', null, false, false, null, 'roomid');
@@ -51,6 +52,38 @@ function xmldb_communication_matrix_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2023071900, 'communication', 'matrix');
     }
 
-    return true;
+    if ($oldversion < 2023082200) {
+        $table = new xmldb_table('matrix_space');
+        // Adding fields to table matrix_space.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE);
+        $table->add_field('commid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, false, null, 'id');
+        $table->add_field('roomid', XMLDB_TYPE_CHAR, '255', null, false, false, null, 'commid');
+        $table->add_field('topic', XMLDB_TYPE_CHAR, '255', null, false, false, null, 'matrixid');
 
+        // Add keys.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('fk_commid', XMLDB_KEY_FOREIGN, ['commid'], 'communication', ['id']);
+
+        // Conditionally launch create table for matrix_space.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Add the new field spaceid to the matrix_room table.
+        $table = new xmldb_table('matrix_room');
+        $field = new xmldb_field('spaceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, false, 0, 'topic');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $key = new xmldb_key('fk_spaceid', XMLDB_KEY_FOREIGN, ['spaceid'], 'matrix_space', ['id']);
+        // Launch add key fk_spaceid.
+        $dbman->add_key($table, $key);
+
+        // Plugin savepoint reached.
+        upgrade_plugin_savepoint(true, 2023082200, 'communication', 'matrix');
+    }
+
+    return true;
 }

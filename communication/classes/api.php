@@ -16,6 +16,7 @@
 
 namespace core_communication;
 
+use core\plugininfo\communication;
 use core_communication\task\add_members_to_room_task;
 use core_communication\task\create_and_configure_room_task;
 use core_communication\task\delete_room_task;
@@ -99,9 +100,9 @@ class api {
     /**
      * Return the underlying communication processor object.
      *
-     * @return processor
+     * @return ?processor
      */
-    public function get_processor(): processor {
+    public function get_processor(): ?processor {
         return $this->communication;
     }
 
@@ -380,12 +381,14 @@ class api {
      * @param string $communicationroomname The communication room name
      * @param null|\stored_file $avatar The stored file for the avatar
      * @param \stdClass|null $instance The actual instance object
+     * @param bool $queue Whether to queue the task or not
      */
     public function create_and_configure_room(
         string $selectedcommunication,
         string $communicationroomname,
         ?\stored_file $avatar = null,
         ?\stdClass $instance = null,
+        bool $queue = true,
     ): void {
         if ($selectedcommunication !== processor::PROVIDER_NONE && $selectedcommunication !== '') {
             // Create communication record.
@@ -407,10 +410,12 @@ class api {
                 $this->set_avatar($avatar);
             }
 
-            // Add ad-hoc task to create the provider room.
-            create_and_configure_room_task::queue(
-                $this->communication,
-            );
+            if ($queue) {
+                // Add ad-hoc task to create the provider room.
+                create_and_configure_room_task::queue(
+                    $this->communication,
+                );
+            }
         }
     }
 
@@ -418,16 +423,18 @@ class api {
      * Create a communication ad-hoc task for update operation.
      * This method will add a task to the queue to update the room.
      *
-     * @param string $selectedprovider The selected communication provider
-     * @param string $communicationroomname The communication room name
+     * @param string|null $selectedprovider The selected communication provider
+     * @param string|null $communicationroomname The communication room name
      * @param null|\stored_file $avatar The stored file for the avatar
      * @param \stdClass|null $instance The actual instance object
+     * @param bool $queue Whether to queue the task or not
      */
     public function update_room(
         ?string $selectedprovider = null,
         ?string $communicationroomname = null,
         ?\stored_file $avatar = null,
         ?\stdClass $instance = null,
+        bool $queue = true,
     ): void {
         // Existing object found, let's update the communication record and associated actions.
         if ($this->communication !== null) {
@@ -469,6 +476,11 @@ class api {
                 return;
             }
 
+            // Nothing else to do if the queue is false.
+            if (!$queue) {
+                return;
+            }
+
             // Add ad-hoc task to update the provider room if the room name changed.
             // TODO add efficiency considering dynamic fields.
             if (
@@ -487,7 +499,7 @@ class api {
             }
         } else {
             // The instance didn't have any communication record, so create one.
-            $this->create_and_configure_room($selectedprovider, $communicationroomname, $avatar, $instance);
+            $this->create_and_configure_room($selectedprovider, $communicationroomname, $avatar, $instance, $queue);
         }
     }
 
@@ -551,6 +563,10 @@ class api {
             return;
         }
 
+        // This is to make sure that the user mapping is created for the users that are not in the room.
+        $this->communication->create_instance_user_mapping($userids);
+
+        // Reset the mapping for the user to be updated.
         $this->communication->reset_users_sync_flag($userids);
 
         if ($queue) {
@@ -595,6 +611,30 @@ class api {
     }
 
     /**
+     * Remove all users from the room.
+     *
+     * @param bool $queue Whether to queue the task or not
+     */
+    public function remove_all_members_from_room(bool $queue = true): void {
+        // No communication object? something not done right.
+        if (!$this->communication) {
+            return;
+        }
+
+        if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
+            return;
+        }
+
+        $this->communication->add_delete_user_flag($this->communication->get_all_userids_for_instance());
+
+        if ($queue) {
+            remove_members_from_room::queue(
+                $this->communication
+            );
+        }
+    }
+
+    /**
      * Display the communication room status notification.
      */
     public function show_communication_room_status_notification(): void {
@@ -611,16 +651,18 @@ class api {
         $pluginname = get_string('pluginname', $this->get_provider());
         $message = get_string('communicationroom' . $roomstatus, 'communication', $pluginname);
 
+        // We only show the ready notification once per user.
+        // We check this with a custom user preference.
+        $roomreadypreference = "{$this->component}_{$this->instancetype}_{$this->instanceid}_room_ready";
+
         switch ($roomstatus) {
             case 'pending':
 
                 \core\notification::add($message, \core\notification::INFO);
+                unset_user_preference($roomreadypreference);
                 break;
 
             case 'ready':
-                // We only show the ready notification once per user.
-                // We check this with a custom user preference.
-                $roomreadypreference = "{$this->component}_{$this->instancetype}_{$this->instanceid}_room_ready";
 
                 if (empty(get_user_preferences($roomreadypreference))) {
                     \core\notification::add($message, \core\notification::SUCCESS);

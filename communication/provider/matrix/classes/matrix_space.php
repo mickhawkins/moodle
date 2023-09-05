@@ -19,19 +19,19 @@ namespace communication_matrix;
 use stdClass;
 
 /**
- * Class matrix_room to manage the updates to the room information in db.
+ * Class matrix_space to manage the updates to the space information in db.
  *
  * @package    communication_matrix
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class matrix_room extends matrix_room_base {
+class matrix_space extends matrix_room_base {
 
     public static function load_by_processor_id(
         int $processorid,
     ): ?self {
         global $DB;
-        $record = $DB->get_record(matrix_constants::TABLE_MATRIX_ROOM, ['commid' => $processorid]);
+        $record = $DB->get_record(matrix_constants::TABLE_MATRIX_SPACE, ['commid' => $processorid]);
 
         if (!$record) {
             return null;
@@ -56,7 +56,7 @@ class matrix_room extends matrix_room_base {
             'roomid' => $roomid,
             'topic' => $topic,
         ];
-        $roomrecord->id = $DB->insert_record(matrix_constants::TABLE_MATRIX_ROOM, $roomrecord);
+        $roomrecord->id = $DB->insert_record(matrix_constants::TABLE_MATRIX_SPACE, $roomrecord);
 
         return self::load_by_processor_id($processorid);
     }
@@ -75,12 +75,12 @@ class matrix_room extends matrix_room_base {
             $this->record->topic = $topic;
         }
 
-        $DB->update_record(matrix_constants::TABLE_MATRIX_ROOM, $this->record);
+        $DB->update_record(matrix_constants::TABLE_MATRIX_SPACE, $this->record);
     }
 
     public function delete_room_record(): void {
         global $DB;
-        $DB->delete_records(matrix_constants::TABLE_MATRIX_ROOM, ['commid' => $this->record->commid]);
+        $DB->delete_records(matrix_constants::TABLE_MATRIX_SPACE, ['commid' => $this->record->commid]);
 
         unset($this->record);
     }
@@ -102,24 +102,8 @@ class matrix_room extends matrix_room_base {
     }
 
     public function get_creation_content(): array {
-        return [];
-    }
-
-    /**
-     * Set the space id for the matrix room.
-     *
-     * @param int $spaceid The space id of the room.
-     */
-    public function set_space_id(int $spaceid): void {
-        $this->record->spaceid = $spaceid;
-    }
-
-    /**
-     * Get the space id.
-     *
-     * @return int The space id of the room.
-     */
-    public function get_space_id(): int {
-        return $this->record->spaceid;
+        return [
+            'type' => 'm.space',
+        ];
     }
 }

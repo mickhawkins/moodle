@@ -431,6 +431,15 @@ class processor {
     }
 
     /**
+     * Get the instance type.
+     *
+     * @return string The instance type
+     */
+    public function get_instance_type(): string {
+        return $this->instancedata->instancetype;
+    }
+
+    /**
      * Get communication provider.
      *
      * @return string|null

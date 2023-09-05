@@ -24,7 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-use core_course\external\course_summary_exporter;
 use core_courseformat\base as course_format;
 use core\output\local\action_menu\subpanel as action_menu_subpanel;
 
@@ -2275,31 +2274,10 @@ function create_course($data, $editoroptions = NULL) {
     if (isset($data->tags)) {
         core_tag_tag::set_item_tags('core', 'course', $course->id, context_course::instance($course->id), $data->tags);
     }
+
     // Set up communication.
-    if (core_communication\api::is_available()) {
-        // Check for default provider config setting.
-        $defaultprovider = get_config('moodlecourse', 'coursecommunicationprovider');
-        $provider = (isset($data->selectedcommunication)) ? $data->selectedcommunication : $defaultprovider;
-
-        if (!empty($provider)) {
-            // Prepare the communication api data.
-            $courseimage = course_get_courseimage($course);
-            $communicationroomname = !empty($data->communicationroomname) ? $data->communicationroomname : $data->fullname;
-
-            // Communication api call.
-            $communication = \core_communication\api::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $course->id,
-            );
-            $communication->create_and_configure_room(
-                $provider,
-                $communicationroomname,
-                $courseimage ?: null,
-                $data,
-            );
-        }
-    }
+    $data->id = $course->id;
+    core_course\communication\communication_helper::create_course_communication_instance($data);
 
     // Save custom fields if there are any of them in the form.
     $handler = core_course\customfield\course_handler::create();
@@ -2422,73 +2400,6 @@ function update_course($data, $editoroptions = NULL) {
         $data->showcompletionconditions = null;
     }
 
-    // Check if provider is selected.
-    $provider = $data->selectedcommunication ?? null;
-    // If the course moved to hidden category, set provider to none.
-    if ($changesincoursecat && empty($data->visible)) {
-        $provider = 'none';
-    }
-
-    // Attempt to get the communication provider if it wasn't provided in the data.
-    if (empty($provider) && core_communication\api::is_available()) {
-        $provider = \core_communication\api::load_by_instance('core_course', 'coursecommunication', $data->id)->get_provider();
-    }
-
-    // Communication api call.
-    if (!empty($provider) && core_communication\api::is_available()) {
-        // Prepare the communication api data.
-        $courseimage = course_get_courseimage($data);
-
-        // This nasty logic is here because of hide course doesn't pass anything in the data object.
-        if (!empty($data->communicationroomname)) {
-            $communicationroomname = $data->communicationroomname;
-        } else {
-            $communicationroomname = $data->fullname ?? $oldcourse->fullname;
-        }
-
-        // Update communication room membership of enrolled users.
-        require_once($CFG->libdir . '/enrollib.php');
-        $courseusers = enrol_get_course_users($data->id);
-        $enrolledusers = [];
-
-        foreach ($courseusers as $user) {
-            $enrolledusers[] = $user->id;
-        }
-
-        $communication = \core_communication\api::load_by_instance(
-            'core_course',
-            'coursecommunication',
-            $data->id
-        );
-
-        $addafterupdate = false;
-        if ($provider !== $communication->get_provider()) {
-            // If provider set to none, remove all the members.
-            if ($provider === 'none') {
-                $communication->remove_members_from_room($enrolledusers);
-            } else if (
-                // If previous provider was not none and current provider is not none, but a different provider, remove members.
-                $communication->get_provider() !== '' &&
-                $communication->get_provider() !== 'none' &&
-                $provider !== $communication->get_provider()
-            ) {
-                $communication->remove_members_from_room($enrolledusers);
-                $addafterupdate = true;
-            } else if (
-                // If previous provider was none and current provider is not none, but a different provider, remove members.
-                ($communication->get_provider() === '' || $communication->get_provider() === 'none') &&
-                $provider !== $communication->get_provider()
-            ) {
-                $addafterupdate = true;
-            }
-        }
-
-        $communication->update_room($provider, $communicationroomname, $courseimage, $data);
-        if ($addafterupdate) {
-            $communication->add_members_to_room($enrolledusers, false);
-        }
-    }
-
     // Update custom fields if there are any of them in the form.
     $handler = core_course\customfield\course_handler::create();
     $handler->instance_form_save($data);
@@ -2500,6 +2411,19 @@ function update_course($data, $editoroptions = NULL) {
 
     // Purge course image cache in case if course image has been updated.
     \cache::make('core', 'course_image')->delete($data->id);
+
+    // Update the communication instance for the course.
+    if (core_course\communication\communication_helper::is_communication_instance_update_required(
+        course: $data,
+        oldcourse: $oldcourse,
+        changesincoursecat: $changesincoursecat,
+    )) {
+        core_course\communication\communication_helper::update_course_communication(
+            course: $data,
+            oldcourse: $oldcourse,
+            changesincoursecat: $changesincoursecat,
+        );
+    }
 
     // update course format options with full course data
     course_get_format($data->id)->update_course_format_options($data, $oldcourse);
@@ -5147,5 +5071,11 @@ function course_get_communication_instance_data(int $courseid): array {
  */
 function course_update_communication_instance_data(stdClass $data): void {
     $data->id = $data->instanceid; // For correct use in update_course.
-    update_course($data);
+    $oldcourse = get_course($data->id);
+    core_course\communication\communication_helper::update_course_communication(
+        course: $data,
+        oldcourse: $oldcourse,
+        changesincoursecat: false,
+    );
+    // update_course($data);
 }
