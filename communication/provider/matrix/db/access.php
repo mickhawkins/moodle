@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version information for communication_matrix.
+ * Capability definitions for matrix communication.
  *
  * @package    communication_matrix
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
@@ -24,8 +24,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'communication_matrix';
+$capabilities = [
 
-$plugin->version = 2023080302;
-$plugin->requires = 2023011300;
-$plugin->maturity = MATURITY_ALPHA;
+    // Matrix moderator capability which aligns with the matrix moderator role or power level 50.
+    'communication/matrix:moderator' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW
+        ]
+    ],
+];
