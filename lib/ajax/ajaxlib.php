@@ -38,7 +38,7 @@
 function user_preference_allow_ajax_update($name, $paramtype) {
     global $USER, $PAGE;
 
-    debugging(__FUNCTION__ . '() is deprecated. Please use the "core_user/repository" module instead.', DEBUG_DEVELOPER);
+    debugging(__FUNCTION__ . '() is deprecated. Please use the "core_user/repository" module instead WOOOOO.', DEBUG_DEVELOPER);
 
     // Record in the session that this user_preference is allowed to updated remotely.
     $USER->ajax_updatable_user_prefs[$name] = $paramtype;

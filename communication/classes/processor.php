@@ -369,24 +369,39 @@ class processor {
      * @param string $component The component name
      * @param string $instancetype The instance type
      * @param int $instanceid The instance id
+     * @param string|null $provider The provider type - if null will load for this context's active provider.
      * @return processor|null
      */
     public static function load_by_instance(
         context $context,
         string $component,
         string $instancetype,
-        int $instanceid
+        int $instanceid,
+        ?string $provider = null,
     ): ?self {
 
         global $DB;
 
-        $record = $DB->get_record('communication', [
-            'contextid' => $context->id,
-            'instanceid' => $instanceid,
-            'component' => $component,
-            'instancetype' => $instancetype,
-        ]);
-
+        if ($provider === null) {
+            // Fetch the active provider in this context.
+            $record = $DB->get_record('communication', [
+                'contextid' => $context->id,
+                'instanceid' => $instanceid,
+                'component' => $component,
+                'instancetype' => $instancetype,
+                'active' => 1,
+            ]);
+        } else {
+            // Fetch a specific provider in this context (which may be inactive).
+            $record = $DB->get_record('communication', [
+                'contextid' => $context->id,
+                'instanceid' => $instanceid,
+                'component' => $component,
+                'instancetype' => $instancetype,
+                'provider' => $provider,
+            ]);
+        }
+error_log(var_export($record,true));
         if ($record && self::is_provider_available($record->provider)) {
             return new self($record);
         }
