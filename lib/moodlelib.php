@@ -5148,15 +5148,16 @@ function delete_course($courseorid, $showfeedback = true) {
     // Make the course completely empty.
     remove_course_contents($courseid, $showfeedback);
 
-    // Delete the course and related context instance.
-    context_helper::delete_instance(CONTEXT_COURSE, $courseid);
-
     // Communication provider delete associated information.
     $communication = \core_communication\api::load_by_instance(
+        $context,
         'core_course',
         'coursecommunication',
         $course->id
     );
+
+    // Delete the course and related context instance.
+    context_helper::delete_instance(CONTEXT_COURSE, $courseid);
 
     // Update communication room membership of enrolled users.
     require_once($CFG->libdir . '/enrollib.php');
