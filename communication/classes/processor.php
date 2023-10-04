@@ -113,22 +113,17 @@ class processor {
     /**
      * Update the communication instance with any changes.
      *
-     * @param null|string $provider The communication provider
+     * @param null|int $active Active state of the instance (PROVIDER_ACTIVE or PROVIDER_INACTIVE)
      * @param null|string $roomname The room name
      */
     public function update_instance(
-        ?string $provider = null,
+        ?string $active = null,
         ?string $roomname = null,
     ): void {
         global $DB;
 
-        if ($provider !== null) {
-            if ($provider === self::PROVIDER_NONE) {
-                $this->instancedata->active = self::PROVIDER_INACTIVE;
-            } else {
-                $this->instancedata->provider = $provider;
-                $this->instancedata->active = self::PROVIDER_ACTIVE;
-            }
+        if ($active !== null && in_array($active, [self::PROVIDER_ACTIVE, self::PROVIDER_INACTIVE])) {
+            $this->instancedata->active = $active;
         }
 
         if ($roomname !== null) {
@@ -383,6 +378,7 @@ class processor {
         global $DB;
 
         if ($provider === null) {
+$test ="PROVIDER IS NULL^^^^^^^^^^^^^^^";
             // Fetch the active provider in this context.
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -392,6 +388,7 @@ class processor {
                 'active' => 1,
             ]);
         } else {
+$test ="PROVIDER IS {$provider}^^^^^^^^^^^^^^^";
             // Fetch a specific provider in this context (which may be inactive).
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -401,7 +398,18 @@ class processor {
                 'provider' => $provider,
             ]);
         }
-error_log(var_export($record,true));
+        if (is_bool($record)) {
+error_log("@@@@@@");
+error_log("NO RECORD FOUND");
+        } else {
+error_log("!!!!!!!!!!!!!!!!!");
+error_log("ID: {$record->id}");
+error_log("Instance ID: {$record->instanceid}");
+error_log("Provider: {$record->provider}");
+error_log("Active: {$record->active}");
+error_log("Room name: {$record->roomname}");
+error_log($test);
+}
         if ($record && self::is_provider_available($record->provider)) {
             return new self($record);
         }
@@ -434,6 +442,7 @@ error_log(var_export($record,true));
      * @return int
      */
     public function get_id(): int {
+error_log("GET ID: {$this->instancedata->id}");
         return $this->instancedata->id;
     }
 

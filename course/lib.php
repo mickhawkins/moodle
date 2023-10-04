@@ -2292,6 +2292,7 @@ function create_course($data, $editoroptions = NULL) {
                 component: 'core_course',
                 instancetype: 'coursecommunication',
                 instanceid: $course->id,
+                provider: $provider,
             );
             $communication->create_and_configure_room(
                 $provider,
@@ -2468,30 +2469,56 @@ function update_course($data, $editoroptions = NULL) {
             instanceid: $data->id,
         );
 
-        $addafterupdate = false;
+        $addusersrequired = false;
+        $enablenewprovider = false;
         if ($provider !== $communication->get_provider()) {
-            // If provider set to none, remove all the members.
+            // If provider set to none, remove all the members from previous provider.
             if ($provider === 'none') {
                 $communication->remove_members_from_room($enrolledusers);
             } else if (
-                // If previous provider was not none and current provider is not none, but a different provider, remove members.
+                // If previous provider was not none and current provider is not none, but a different provider,
+                // remove members from previous provider.
                 $communication->get_provider() !== '' &&
                 $communication->get_provider() !== 'none' &&
                 $provider !== $communication->get_provider()
             ) {
                 $communication->remove_members_from_room($enrolledusers);
-                $addafterupdate = true;
+                $addusersrequired = true;
             } else if (
-                // If previous provider was none and current provider is not none, but a different provider, remove members.
+                // If previous provider was none and current provider is not none, but a different provider,
+                // remove members from previous provider.
                 ($communication->get_provider() === '' || $communication->get_provider() === 'none') &&
                 $provider !== $communication->get_provider()
             ) {
-                $addafterupdate = true;
+                $addusersrequired = true;
             }
+
+            // Provider changed, need to enable the current one and disable the previous one.
+            $enablenewprovider = true;
+            $communication->update_room(
+                active: \core_communication\processor::PROVIDER_INACTIVE,
+            );
+
+            // Switch to the newly selected provider so updates below are made to the new one.
+            $communication = \core_communication\api::load_by_instance(
+                context: $context,
+                component: 'core_course',
+                instancetype: 'coursecommunication',
+                instanceid: $data->id,
+                provider: $provider,
+            );
         }
 
-        $communication->update_room($provider, $communicationroomname, $courseimage, $data);
-        if ($addafterupdate) {
+        // Update the currently enabled provider's room data.
+        $communication->update_room(
+            active: $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : null,
+            communicationroomname: $communicationroomname,
+            avatar: $courseimage,
+            instance: $data,
+        );
+
+        // Add members to the room if required.
+        if ($addusersrequired) {
             $communication->add_members_to_room($enrolledusers, false);
         }
     }

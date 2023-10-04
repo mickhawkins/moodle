@@ -110,6 +110,7 @@ class api {
             component: $this->component,
             instancetype: $this->instancetype,
             instanceid: $this->instanceid,
+            provider: $this->provider,
         );
     }
 
@@ -449,39 +450,53 @@ class api {
      * Create a communication ad-hoc task for update operation.
      * This method will add a task to the queue to update the room.
      *
-     * @param string $selectedprovider The selected communication provider
-     * @param string $communicationroomname The communication room name
+     * @param null|int $active The selected active state of the provider
+     * @param null|string $communicationroomname The communication room name
      * @param null|\stored_file $avatar The stored file for the avatar
      * @param \stdClass|null $instance The actual instance object
      */
     public function update_room(
-        ?string $selectedprovider = null,
+        ?int $active = null,
         ?string $communicationroomname = null,
         ?\stored_file $avatar = null,
         ?\stdClass $instance = null,
     ): void {
         // Existing object found, let's update the communication record and associated actions.
-        if ($this->communication !== null) {
-            // Get the previous data to compare for update.
-            $previousprovider = $this->communication->get_provider();
-            $previousroomname = $this->communication->get_room_name();
-
+        // if ($this->communication !== null) {
             // Reload so the currently selected provider is used.
             $this->reload();
 
-            if ($communicationroomname !== null) {
-                if ($previousprovider !== $selectedprovider) {
-                    // Fetch the existing room name for the current provider.
-                    $previousroomname = $this->communication->get_room_name();
-                }
+            // If the provider is none, we don't need to do anything from room point of view.
+            if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
+                return;
+            }
 
-                // If the name of the currently selected provider has changed, update it.
-                if ($communicationroomname !== $previousroomname) {
-                    $this->communication->update_instance(
-                        provider: $selectedprovider,
-                        roomname: $communicationroomname,
-                    );
-                }
+            $roomnamechange = null;
+            $activestatuschange = null;
+            $roomupdaterequired = false;
+
+            // Check if the room name is being changed.
+            if (
+                $communicationroomname !== null &&
+                $communicationroomname !== $this->communication->get_room_name()
+            ) {
+                $roomnamechange = $communicationroomname;
+                $roomupdaterequired = true;
+            }
+
+            // Check if the active status of the provider is being changed.
+            if (
+                $active !== null &&
+                $active !== $this->communication->is_instance_active()
+            ) {
+                $activestatuschange = $active;
+            }
+
+            if ($roomnamechange !== null || $activestatuschange !== null) {
+                $this->communication->update_instance(
+                    active: $active,
+                    roomname: $communicationroomname,
+                );
             }
 
             // Update provider record from form data.
@@ -491,31 +506,34 @@ class api {
 
             // Update the avatar.
             // If the value is `null`, then unset the avatar.
-            $this->set_avatar($avatar);
+            if ($this->set_avatar($avatar)) {
+                $roomupdaterequired = true;
+            }
 
-            // If the provider is none, we don't need to do anything from room point of view.
-            if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
-                return;
+            if ($roomupdaterequired) {
+                update_room_task::queue(
+                    $this->communication,
+                );
             }
 
             // Add ad-hoc task to update the provider room if the room name changed.
             // TODO add efficiency considering dynamic fields.
-            if (
-                $previousprovider === $selectedprovider
-            ) {
-                update_room_task::queue(
-                    $this->communication,
-                );
-            } else {
-                // Add ad-hoc task to create the provider room.
-                create_and_configure_room_task::queue(
-                    $this->communication,
-                );
-            }
-        } else {
-            // The instance had no communication record for this provider type, so create one.
-            $this->create_and_configure_room($selectedprovider, $communicationroomname, $avatar, $instance);
-        }
+            // if (
+            //     $previousprovider === $selectedprovider
+            // ) {
+            //     update_room_task::queue(
+            //         $this->communication,
+            //     );
+            // } else {
+            //     // Add ad-hoc task to create the provider room.
+            //     create_and_configure_room_task::queue(
+            //         $this->communication,
+            //     );
+            // }
+        // } else {
+        //     // The instance had no communication record for this provider type, so create one.
+        //     $this->create_and_configure_room($selectedprovider, $communicationroomname, $avatar, $instance);
+        // }
     }
 
     /**

@@ -44,7 +44,8 @@ class create_and_configure_room_task extends adhoc_task {
             mtrace("Skipping room creation because the instance is not active");
             return;
         }
-error_log("TASK PROVIDER: {$communication->get_provider()}");
+mtrace("####################################");
+mtrace("TASK PROVIDER: {$communication->get_provider()}");
         // If the room is created successfully, add members to the room if supported by the provider.
         if ($communication->get_room_provider()->create_chat_room() && $communication->supports_user_features()) {
             add_members_to_room_task::queue(
