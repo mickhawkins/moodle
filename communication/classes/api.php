@@ -471,7 +471,6 @@ class api {
 
         $roomnamechange = null;
         $activestatuschange = null;
-        $roomupdaterequired = false;
 
         // Check if the room name is being changed.
         if (
@@ -479,7 +478,6 @@ class api {
             $communicationroomname !== $this->communication->get_room_name()
         ) {
             $roomnamechange = $communicationroomname;
-            $roomupdaterequired = true;
         }
 
         // Check if the active status of the provider is being changed.
@@ -504,15 +502,13 @@ class api {
 
         // Update the avatar.
         // If the value is `null`, then unset the avatar.
-        if ($this->set_avatar($avatar)) {
-            $roomupdaterequired = true;
-        }
+        $this->set_avatar($avatar);
 
-        if ($roomupdaterequired) {
-            update_room_task::queue(
-                $this->communication,
-            );
-        }
+        // Always queue a room update, even if none of the above standard fields have changed.
+        // It is possible for providers to have custom fields that have been updated.
+        update_room_task::queue(
+            $this->communication,
+        );
     }
 
     /**
