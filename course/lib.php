@@ -2470,17 +2470,11 @@ function update_course($data, $editoroptions = NULL) {
             instanceid: $data->id,
         );
         $existingprovider = $communication->get_provider();
-
-$test1 = $communication->get_provider();
-error_log("############ new provider = $provider, old provider = $test1");
-error_log(var_export($test1,true));
-
         $addusersrequired = false;
         $enablenewprovider = false;
 
         // Action required changes if provider has changed.
         if ($provider !== $existingprovider) {
-error_log("CHANGE IN PROVIDER");
             // Provider changed, flag new one to be enabled.
             $enablenewprovider = true;
 
@@ -2520,13 +2514,8 @@ error_log("CHANGE IN PROVIDER");
                     provider: $provider,
                 );
 
-// error_log("SWITCH PROVIDER TO expect $provider, get {$communication->get_provider()}");
-// $communication->reload();
-// error_log("RELOADED PROVIDER - {$communication->get_provider()}");
-
                 // Create it if it does not exist.
                 if ($communication->get_provider() === '') {
-error_log("Create provider");
                     $communication->create_and_configure_room(
                         selectedcommunication: $provider,
                         communicationroomname: $communicationroomname,
@@ -2542,19 +2531,14 @@ error_log("Create provider");
                         provider: $provider,
                     );
                 } else if ($addusersrequired) {
-error_log("Queue adding members");
                     // For providers that already exist, add members to the room if required.
                     // Newly created providers automatically add members.
                     $communication->add_members_to_room($enrolledusers);
-                } else {
-error_log('Add users not required');
                 }
             }
         }
 
         if ($provider !== 'none') {
-            $test = $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : 0;
-            error_log("NEW STATUS WILL BE: $test for provider {$communication->get_provider()}");
             // Update the currently enabled provider's room data.
             $communication->update_room(
                 active: $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : null,
@@ -2562,8 +2546,6 @@ error_log('Add users not required');
                 avatar: $courseimage,
                 instance: $data,
             );
-        } else {
-            error_log("NEW PROVIDER IS NONE");
         }
     }
 

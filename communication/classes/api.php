@@ -105,7 +105,6 @@ class api {
      * Reload in the internal instance data.
      */
     public function reload(): void {
-//error_log("RELOAD");
         $this->communication = processor::load_by_instance(
             context: $this->context,
             component: $this->component,
@@ -462,85 +461,58 @@ class api {
         ?\stored_file $avatar = null,
         ?\stdClass $instance = null,
     ): void {
-        // Existing object found, let's update the communication record and associated actions.
-        // if ($this->communication !== null) {
-            // Reload so the currently selected provider is used.
-            $this->reload();
-//error_log("API UPDATE CALLED, active = $active, provider = {$this->provider}");
-            // If the provider is none, we don't need to do anything from room point of view.
-            if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
-// error_log("UPDATE PROVIDER IS NONEEEEEE");
-                return;
-            }
+        // Reload so the currently selected provider is used.
+        $this->reload();
 
-            $roomnamechange = null;
-            $activestatuschange = null;
-            $roomupdaterequired = false;
+        // If the provider is none, we don't need to do anything from room point of view.
+        if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
+            return;
+        }
 
-            // Check if the room name is being changed.
-            if (
-                $communicationroomname !== null &&
-                $communicationroomname !== $this->communication->get_room_name()
-            ) {
-                $roomnamechange = $communicationroomname;
-                $roomupdaterequired = true;
-            }
+        $roomnamechange = null;
+        $activestatuschange = null;
+        $roomupdaterequired = false;
 
-            // Check if the active status of the provider is being changed.
-            if (
-                $active !== null &&
-                $active !== $this->communication->is_instance_active()
-            ) {
-// error_log("IS DETECTING ACTIVE");
-                $activestatuschange = $active;
-            } else {
-                $test = $this->communication->is_instance_active() ? "Already active" : "Not already active";
-// error_log("NOT DETECTING ACTIVE CHANGE, $test");
-            }
+        // Check if the room name is being changed.
+        if (
+            $communicationroomname !== null &&
+            $communicationroomname !== $this->communication->get_room_name()
+        ) {
+            $roomnamechange = $communicationroomname;
+            $roomupdaterequired = true;
+        }
 
-            if ($roomnamechange !== null || $activestatuschange !== null) {
-// error_log("CALLING COMM UPDATE INSTANCE");
-                $this->communication->update_instance(
-                    active: $active,
-                    roomname: $communicationroomname,
-                );
-            }
+        // Check if the active status of the provider is being changed.
+        if (
+            $active !== null &&
+            $active !== $this->communication->is_instance_active()
+        ) {
+            $activestatuschange = $active;
+        }
 
-            // Update provider record from form data.
-            if ($instance !== null) {
-                $this->communication->get_form_provider()->save_form_data($instance);
-            }
+        if ($roomnamechange !== null || $activestatuschange !== null) {
+            $this->communication->update_instance(
+                active: $active,
+                roomname: $communicationroomname,
+            );
+        }
 
-            // Update the avatar.
-            // If the value is `null`, then unset the avatar.
-            if ($this->set_avatar($avatar)) {
-                $roomupdaterequired = true;
-            }
+        // Update provider record from form data.
+        if ($instance !== null) {
+            $this->communication->get_form_provider()->save_form_data($instance);
+        }
 
-            if ($roomupdaterequired) {
-                update_room_task::queue(
-                    $this->communication,
-                );
-            }
+        // Update the avatar.
+        // If the value is `null`, then unset the avatar.
+        if ($this->set_avatar($avatar)) {
+            $roomupdaterequired = true;
+        }
 
-            // Add ad-hoc task to update the provider room if the room name changed.
-            // TODO add efficiency considering dynamic fields.
-            // if (
-            //     $previousprovider === $selectedprovider
-            // ) {
-            //     update_room_task::queue(
-            //         $this->communication,
-            //     );
-            // } else {
-            //     // Add ad-hoc task to create the provider room.
-            //     create_and_configure_room_task::queue(
-            //         $this->communication,
-            //     );
-            // }
-        // } else {
-        //     // The instance had no communication record for this provider type, so create one.
-        //     $this->create_and_configure_room($selectedprovider, $communicationroomname, $avatar, $instance);
-        // }
+        if ($roomupdaterequired) {
+            update_room_task::queue(
+                $this->communication,
+            );
+        }
     }
 
     /**

@@ -45,7 +45,6 @@ $instanceinfo = [
 if (!core_communication\api::is_available()) {
     throw new \moodle_exception('communicationdisabled', 'communication');
 }
-error_log("SELECTED: $selectedcommunication");
 // Attempt to load the communication instance with the provided params.
 $communication = \core_communication\api::load_by_instance(
     context: $context,

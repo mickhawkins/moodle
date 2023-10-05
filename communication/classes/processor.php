@@ -124,9 +124,6 @@ class processor {
 
         if ($active !== null && in_array($active, [self::PROVIDER_ACTIVE, self::PROVIDER_INACTIVE])) {
             $this->instancedata->active = $active;
-            error_log ("Updating status to $active");
-        } else {
-            error_log("Not change in active status");
         }
 
         if ($roomname !== null) {
@@ -381,8 +378,6 @@ class processor {
         global $DB;
 
         if ($provider === null) {
-// $test ="PROVIDER IS NULL^^^^^^^^^";
-// $test2 = "active provider";
             // Fetch the active provider in this context.
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -392,8 +387,6 @@ class processor {
                 'active' => 1,
             ]);
         } else {
-// $test ="PROVIDER IS {$provider}^^^^^^^^^";
-// $test2 = "given provider";
             // Fetch a specific provider in this context (which may be inactive).
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -403,18 +396,6 @@ class processor {
                 'provider' => $provider,
             ]);
         }
-// if (is_bool($record)) {
-// error_log("NO RECORD FOUND - $test2 @@@@@@");
-// error_log($test);
-// } else {
-// error_log("!!!!!!!!!!!!!!!!!");
-// error_log("ID: {$record->id}");
-// error_log("Instance ID: {$record->instanceid}");
-// error_log("Provider: {$record->provider}");
-// error_log("Active: {$record->active}");
-// error_log("Room name: {$record->roomname}");
-// error_log($test);
-// }
         if ($record && self::is_provider_available($record->provider)) {
             return new self($record);
         }
