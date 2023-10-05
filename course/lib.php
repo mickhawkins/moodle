@@ -2530,10 +2530,19 @@ function update_course($data, $editoroptions = NULL) {
                         instanceid: $data->id,
                         provider: $provider,
                     );
+
+                    $addusersrequired = true;
+                    $queuememberstask = false;
                 } else if ($addusersrequired) {
-                    // For providers that already exist, add members to the room if required.
-                    // Newly created providers automatically add members.
-                    $communication->add_members_to_room($enrolledusers);
+                    // Existing room that requires users can queue the members task now.
+                    $queuememberstask = true;
+                }
+
+                // Complete room membership tasks if required.
+                // Newly created providers complete the user mapping but do not queue the task
+                // (it will be handled by the room creation task).
+                if ($addusersrequired) {
+                    $communication->add_members_to_room($enrolledusers, $queuememberstask);
                 }
             }
         }
