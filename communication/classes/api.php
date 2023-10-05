@@ -105,6 +105,7 @@ class api {
      * Reload in the internal instance data.
      */
     public function reload(): void {
+//error_log("RELOAD");
         $this->communication = processor::load_by_instance(
             context: $this->context,
             component: $this->component,
@@ -465,9 +466,10 @@ class api {
         // if ($this->communication !== null) {
             // Reload so the currently selected provider is used.
             $this->reload();
-
+//error_log("API UPDATE CALLED, active = $active, provider = {$this->provider}");
             // If the provider is none, we don't need to do anything from room point of view.
             if ($this->communication->get_provider() === processor::PROVIDER_NONE) {
+// error_log("UPDATE PROVIDER IS NONEEEEEE");
                 return;
             }
 
@@ -489,10 +491,15 @@ class api {
                 $active !== null &&
                 $active !== $this->communication->is_instance_active()
             ) {
+// error_log("IS DETECTING ACTIVE");
                 $activestatuschange = $active;
+            } else {
+                $test = $this->communication->is_instance_active() ? "Already active" : "Not already active";
+// error_log("NOT DETECTING ACTIVE CHANGE, $test");
             }
 
             if ($roomnamechange !== null || $activestatuschange !== null) {
+// error_log("CALLING COMM UPDATE INSTANCE");
                 $this->communication->update_instance(
                     active: $active,
                     roomname: $communicationroomname,

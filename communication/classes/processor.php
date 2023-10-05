@@ -124,6 +124,9 @@ class processor {
 
         if ($active !== null && in_array($active, [self::PROVIDER_ACTIVE, self::PROVIDER_INACTIVE])) {
             $this->instancedata->active = $active;
+            error_log ("Updating status to $active");
+        } else {
+            error_log("Not change in active status");
         }
 
         if ($roomname !== null) {
@@ -378,7 +381,8 @@ class processor {
         global $DB;
 
         if ($provider === null) {
-$test ="PROVIDER IS NULL^^^^^^^^^^^^^^^";
+// $test ="PROVIDER IS NULL^^^^^^^^^";
+// $test2 = "active provider";
             // Fetch the active provider in this context.
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -388,7 +392,8 @@ $test ="PROVIDER IS NULL^^^^^^^^^^^^^^^";
                 'active' => 1,
             ]);
         } else {
-$test ="PROVIDER IS {$provider}^^^^^^^^^^^^^^^";
+// $test ="PROVIDER IS {$provider}^^^^^^^^^";
+// $test2 = "given provider";
             // Fetch a specific provider in this context (which may be inactive).
             $record = $DB->get_record('communication', [
                 'contextid' => $context->id,
@@ -398,18 +403,18 @@ $test ="PROVIDER IS {$provider}^^^^^^^^^^^^^^^";
                 'provider' => $provider,
             ]);
         }
-        if (is_bool($record)) {
-error_log("@@@@@@");
-error_log("NO RECORD FOUND");
-        } else {
-error_log("!!!!!!!!!!!!!!!!!");
-error_log("ID: {$record->id}");
-error_log("Instance ID: {$record->instanceid}");
-error_log("Provider: {$record->provider}");
-error_log("Active: {$record->active}");
-error_log("Room name: {$record->roomname}");
-error_log($test);
-}
+// if (is_bool($record)) {
+// error_log("NO RECORD FOUND - $test2 @@@@@@");
+// error_log($test);
+// } else {
+// error_log("!!!!!!!!!!!!!!!!!");
+// error_log("ID: {$record->id}");
+// error_log("Instance ID: {$record->instanceid}");
+// error_log("Provider: {$record->provider}");
+// error_log("Active: {$record->active}");
+// error_log("Room name: {$record->roomname}");
+// error_log($test);
+// }
         if ($record && self::is_provider_available($record->provider)) {
             return new self($record);
         }
@@ -442,7 +447,6 @@ error_log($test);
      * @return int
      */
     public function get_id(): int {
-error_log("GET ID: {$this->instancedata->id}");
         return $this->instancedata->id;
     }
 
@@ -492,15 +496,12 @@ error_log("GET ID: {$this->instancedata->id}");
     }
 
     /**
-     * Get communication provider.
+     * Get communication provider type.
      *
      * @return string|null
      */
     public function get_provider(): ?string {
-        if ((int)$this->instancedata->active === self::PROVIDER_ACTIVE) {
-            return $this->instancedata->provider;
-        }
-        return self::PROVIDER_NONE;
+        return $this->instancedata->provider;
     }
 
     /**

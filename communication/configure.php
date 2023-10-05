@@ -40,7 +40,7 @@ $instanceinfo = [
     'instancetype' => $instancetype,
     'component' => $component,
 ];
-echo "SELECTED IS $selectedcommunication";
+
 // Requires communication to be enabled.
 if (!core_communication\api::is_available()) {
     throw new \moodle_exception('communicationdisabled', 'communication');

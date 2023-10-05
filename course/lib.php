@@ -2462,64 +2462,108 @@ function update_course($data, $editoroptions = NULL) {
             $enrolledusers[] = $user->id;
         }
 
+        // Existing communication provider.
         $communication = \core_communication\api::load_by_instance(
             context: $context,
             component: 'core_course',
             instancetype: 'coursecommunication',
             instanceid: $data->id,
         );
+        $existingprovider = $communication->get_provider();
+
+$test1 = $communication->get_provider();
+error_log("############ new provider = $provider, old provider = $test1");
+error_log(var_export($test1,true));
 
         $addusersrequired = false;
         $enablenewprovider = false;
-        if ($provider !== $communication->get_provider()) {
+
+        // Action required changes if provider has changed.
+        if ($provider !== $existingprovider) {
+error_log("CHANGE IN PROVIDER");
+            // Provider changed, flag new one to be enabled.
+            $enablenewprovider = true;
+
             // If provider set to none, remove all the members from previous provider.
-            if ($provider === 'none') {
+            if ($provider === 'none' && $existingprovider !== '') {
                 $communication->remove_members_from_room($enrolledusers);
             } else if (
-                // If previous provider was not none and current provider is not none, but a different provider,
+                // If previous provider was not none and current provider is not none,
                 // remove members from previous provider.
-                $communication->get_provider() !== '' &&
-                $communication->get_provider() !== 'none' &&
-                $provider !== $communication->get_provider()
+                $existingprovider !== '' &&
+                $existingprovider !== 'none'
             ) {
                 $communication->remove_members_from_room($enrolledusers);
                 $addusersrequired = true;
             } else if (
-                // If previous provider was none and current provider is not none, but a different provider,
+                // If previous provider was none and current provider is not none,
                 // remove members from previous provider.
-                ($communication->get_provider() === '' || $communication->get_provider() === 'none') &&
-                $provider !== $communication->get_provider()
+                ($existingprovider === '' || $existingprovider === 'none')
             ) {
                 $addusersrequired = true;
             }
 
-            // Provider changed, need to enable the current one and disable the previous one.
-            $enablenewprovider = true;
-            $communication->update_room(
-                active: \core_communication\processor::PROVIDER_INACTIVE,
-            );
+            // Disable previous provider, if one was enabled.
+            if ($existingprovider !== '' && $existingprovider !== 'none') {
+                $communication->update_room(
+                    active: \core_communication\processor::PROVIDER_INACTIVE,
+                );
+            }
 
-            // Switch to the newly selected provider so updates below are made to the new one.
-            $communication = \core_communication\api::load_by_instance(
-                context: $context,
-                component: 'core_course',
-                instancetype: 'coursecommunication',
-                instanceid: $data->id,
-                provider: $provider,
-            );
+            // Switch to the newly selected provider so it can be updated.
+            if ($provider !== 'none') {
+                $communication = \core_communication\api::load_by_instance(
+                    context: $context,
+                    component: 'core_course',
+                    instancetype: 'coursecommunication',
+                    instanceid: $data->id,
+                    provider: $provider,
+                );
+
+// error_log("SWITCH PROVIDER TO expect $provider, get {$communication->get_provider()}");
+// $communication->reload();
+// error_log("RELOADED PROVIDER - {$communication->get_provider()}");
+
+                // Create it if it does not exist.
+                if ($communication->get_provider() === '') {
+error_log("Create provider");
+                    $communication->create_and_configure_room(
+                        selectedcommunication: $provider,
+                        communicationroomname: $communicationroomname,
+                        avatar: $courseimage,
+                        instance: $data
+                    );
+
+                    $communication = \core_communication\api::load_by_instance(
+                        context: $context,
+                        component: 'core_course',
+                        instancetype: 'coursecommunication',
+                        instanceid: $data->id,
+                        provider: $provider,
+                    );
+                } else if ($addusersrequired) {
+error_log("Queue adding members");
+                    // For providers that already exist, add members to the room if required.
+                    // Newly created providers automatically add members.
+                    $communication->add_members_to_room($enrolledusers);
+                } else {
+error_log('Add users not required');
+                }
+            }
         }
 
-        // Update the currently enabled provider's room data.
-        $communication->update_room(
-            active: $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : null,
-            communicationroomname: $communicationroomname,
-            avatar: $courseimage,
-            instance: $data,
-        );
-
-        // Add members to the room if required.
-        if ($addusersrequired) {
-            $communication->add_members_to_room($enrolledusers, false);
+        if ($provider !== 'none') {
+            $test = $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : 0;
+            error_log("NEW STATUS WILL BE: $test for provider {$communication->get_provider()}");
+            // Update the currently enabled provider's room data.
+            $communication->update_room(
+                active: $enablenewprovider ? \core_communication\processor::PROVIDER_ACTIVE : null,
+                communicationroomname: $communicationroomname,
+                avatar: $courseimage,
+                instance: $data,
+            );
+        } else {
+            error_log("NEW PROVIDER IS NONE");
         }
     }
 
