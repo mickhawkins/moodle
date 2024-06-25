@@ -29,7 +29,8 @@ use stored_file;
  * @copyright  2023 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class processor {
+class processor
+{
     /** @var string The magic 'none' provider */
     public const PROVIDER_NONE = 'none';
 
@@ -51,7 +52,8 @@ class processor {
      */
     protected function __construct(
         private stdClass $instancedata,
-    ) {
+    )
+    {
         $providercomponent = $this->instancedata->provider;
         $providerclass = $this->get_classname_for_provider($providercomponent);
         if (!class_exists($providerclass)) {
@@ -81,18 +83,19 @@ class processor {
      */
     public static function create_instance(
         context $context,
-        string $provider,
-        int $instanceid,
-        string $component,
-        string $instancetype,
-        string $roomname,
-    ): ?self {
+        string  $provider,
+        int     $instanceid,
+        string  $component,
+        string  $instancetype,
+        string  $roomname,
+    ): ?self
+    {
         global $DB;
 
         if ($provider === self::PROVIDER_NONE) {
             return null;
         }
-        $record = (object) [
+        $record = (object)[
             'contextid' => $context->id,
             'provider' => $provider,
             'instanceid' => $instanceid,
@@ -117,7 +120,8 @@ class processor {
     public function update_instance(
         ?string $active = null,
         ?string $roomname = null,
-    ): void {
+    ): void
+    {
         global $DB;
 
         if ($active !== null && in_array($active, [self::PROVIDER_ACTIVE, self::PROVIDER_INACTIVE])) {
@@ -134,7 +138,8 @@ class processor {
     /**
      * Delete communication data.
      */
-    public function delete_instance(): void {
+    public function delete_instance(): void
+    {
         global $DB;
         $DB->delete_records('communication', ['id' => $this->instancedata->id]);
     }
@@ -146,13 +151,14 @@ class processor {
      * @param bool $deleted The deleted status
      * @return array
      */
-    public function get_instance_userids(bool $synced = false, bool $deleted = false): array {
+    public function get_instance_userids(bool $synced = false, bool $deleted = false): array
+    {
         global $DB;
         return $DB->get_fieldset_select(
             'communication_user',
             'userid',
             'commid = ? AND synced = ? AND deleted = ?',
-            [$this->instancedata->id, (int) $synced, (int) $deleted]
+            [$this->instancedata->id, (int)$synced, (int)$deleted]
         );
     }
 
@@ -161,7 +167,8 @@ class processor {
      *
      * @return array
      */
-    public function get_all_userids_for_instance(): array {
+    public function get_all_userids_for_instance(): array
+    {
         global $DB;
         return $DB->get_fieldset_select(
             'communication_user',
@@ -176,7 +183,8 @@ class processor {
      *
      * @return array
      */
-    public function get_all_delete_flagged_userids(): array {
+    public function get_all_delete_flagged_userids(): array
+    {
         global $DB;
         return $DB->get_fieldset_select(
             'communication_user',
@@ -191,14 +199,15 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function create_instance_user_mapping(array $userids): void {
+    public function create_instance_user_mapping(array $userids): void
+    {
         global $DB;
 
         // Check if user ids exits in existing user ids.
         $useridstoadd = array_diff($userids, $this->get_all_userids_for_instance());
 
         foreach ($useridstoadd as $userid) {
-            $record = (object) [
+            $record = (object)[
                 'commid' => $this->instancedata->id,
                 'userid' => $userid,
             ];
@@ -212,7 +221,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function mark_users_as_not_deleted(array $userids): void {
+    public function mark_users_as_not_deleted(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -233,7 +243,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function mark_users_as_synced(array $userids): void {
+    public function mark_users_as_synced(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -254,7 +265,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function reset_users_sync_flag(array $userids): void {
+    public function reset_users_sync_flag(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -275,7 +287,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function add_delete_user_flag(array $userids): void {
+    public function add_delete_user_flag(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -296,7 +309,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function delete_instance_user_mapping(array $userids): void {
+    public function delete_instance_user_mapping(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -315,7 +329,8 @@ class processor {
      *
      * @param array $userids The user ids
      */
-    public function delete_instance_non_synced_user_mapping(array $userids): void {
+    public function delete_instance_non_synced_user_mapping(array $userids): void
+    {
         global $DB;
 
         if (empty($userids)) {
@@ -332,7 +347,8 @@ class processor {
     /**
      * Delete communication user record for instance.
      */
-    public function delete_user_mappings_for_instance(): void {
+    public function delete_user_mappings_for_instance(): void
+    {
         global $DB;
         $DB->delete_records('communication_user', [
             'commid' => $this->instancedata->id,
@@ -345,7 +361,8 @@ class processor {
      * @param int $id The communication instance id
      * @return processor|null
      */
-    public static function load_by_id(int $id): ?self {
+    public static function load_by_id(int $id): ?self
+    {
         global $DB;
         $record = $DB->get_record('communication', ['id' => $id]);
         if ($record && self::is_provider_available($record->provider)) {
@@ -367,11 +384,12 @@ class processor {
      */
     public static function load_by_instance(
         context $context,
-        string $component,
-        string $instancetype,
-        int $instanceid,
+        string  $component,
+        string  $instancetype,
+        int     $instanceid,
         ?string $provider = null,
-    ): ?self {
+    ): ?self
+    {
 
         global $DB;
 
@@ -403,7 +421,8 @@ class processor {
      *
      * @return bool
      */
-    public function is_instance_active(): bool {
+    public function is_instance_active(): bool
+    {
         return $this->instancedata->active;
     }
 
@@ -413,7 +432,8 @@ class processor {
      * @param string $component The component name.
      * @return string
      */
-    private function get_classname_for_provider(string $component): string {
+    private function get_classname_for_provider(string $component): string
+    {
         return "{$component}\\communication_feature";
     }
 
@@ -422,7 +442,8 @@ class processor {
      *
      * @return int
      */
-    public function get_id(): int {
+    public function get_id(): int
+    {
         return $this->instancedata->id;
     }
 
@@ -431,7 +452,8 @@ class processor {
      *
      * @return context
      */
-    public function get_context(): context {
+    public function get_context(): context
+    {
         return context::instance_by_id($this->get_context_id());
     }
 
@@ -440,7 +462,8 @@ class processor {
      *
      * @return int
      */
-    public function get_context_id(): int {
+    public function get_context_id(): int
+    {
         return $this->instancedata->contextid;
     }
 
@@ -449,7 +472,8 @@ class processor {
      *
      * @return string
      */
-    public function get_instance_type(): string {
+    public function get_instance_type(): string
+    {
         return $this->instancedata->instancetype;
     }
 
@@ -458,7 +482,8 @@ class processor {
      *
      * @return int
      */
-    public function get_instance_id(): int {
+    public function get_instance_id(): int
+    {
         return $this->instancedata->instanceid;
     }
 
@@ -467,7 +492,8 @@ class processor {
      *
      * @return string
      */
-    public function get_component(): string {
+    public function get_component(): string
+    {
         return $this->instancedata->component;
     }
 
@@ -476,7 +502,8 @@ class processor {
      *
      * @return string|null
      */
-    public function get_provider(): ?string {
+    public function get_provider(): ?string
+    {
         return $this->instancedata->provider;
     }
 
@@ -485,7 +512,8 @@ class processor {
      *
      * @return string|null
      */
-    public function get_room_name(): ?string {
+    public function get_room_name(): ?string
+    {
         return $this->instancedata->roomname;
     }
 
@@ -494,7 +522,8 @@ class processor {
      *
      * @return int
      */
-    public function get_provider_status(): int {
+    public function get_provider_status(): int
+    {
         return $this->instancedata->active;
     }
 
@@ -503,7 +532,8 @@ class processor {
      *
      * @return room_chat_provider
      */
-    public function get_room_provider(): room_chat_provider {
+    public function get_room_provider(): room_chat_provider
+    {
         $this->require_api_enabled();
         $this->require_room_features();
         return $this->provider;
@@ -514,7 +544,8 @@ class processor {
      *
      * @return user_provider
      */
-    public function get_user_provider(): user_provider {
+    public function get_user_provider(): user_provider
+    {
         $this->require_api_enabled();
         $this->require_user_features();
         return $this->provider;
@@ -525,7 +556,8 @@ class processor {
      *
      * @return room_user_provider
      */
-    public function get_room_user_provider(): room_user_provider {
+    public function get_room_user_provider(): room_user_provider
+    {
         $this->require_api_enabled();
         $this->require_room_features();
         $this->require_room_user_features();
@@ -537,7 +569,8 @@ class processor {
      *
      * @return synchronise_provider
      */
-    public function get_sync_provider(): synchronise_provider {
+    public function get_sync_provider(): synchronise_provider
+    {
         $this->require_api_enabled();
         $this->require_sync_provider_features();
         return $this->provider;
@@ -549,7 +582,8 @@ class processor {
      * @param string $provider The provider name
      * @param \MoodleQuickForm $mform The moodle form
      */
-    public static function set_provider_specific_form_definition(string $provider, \MoodleQuickForm $mform): void {
+    public static function set_provider_specific_form_definition(string $provider, \MoodleQuickForm $mform): void
+    {
         $providerclass = "{$provider}\\communication_feature";
         $providerclass::set_form_definition($mform);
     }
@@ -559,7 +593,8 @@ class processor {
      *
      * @return form_provider
      */
-    public function get_form_provider(): form_provider {
+    public function get_form_provider(): form_provider
+    {
         $this->requires_form_features();
         return $this->provider;
     }
@@ -569,7 +604,8 @@ class processor {
      *
      * @return bool
      */
-    public function supports_user_features(): bool {
+    public function supports_user_features(): bool
+    {
         return ($this->provider instanceof user_provider);
     }
 
@@ -578,7 +614,8 @@ class processor {
      *
      * @return bool
      */
-    public function supports_room_user_features(): bool {
+    public function supports_room_user_features(): bool
+    {
         if (!$this->supports_user_features()) {
             return false;
         }
@@ -595,7 +632,8 @@ class processor {
      *
      * @return bool
      */
-    public function requires_form_features(): void {
+    public function requires_form_features(): void
+    {
         if (!$this->supports_form_features()) {
             throw new \coding_exception('Form features are not supported by the provider');
         }
@@ -606,14 +644,16 @@ class processor {
      *
      * @return bool
      */
-    public function supports_form_features(): bool {
+    public function supports_form_features(): bool
+    {
         return ($this->provider instanceof form_provider);
     }
 
     /**
      * Get communication instance id.
      */
-    public function require_user_features(): void {
+    public function require_user_features(): void
+    {
         if (!$this->supports_user_features()) {
             throw new \coding_exception('User features are not supported by the provider');
         }
@@ -624,14 +664,16 @@ class processor {
      *
      * @return bool
      */
-    public function supports_room_features(): bool {
+    public function supports_room_features(): bool
+    {
         return ($this->provider instanceof room_chat_provider);
     }
 
     /**
      * Check if communication api is enabled.
      */
-    public function require_api_enabled(): void {
+    public function require_api_enabled(): void
+    {
         if (!api::is_available()) {
             throw new \coding_exception('Communication API is not enabled, please enable it from experimental features');
         }
@@ -640,7 +682,8 @@ class processor {
     /**
      * Get communication instance id.
      */
-    public function require_room_features(): void {
+    public function require_room_features(): void
+    {
         if (!$this->supports_room_features()) {
             throw new \coding_exception('room features are not supported by the provider');
         }
@@ -649,7 +692,8 @@ class processor {
     /**
      * Get communication instance id.
      */
-    public function require_room_user_features(): void {
+    public function require_room_user_features(): void
+    {
         if (!$this->supports_room_user_features()) {
             throw new \coding_exception('room features are not supported by the provider');
         }
@@ -660,14 +704,16 @@ class processor {
      *
      * @return bool whether the provider supports sync features or not
      */
-    public function supports_sync_provider_features(): bool {
+    public function supports_sync_provider_features(): bool
+    {
         return ($this->provider instanceof synchronise_provider);
     }
 
     /**
      * Check if the provider supports sync features when required.
      */
-    public function require_sync_provider_features(): void {
+    public function require_sync_provider_features(): void
+    {
         if (!$this->supports_sync_provider_features()) {
             throw new \coding_exception('sync features are not supported by the provider');
         }
@@ -678,7 +724,8 @@ class processor {
      *
      * @return bool|\stored_file
      */
-    public function get_avatar(): ?stored_file {
+    public function get_avatar(): ?stored_file
+    {
         $fs = get_file_storage();
         $file = $fs->get_file(
             (\context_system::instance())->id,
@@ -698,7 +745,8 @@ class processor {
      *
      * @param string|null $filename
      */
-    public function set_avatar_filename(?string $filename): void {
+    public function set_avatar_filename(?string $filename): void
+    {
         global $DB;
 
         $this->instancedata->avatarfilename = $filename;
@@ -710,7 +758,8 @@ class processor {
      *
      * @return string|null
      */
-    public function get_avatar_filename(): ?string {
+    public function get_avatar_filename(): ?string
+    {
         return $this->instancedata->avatarfilename;
     }
 
@@ -719,8 +768,9 @@ class processor {
      *
      * @return bool
      */
-    public function is_avatar_synced(): bool {
-        return (bool) $this->instancedata->avatarsynced;
+    public function is_avatar_synced(): bool
+    {
+        return (bool)$this->instancedata->avatarsynced;
     }
 
     /**
@@ -728,11 +778,12 @@ class processor {
      *
      * @param boolean $synced True if avatar has been synced.
      */
-    public function set_avatar_synced_flag(bool $synced): void {
+    public function set_avatar_synced_flag(bool $synced): void
+    {
         global $DB;
 
-        $this->instancedata->avatarsynced = (int) $synced;
-        $DB->set_field('communication', 'avatarsynced', (int) $synced, ['id' => $this->instancedata->id]);
+        $this->instancedata->avatarsynced = (int)$synced;
+        $DB->set_field('communication', 'avatarsynced', (int)$synced, ['id' => $this->instancedata->id]);
     }
 
     /**
@@ -740,7 +791,8 @@ class processor {
      *
      * @return string|null
      */
-    public function get_room_url(): ?string {
+    public function get_room_url(): ?string
+    {
         if ($this->provider && $this->is_instance_active()) {
             return $this->get_room_provider()->get_chat_room_url();
         }
@@ -753,7 +805,8 @@ class processor {
      * @param string $provider provider component name
      * @return bool
      */
-    public static function is_provider_available(string $provider): bool {
+    public static function is_provider_available(string $provider): bool
+    {
         if (\core\plugininfo\communication::is_plugin_enabled($provider)) {
             $providerclass = "{$provider}\\communication_feature";
             return $providerclass::is_configured();

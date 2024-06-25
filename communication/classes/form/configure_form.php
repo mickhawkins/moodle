@@ -25,6 +25,7 @@
 namespace core_communication\form;
 
 use core\context;
+use core_communication\processor;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -116,6 +117,23 @@ class configure_form extends \moodleform {
         $this->set_data($instancedata);
     }
 
+    // TODO: Custom validation
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+//error_log(var_export($this->communication, true));
+        $provider = $this->get_form_provider();
+error_log( "Provider is $provider ... object is {$this->communication->get_provider()}");
+
+        if ($this->communication->has_custom_form_validation($provider)) { //TODO: does this need to pass in provider if it's using $this->communication? depends if we actually need to fetch the form provider or not
+            $providerclass = "{$provider}\\communication_feature";
+            $providererrors = $providerclass::perform_custom_form_validation($data);
+            $errors = array_merge($errors, $providererrors);
+        } else {
+            error_log("NO CUSTOM VALIDATION ON THIS PROVIDER ($provider)");
+        }
+        return $errors;
+    }
+
     /**
      * Defines the requested/current provider
      *
@@ -123,6 +141,13 @@ class configure_form extends \moodleform {
      * and then use it to show the provider form fields.
      */
     private function set_form_definition_for_provider(): void {
+        $provider = $this->get_form_provider();
+        $this->communication->form_definition_for_provider($this->_form, $provider);
+    }
+
+//TODO: should this be part of the constructor, or will that not be up to date if the provider is changed? Test.
+// ALSO check with whoever wrote it, why the original code was required, when we have $this->>communication. Is it when we're switching providers??
+    private function get_form_provider() {
         $instancedata = $this->_customdata['instancedata'];
         if ($selectedcommunication = $this->_customdata['selectedcommunication']) {
             // First is to check whether the selected communication was selected from the form.
@@ -135,6 +160,6 @@ class configure_form extends \moodleform {
             $provider = \core_communication\processor::PROVIDER_NONE;
         }
 
-        $this->communication->form_definition_for_provider($this->_form, $provider);
+        return $provider;
     }
 }

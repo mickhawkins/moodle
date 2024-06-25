@@ -286,6 +286,17 @@ class api {
         processor::set_provider_specific_form_definition($provider, $mform);
     }
 
+    // TODO
+    public function has_custom_form_validation(string $provider = processor::PROVIDER_NONE): bool {
+        $providerclass = "{$provider}\\communication_feature";
+        $providerinterfaces = class_implements($providerclass) ?: [];
+        if ($provider === processor::PROVIDER_NONE || !(in_array('core_communication\form_validation_provider', $providerinterfaces))) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Get the avatar file.
      *
