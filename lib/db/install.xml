@@ -4880,6 +4880,7 @@
     <TABLE NAME="sms_gateways" COMMENT="Instances of SMS gateways">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="gateway" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="enabled" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="config" TYPE="text" NOTNULL="true" SEQUENCE="false"/>

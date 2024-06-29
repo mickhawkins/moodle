@@ -1246,6 +1246,7 @@ function xmldb_main_upgrade($oldversion) {
 
         // Adding fields to table sms_gateways.
         $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
         $table->add_field('gateway', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null);
         $table->add_field('enabled', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '1');
         $table->add_field('config', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null);

@@ -16,6 +16,7 @@
 
 namespace core\plugininfo;
 
+use core_plugin_manager;
 use moodle_url;
 
 /**
@@ -68,5 +69,26 @@ class smsgateway extends base {
         return new \moodle_url('/admin/settings.php', [
             'section' => 'smsgateway',
         ]);
+    }
+
+    public static function get_enabled_plugins(): ?array {
+        $pluginmanager = core_plugin_manager::instance();
+        $plugins = $pluginmanager->get_installed_plugins('smsgateway');
+
+        if (!$plugins) {
+            return [];
+        }
+
+        $plugins = array_keys($plugins);
+
+        // Filter to return only enabled plugins.
+        $enabled = [];
+        foreach ($plugins as $plugin) {
+            $disabled = get_config('smsgateway_' . $plugin, 'disabled');
+            if (empty($disabled)) {
+                $enabled[$plugin] = $plugin;
+            }
+        }
+        return $enabled;
     }
 }
