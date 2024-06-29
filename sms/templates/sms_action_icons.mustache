@@ -1,0 +1,40 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template core_sms/sms_action_icons
+    Template for sms gateway actions icons.
+    Context variables required for this template:
+    * url - URL of the button
+    * icon - Bootstrap icon class for the button
+    * name - Text of the button
+    Example context (json):
+    {
+        "buttons": [{
+            "url": "www.example.com",
+            "icon": "fa fa-edit",
+            "name": "Edit"
+        }]
+    }
+}}
+
+<div class="sms-gateways-action-buttons">
+    {{#buttons}}
+        <div class="sms-gateways-action-icon-container">
+            <a href = "{{{url}}}" class="sms-gateways-action-icon-link"><i class="{{icon}}"></i>&nbsp;{{name}}</a>
+        </div>
+    {{/buttons}}
+</div>
