@@ -3230,6 +3230,12 @@ $functions = array(
         'ajax'        => true,
         'readonlysession' => true,
     ],
+    'core_sms_set_gateway_status' => [
+        'classname'   => 'core_sms\external\sms_gateway_status',
+        'description' => 'Set the sms gateway status',
+        'type'        => 'write',
+        'ajax'        => true,
+    ],
 );
 
 $services = array(
