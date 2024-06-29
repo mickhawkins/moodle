@@ -29,7 +29,7 @@
  * @return bool
  */
 function xmldb_factor_sms_upgrade(int $oldversion): bool {
-    if ($oldversion < 2024050300) {
+    if ($oldversion < 2024082200) {
         $config = get_config('factor_sms');
         // If the sms factor is enabled, then do the migration to the sms subsystem.
         if ((int)$config->enabled === 1) {
@@ -43,14 +43,17 @@ function xmldb_factor_sms_upgrade(int $oldversion): bool {
             $smsconfig->api_region = $config->api_region;
             // Now insert the record.
             $manager = \core\di::get(\core_sms\manager::class);
-            $manager->create_gateway_instance(
+            $gateway = $manager->create_gateway_instance(
                 classname: \smsgateway_aws\gateway::class,
+                name: 'MFA AWS',
                 enabled: $config->enabled,
                 config: $smsconfig,
             );
+            // Set the mfa config for the sms gateway.
+            set_config('smsgateway', $gateway->id, 'factor_sms');
         }
         // MFA savepoint reached.
-        upgrade_plugin_savepoint(true, 2024050300, 'factor', 'sms');
+        upgrade_plugin_savepoint(true, 2024082200, 'factor', 'sms');
     }
 
     return true;
