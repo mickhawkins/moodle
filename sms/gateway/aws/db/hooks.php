@@ -15,21 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component smsgateway_aws, language 'en'.
+ * Hook listener callbacks for aws sms gateway.
  *
  * @package    smsgateway_aws
  * @copyright  2024 Safat Shahin <safat.shahin@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['api_key'] = 'Access key';
-$string['api_region'] = 'Amazon API gateway region';
-$string['api_secret'] = 'Secret access key';
-$string['aws_sns'] = 'AWS SNS';
-$string['gateway'] = 'AWS service';
-$string['aws_information'] = 'Complete the following fields using the information provided by AWS';
-$string['pluginname'] = 'AWS';
-$string['privacy:metadata'] = 'The AWS SMS gateway plugin does not store any personal data.';
-$string['usecredchain'] = 'Find AWS credentials using the default credential provider chain';
+defined('MOODLE_INTERNAL') || die();
 
-
+$callbacks = [
+    [
+        'hook' => \core_sms\hook\after_sms_gateway_form_hook::class,
+        'callback' => \smsgateway_aws\hook_listener::class . '::set_form_definition_for_aws_sms_gateway',
+    ],
+];
