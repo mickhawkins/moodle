@@ -16,8 +16,8 @@
 
 namespace smsgateway_aws\local\service;
 
-use core\aws\aws_helper;
 use core_sms\message_status;
+use smsgateway_aws\helper;
 use smsgateway_aws\local\aws_sms_service_provider;
 use stdClass;
 
@@ -52,7 +52,7 @@ class aws_sns implements aws_sms_service_provider {
         $params = [
             'version' => 'latest',
             'region' => $config->api_region,
-            'http' => ['proxy' => aws_helper::get_proxy_string()],
+            'http' => ['proxy' => helper::get_proxy_string()],
         ];
         if (!$config->usecredchain) {
             $params['credentials'] = [
