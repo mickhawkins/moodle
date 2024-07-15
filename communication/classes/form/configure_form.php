@@ -146,7 +146,7 @@ error_log( "Provider is $provider ... object is {$this->communication->get_provi
     }
 
 //TODO: should this be part of the constructor, or will that not be up to date if the provider is changed? Test.
-// ALSO check with whoever wrote it, why the original code was required, when we have $this->>communication. Is it when we're switching providers??
+// ALSO check with whoever wrote it, why the original code was required, when we have $this->communication. Is it when we're switching providers??
     private function get_form_provider() {
         $instancedata = $this->_customdata['instancedata'];
         if ($selectedcommunication = $this->_customdata['selectedcommunication']) {

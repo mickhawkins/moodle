@@ -117,6 +117,40 @@ class communication_feature_test extends \advanced_testcase {
     }
 
     /**
+     * Test if the custom form validation returns the expected responses.
+     *
+     * @covers ::perform_custom_form_validation
+     */
+    public static function test_perform_custom_form_validation(): void {
+
+        //todo: move these.
+        $tests = [
+            'standard URL' => [
+                'url' => 'https://moodle.org/',
+                'result' => [],
+            ],
+            'Matrix room alias URL' => [
+                'url' => 'https://matrix.to/#/#customlinktest:moodle.com',
+                'result' => [],
+            ],
+            'Matrix room ID URL' => [
+                'url' => 'https://matrix.to/#/!aBCdefgH:moodle.com',
+                'result' => [],
+            ],
+            'incorrect URL format' => [
+                'url' => 'https://moodle.org/',
+                'result' => ['customlinkurl' => get_string('invalidurl', 'error')],
+            ],
+        ];
+
+        $communicationprocessor = $this->get_test_communication_processor();
+        foreach ($tests as $name => $values) {
+            $response = $communicationprocessor->get_form_provider()->perform_custom_form_validation($values['url']);
+            $this->assertEquals($values['result'], $response);
+        }
+    }
+
+    /**
      * Test if the selected provider is configured.
      *
      * @covers ::is_configured

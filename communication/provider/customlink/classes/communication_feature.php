@@ -174,38 +174,32 @@ class communication_feature implements
     }
 
     public static function perform_custom_form_validation(array $data): array {
-
-error_log("HIT CUSTOM VALIDATION");
-
         try {
+            // Validate URL.
             validate_param($data['customlinkurl'], PARAM_URL);
         } catch (\core\exception\invalid_parameter_exception $e) {
-            // Failed URL validation - check if it's a Matrix URL (they fail URL spec validation due to using /#/).
-            // Matrix URLs follow the format baseurl/#/!roomid, baseurl/#/#roomalias, or baseurl/#/@user.
-            $testurl = preg_replace('/\/#\/[!#@]/', '/', $data['customlinkurl'], 1);
-//TODO: Check which permutations were actually failing, might be able to just do one instead of the 3 possible !#@ (could be just /#/# that it doesn't like.
-// If that's the case, sites pre 4.5 would simply need to use the full room URL instead of the alias (ie check if /#/!blah works fine).
+            // Failed URL validation - try stripping Matrix room alias syntax (baseurl/#/#roomalias) from URL and re-validating.
+            $testurl = preg_replace('/\/#\/#/', '/', $data['customlinkurl'], 1);
+
             if ($testurl === $data['customlinkurl']) {
                 // Was not a potential Matrix URL, which means it simply fails URL validation.
-                error_log("ERROR 1");
                 return [
                     'customlinkurl' => get_string('invalidurl', 'error'),
                 ];
             }
 
-            // Potentially a Matrix URL. Re-validate with Matrix specific portion (eg /#/#) removed.
-            // (If it passes, treat it as a valid Matrix URL).
+            // Potentially a Matrix room alisa URL. Re-validate updated URL now that one instance of /#/# is replaced with /.
+            // If it passes, treat as a valid Matrix URL (the Matrix alias format caused the failure, due to not meeting URL spec).
             try {
-                error_log("MIGHT BE MATRIX");
                 validate_param($testurl, PARAM_URL);
             } catch (\core\exception\invalid_parameter_exception $e) {
-                error_log("ERROR 2");
+                // Still not a valid URL.
                 return [
                     'customlinkurl' => get_string('invalidurl', 'error'),
                 ];
             }
         }
-error_log("VALID URL");
+
         // No validation errors identified.
         return [];
     }

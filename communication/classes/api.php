@@ -286,15 +286,23 @@ class api {
         processor::set_provider_specific_form_definition($provider, $mform);
     }
 
-    // TODO
-    public function has_custom_form_validation(string $provider = processor::PROVIDER_NONE): bool {
+    /**
+     * Check whether a provider requires any custom validation in the settings form.
+     *
+     * @param string $provider The name of the provider being checked.
+     * @return boolean True if it is a valid provider which implements the form_validation_provider interface.
+     */
+    public function has_custom_form_validation(string $provider): bool {
         $providerclass = "{$provider}\\communication_feature";
-        $providerinterfaces = class_implements($providerclass) ?: [];
-        if ($provider === processor::PROVIDER_NONE || !(in_array('core_communication\form_validation_provider', $providerinterfaces))) {
-            return false;
+
+        if ($provider !== processor::PROVIDER_NONE && class_exists($providerclass, false)) {
+            $providerinterfaces = class_implements($providerclass) ?: [];
+            if (in_array('core_communication\form_validation_provider', $providerinterfaces)) {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     /**
