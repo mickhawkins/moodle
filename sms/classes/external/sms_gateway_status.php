@@ -44,6 +44,10 @@ class sms_gateway_status extends external_api {
             'enabled' => $enabled,
         ]);
 
+        $context = context_system::instance();
+        self::validate_context($context);
+        require_capability('moodle/site:config', $context);
+
         $result = [
             'result' => true,
             'message' => '',

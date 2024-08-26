@@ -28,8 +28,9 @@ require_once('../config.php');
 require_once($CFG->dirroot . '/lib/adminlib.php');
 
 require_login();
-
 $context = context_system::instance();
+require_capability('moodle/site:config', $context);
+
 $id = optional_param('id', null, PARAM_INT);
 $action = optional_param('action', '', PARAM_TEXT);
 $confirm = optional_param('confirm', 0, PARAM_BOOL);

@@ -25,8 +25,9 @@
 require_once('../config.php');
 
 require_login();
-
 $context = context_system::instance();
+require_capability('moodle/site:config', $context);
+
 $id = optional_param('id', null, PARAM_INT);
 $gateway = optional_param('smsgateway', null, PARAM_PLUGIN);
 $returnurl = optional_param('returnurl', null, PARAM_LOCALURL);
