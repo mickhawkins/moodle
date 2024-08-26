@@ -75,11 +75,12 @@ class hook_listener {
             'maxlength="255" size="20"',
         );
         $mform->setType('api_key', PARAM_TEXT);
+        $mform->addRule('api_key', get_string('required'), 'required', null, 'client');
+        $mform->addRule('api_key', get_string('maximumchars', '', 255), 'maxlength', 255);
         $mform->setDefault(
             elementName: 'api_key',
             defaultValue: '',
         );
-
         $mform->addElement(
             'passwordunmask',
             'api_secret',
@@ -87,6 +88,8 @@ class hook_listener {
             'maxlength="255" size="20"',
         );
         $mform->setType('api_secret', PARAM_TEXT);
+        $mform->addRule('api_secret', get_string('required'), 'required', null, 'client');
+        $mform->addRule('api_secret', get_string('maximumchars', '', 255), 'maxlength', 255);
         $mform->setDefault(
             elementName: 'api_secret',
             defaultValue: '',
@@ -99,6 +102,8 @@ class hook_listener {
             'maxlength="255" size="20"',
         );
         $mform->setType('api_region', PARAM_TEXT);
+        $mform->addRule('api_region', get_string('required'), 'required', null, 'client');
+        $mform->addRule('api_region', get_string('maximumchars', '', 255), 'maxlength', 255);
         $mform->setDefault(
             elementName: 'api_region',
             defaultValue: 'ap-southeast-2',
