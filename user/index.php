@@ -52,16 +52,21 @@ $PAGE->set_url('/user/index.php', array(
         'id' => $courseid,
         'newcourse' => $newcourse));
 
-if ($contextid) {
-    $context = context::instance_by_id($contextid, MUST_EXIST);
-    if ($context->contextlevel != CONTEXT_COURSE) {
-        throw new \moodle_exception('invalidcontext');
+try {
+    if ($contextid) {
+        $context = context::instance_by_id($contextid, MUST_EXIST);
+        if ($context->contextlevel != CONTEXT_COURSE) {
+            throw new \moodle_exception('invaliddata');
+        }
+        $course = $DB->get_record('course', ['id' => $context->instanceid], '*', MUST_EXIST);
+    } else {
+        $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
+        $context = context_course::instance($course->id, MUST_EXIST);
     }
-    $course = $DB->get_record('course', array('id' => $context->instanceid), '*', MUST_EXIST);
-} else {
-    $course = $DB->get_record('course', array('id' => $courseid), '*', MUST_EXIST);
-    $context = context_course::instance($course->id, MUST_EXIST);
+} catch (\dml_exception $e) {
+    throw new \moodle_exception('invaliddata');
 }
+
 // Not needed anymore.
 unset($contextid);
 unset($courseid);
