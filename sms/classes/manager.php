@@ -170,10 +170,7 @@ class manager {
                         config: $record->config,
                     );
                 },
-                $this->db->get_records(
-                    table: 'sms_gateways',
-                    conditions: $filter,
-                ),
+                $this->get_gateway_records($filter),
             )
         );
     }

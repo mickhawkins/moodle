@@ -27,14 +27,17 @@ use moodle_url;
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class smsgateway extends base {
+    #[\Override]
     public function is_uninstall_allowed(): bool {
         return true;
     }
 
+    #[\Override]
     public function get_settings_section_name(): string {
         return "smsgateway{$this->name}";
     }
 
+    #[\Override]
     public function load_settings(
         \part_of_admin_tree $adminroot,
         $parentnodename,
@@ -65,12 +68,14 @@ class smsgateway extends base {
         }
     }
 
+    #[\Override]
     public static function get_manage_url(): moodle_url {
         return new \moodle_url('/admin/settings.php', [
             'section' => 'smsgateway',
         ]);
     }
 
+    #[\Override]
     public static function get_enabled_plugins(): ?array {
         $pluginmanager = core_plugin_manager::instance();
         $plugins = $pluginmanager->get_installed_plugins('smsgateway');
