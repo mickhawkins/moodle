@@ -77,7 +77,7 @@ if ($action === 'delete') {
     $PAGE->set_heading($strheading);
 
     echo $OUTPUT->header();
-    $yesurl = new moodle_url($returnurl, ['id' => $id, 'action' => 'delete', 'confirm' => 1, 'sesskey' => sesskey()]);
+    $yesurl = new moodle_url($returnurl, ['id' => $id, 'action' => 'delete', 'confirm' => 1]);
     $message = get_string('delete_sms_gateway_confirmation', 'sms', $a);
     echo $OUTPUT->confirm($message, $yesurl, $returnurl);
     echo $OUTPUT->footer();

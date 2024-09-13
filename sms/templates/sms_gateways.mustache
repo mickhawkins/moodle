@@ -27,21 +27,11 @@
     }
 }}
 
-<div class="clearfix">
-    <div class="container-close">
-        <div class="row">
-            <div class="col-6">
-            </div>
-            <div class="col-6">
-                <div class="text-right">
-                    <a href="{{createurl}}" title="{{#str}}createnewgateway, sms{{/str}}" class="btn btn-primary mb-3">
-                        <i class="fa fa-plus"></i>&nbsp;{{#str}}createnewgateway, sms{{/str}}
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div data-region="core-sms-gateway-table">
-        {{{tablehtml}}}
-    </div>
+<div class="d-flex flex-row-reverse">
+    <a href="{{createurl}}" title="{{#str}}createnewgateway, sms{{/str}}" class="btn btn-primary mb-3">
+        <i class="fa fa-plus"></i>&nbsp;{{#str}}createnewgateway, sms{{/str}}
+    </a>
+</div>
+<div data-region="core-sms-gateway-table">
+    {{{tablehtml}}}
 </div>

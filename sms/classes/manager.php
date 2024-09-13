@@ -130,7 +130,7 @@ class manager {
         if ($gatewayid) {
             // Check if the gateway id is valid.
             $gateway = $this->get_gateway_instances(['id' => $gatewayid]);
-            $gateway = reset($gateway);
+            $gateway = $gateway ? reset($gateway) : null;
             return $gateway;
         }
 

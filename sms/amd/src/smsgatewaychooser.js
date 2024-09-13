@@ -32,7 +32,7 @@ const Selectors = {
  * Initialise the sms gateway chooser.
  */
 export const init = () => {
-    document.querySelector(Selectors.fields.selector).addEventListener('change', e => {
+    document.querySelector(Selectors.fields.selector)?.addEventListener('change', e => {
         const form = e.target.closest('form');
         const updateButton = form.querySelector(Selectors.fields.updateButton);
         const url = new URL(form.action);

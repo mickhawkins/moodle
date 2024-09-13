@@ -51,11 +51,7 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
         $this->setup();
     }
 
-    /**
-     * Get the context.
-     *
-     * @return context_system
-     */
+    #[\Override]
     public function get_context(): context_system {
         return context_system::instance();
     }
@@ -68,9 +64,10 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
      * @return string
      */
     protected function get_table_js_module(): string {
-        return 'core_sms/smsgatewaytoggle';
+        return 'core_admin/plugin_management_table';
     }
 
+    #[\Override]
     protected function get_dynamic_table_html_end(): string {
         global $PAGE;
 
@@ -85,23 +82,6 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
         $columnlist = $this->get_column_list();
         $this->define_columns(array_keys($columnlist));
         $this->define_headers(array_values($columnlist));
-
-        $columnswithhelp = $this->get_columns_with_help();
-        $columnhelp = array_map(function (string $column) use ($columnswithhelp): ?\renderable {
-            if (array_key_exists($column, $columnswithhelp)) {
-                return $columnswithhelp[$column];
-            }
-
-            return null;
-        }, array_keys($columnlist));
-        $this->define_help_for_headers($columnhelp);
-    }
-
-    /**
-     * Get the columns with help icons.
-     */
-    protected function get_columns_with_help(): array {
-        return [];
     }
 
     /**
@@ -127,6 +107,7 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
         return 'sms_gateways_table';
     }
 
+    #[\Override]
     public function guess_base_url(): void {
         $this->define_baseurl(new moodle_url('/sms/sms_gateways.php'));
     }
@@ -149,7 +130,7 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
      *
      * @return array
      */
-    public function get_sms_gateways(): array {
+    protected function get_sms_gateways(): array {
         $gateways = \core\di::get(\core_sms\manager::class)->get_gateway_records();
         if (!empty($gateways)) {
             \core_collator::asort_objects_by_property($gateways, 'id');
@@ -227,7 +208,7 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
      *
      * @return string
      */
-    public function get_toggle_service(): string {
+    protected function get_toggle_service(): string {
         return 'core_sms_set_gateway_status';
     }
 
@@ -242,9 +223,9 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
 
         $enabled = $row->enabled;
         if ($enabled) {
-            $labelstr = get_string('enabled');
+            $labelstr = get_string('disableplugin', 'core_admin', $row->name);
         } else {
-            $labelstr = get_string('disabled');
+            $labelstr = get_string('enableplugin', 'core_admin', $row->name);
         }
 
         $params = [
@@ -255,13 +236,15 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
                 'value' => $this->get_gateway_name($row->gateway),
                 'toggle-method' => $this->get_toggle_service(),
                 'action' => 'togglestate',
-                'gatewayid' => $row->id,
+                'plugin' => $row->id, // Set plugin attribute to gateway ID.
                 'state' => $enabled ? 1 : 0,
             ],
+            'title' => $labelstr,
             'label' => $labelstr,
+            'labelclasses' => 'sr-only',
         ];
 
-        return $OUTPUT->render_from_template('core_sms/sms_gateway_toggle', $params);
+        return $OUTPUT->render_from_template('core_admin/setting_configtoggle', $params);
     }
 
     /**
@@ -273,28 +256,19 @@ class sms_gateway_table extends flexible_table implements dynamic_table {
     public function col_actions(stdClass $row): string {
         global $OUTPUT;
 
-        $urlparams = [
-            'id' => $row->id,
-        ];
-        $editurl = new moodle_url('/sms/configure.php', $urlparams);
-        $deleteurl = new moodle_url(
-            '/sms/sms_gateways.php',
-            $urlparams + ['action' => 'delete', 'sesskey' => sesskey()]);
+        $editurl = new moodle_url('/sms/configure.php', ['id' => $row->id]);
+        $deleteurl = new moodle_url('/sms/sms_gateways.php', ['id' => $row->id, 'action' => 'delete']);
 
-        $template = new stdClass();
-        $template->buttons = [
-            [
-                'name' => get_string('edit'),
-                'icon' => 'fa fa-edit',
-                'url' => $editurl,
-            ],
-            [
-                'name' => get_string('delete'),
-                'icon' => 'fa fa-trash',
-                'url' => $deleteurl,
-            ],
+        $templatecontext = [
+            'editurl' => $editurl->out(false),
+            'deleteurl' => $deleteurl->out(false),
         ];
 
-        return $OUTPUT->render_from_template('core_sms/sms_action_icons', $template);
+        return $OUTPUT->render_from_template('core_sms/sms_action_icons', $templatecontext);
+    }
+
+    #[\Override]
+    public function has_capability(): bool {
+        return has_capability('moodle/site:config', $this->get_context());
     }
 }

@@ -18,23 +18,26 @@
     @template core_sms/sms_action_icons
     Template for sms gateway actions icons.
     Context variables required for this template:
-    * url - URL of the button
-    * icon - Bootstrap icon class for the button
-    * name - Text of the button
+    * editurl - URL for the edit button
+    * deleteurl - URL for the delete button
     Example context (json):
     {
-        "buttons": [{
-            "url": "www.example.com",
-            "icon": "fa fa-edit",
-            "name": "Edit"
-        }]
+        "editurl": "http://example.com/edit",
+        "deleteurl": "http://example.com/delete"
     }
 }}
 
 <div class="sms-gateways-action-buttons">
-    {{#buttons}}
-        <div class="sms-gateways-action-icon-container">
-            <a href = "{{{url}}}" class="sms-gateways-action-icon-link"><i class="{{icon}}"></i>&nbsp;{{name}}</a>
-        </div>
-    {{/buttons}}
+    <div class="sms-gateways-action-icon-container">
+        <a href="{{editurl}}" aria-label="{{#str}} edit {{/str}}" title="{{#str}} edit {{/str}}">
+            {{#pix}} i/manual_item, core {{/pix}}
+            {{#str}} edit {{/str}}
+        </a>
+    </div>
+    <div class="sms-gateways-action-icon-container">
+        <a href="{{deleteurl}}" aria-label="{{#str}} delete {{/str}}" title="{{#str}} delete {{/str}}">
+            {{#pix}} i/trash, core {{/pix}}
+            {{#str}} delete {{/str}}
+        </a>
+    </div>
 </div>

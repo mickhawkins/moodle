@@ -33,15 +33,19 @@ class sms_gateway_status extends external_api {
 
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'gatewayid' => new external_value(PARAM_INT, 'Gateway ID', VALUE_REQUIRED),
-            'enabled' => new external_value(PARAM_BOOL, 'Enabled or disabled', VALUE_REQUIRED),
+            'plugin' => new external_value(PARAM_INT, 'Gateway ID', VALUE_REQUIRED),
+            'state' => new external_value(PARAM_INT, 'Enabled or disabled', VALUE_REQUIRED),
         ]);
     }
 
-    public static function execute(int $gatewayid, bool $enabled): array {
-        $params = self::validate_parameters(self::execute_parameters(), [
-            'gatewayid' => $gatewayid,
-            'enabled' => $enabled,
+    public static function execute(int $plugin, int $state): array {
+        // Parameter validation.
+        [
+            'plugin' => $gatewayid,
+            'state' => $state,
+        ] = self::validate_parameters(self::execute_parameters(), [
+            'plugin' => $plugin,
+            'state' => $state,
         ]);
 
         $context = context_system::instance();
@@ -54,11 +58,22 @@ class sms_gateway_status extends external_api {
             'messagetype' => '',
         ];
         $manager = \core\di::get(\core_sms\manager::class);
-        $gatewaymanagers = $manager->get_gateway_instances(['id' => $params['gatewayid']]);
+        $gatewaymanagers = $manager->get_gateway_instances(['id' => $gatewayid]);
         $gatewaymanager = reset($gatewaymanagers);
 
-        if ($params['enabled']) {
+        if (!$gatewaymanager) {
+            $result = [
+                'result' => false,
+                'message' => 'sms_gateway_not_found',
+                'messagetype' => 'error'
+            ];
+            return $result;
+        }
+
+        if (!empty($state)) {
             $manager->enable_gateway(gateway: $gatewaymanager);
+            $message = get_string('plugin_enabled', 'core_admin', $gatewaymanager->name);
+            $messagetype = \core\notification::SUCCESS;
         } else {
             $gatewayresult = $manager->disable_gateway(gateway: $gatewaymanager);
             if ($gatewayresult->enabled) {
@@ -67,8 +82,15 @@ class sms_gateway_status extends external_api {
                     'message' => 'sms_gateway_disable_failed',
                     'messagetype' => 'error'
                 ];
+                $message = get_string('sms_gateway_disable_failed', 'core_sms');
+                $messagetype = \core\notification::ERROR;
+            } else {
+                $message = get_string('plugin_disabled', 'core_admin', $gatewaymanager->name);
+                $messagetype = \core\notification::SUCCESS;
             }
         }
+
+        \core\notification::add($message, $messagetype);
 
         return $result;
     }

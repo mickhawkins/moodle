@@ -60,8 +60,8 @@ class sms_gateway_status_test extends \externallib_advanced_testcase {
 
         // Now let's disable the gateway.
         sms_gateway_status::execute(
-            gatewayid: $gateway->id,
-            enabled: false,
+            plugin: $gateway->id,
+            state: 0,
         );
         $gatewaymanagers = $manager->get_gateway_instances(
             filter: ['id' => $gateway->id],
@@ -71,8 +71,8 @@ class sms_gateway_status_test extends \externallib_advanced_testcase {
 
         // Let's enable again.
         sms_gateway_status::execute(
-            gatewayid: $gateway->id,
-            enabled: true,
+            plugin: $gateway->id,
+            state: 1,
         );
         $gatewaymanagers = $manager->get_gateway_instances(
             filter: ['id' => $gateway->id],
