@@ -74,7 +74,7 @@ class helper_test extends \advanced_testcase {
         ?string $countrycode = null,
     ): void {
         $this->resetAfterTest();
-        $this->assertEquals($expected, helper::format_number($phonenumber, $countrycode));
+        $this->assertEquals($expected, \core_sms\manager::format_number($phonenumber, $countrycode));
     }
 
     /**

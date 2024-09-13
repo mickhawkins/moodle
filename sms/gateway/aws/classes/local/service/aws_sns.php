@@ -38,6 +38,7 @@ class aws_sns implements aws_sms_service_provider {
         require_once($CFG->libdir . '/aws-sdk/src/functions.php');
     }
 
+    #[\Override]
     public static function send_sms_message(
         string $messagecontent,
         string $phonenumber,
