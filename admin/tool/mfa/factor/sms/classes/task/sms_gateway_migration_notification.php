@@ -37,8 +37,8 @@ class sms_gateway_migration_notification extends adhoc_task {
             $messagesubject = get_string('notification:smsgatewaymigration', 'factor_sms');
 
             $message = new \core\message\message();
-            $message->component = 'factor_sms';
-            $message->name = 'sms_gateway_migrated';
+            $message->component = 'moodle';
+            $message->name = 'notices';
             $message->userfrom = \core_user::get_noreply_user();
             $message->subject = $messagesubject;
             $message->fullmessageformat = FORMAT_HTML;
