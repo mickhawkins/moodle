@@ -127,21 +127,28 @@ class hook_listener {
         \core\hook\output\before_footer_html_generation $hook,
     ): void {
         $page = $hook->renderer->get_page();
-        if (!local\linearnavigationsettings::show_navigation_footer($page)) {
-            return;
+        if (local\linearnavigationsettings::show_navigation_footer($page)) {
+            // Add the sticky footer with the linear navigation content if linear navigation is enabled on this page.
+            $linearnavigationcontent = new output\local\linearnavigation\footer_content($page->cm);
+            $stickyfootercontent = $hook->renderer->render($linearnavigationcontent);
+            $footer = new supplementary_sticky_footer(
+                $stickyfootercontent,
+                'course-linear-navigation',
+            );
         }
 
-        // Add the sticky footer with the linear navigation content.
-        $linearnavigationcontent = new output\local\linearnavigation\footer_content($page->cm);
-        $stickyfootercontent = $hook->renderer->render($linearnavigationcontent);
-        $footer = new supplementary_sticky_footer(
-            $stickyfootercontent,
-            'course-linear-navigation',
-        );
         $supplementarycontent = $page->get_supplementary_content();
         if ($supplementarycontent !== null) {
+            // Add supplementary content to the sticky footer, creating a new sticky footer if necessary.
+            if (!isset($footer)) {
+                $footer = new supplementary_sticky_footer();
+            }
+
             $footer->add_supplementary_content($supplementarycontent);
         }
-        $hook->add_html($hook->renderer->render($footer));
+
+        if (isset($footer)) {
+            $hook->add_html($hook->renderer->render($footer));
+        }
     }
 }

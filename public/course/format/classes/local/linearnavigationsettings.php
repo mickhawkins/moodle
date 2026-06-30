@@ -141,16 +141,15 @@ class linearnavigationsettings {
         }
 
         $format = \course_get_format($page->course);
-        $supplementarycontent = $page->get_supplementary_content();
-        if (!$format->uses_linear_navigation() && $supplementarycontent === null) {
-            // Only add the sticky footer for course formats using linear navigation or
-            // if there is supplementary content to be added.
+        if (!$format->uses_linear_navigation()) {
+            // Only add the navigation footer for course formats using linear navigation.
             return false;
         }
+
         $formatoptions = $format->get_format_options();
         $linearnavigationenabled = ($formatoptions[self::SETTING_ENABLE_LINEAR_NAV] ?? false);
-        if (!$linearnavigationenabled && $supplementarycontent === null) {
-            // Linear navigation is not enabled and there is no supplementary content, do not add the sticky footer.
+        if (!$linearnavigationenabled) {
+            // Linear navigation is not enabled, do not add the navigation footer.
             return false;
         }
 
