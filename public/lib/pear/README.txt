@@ -33,12 +33,12 @@ In detail, the libraries added here are:
     - Current version: 1.2.2
     - by Adam Daniel, Bertrand Mansion, Klaus Guenther, Alexey Borzov,
     - License: PHP 2.02 or PHP v4 (BSD-3-Clause)
-    - http://pear.php.net/package/HTML
+    - http://pear.php.net/package/HTML_Common
 - PEAR main class:
     - Current version: 1.4.5
     - by Stig Bakken, Thomas V.V.Cox, Pierre-Alain Joye,
       Greg Beaver and Martin Jansen
-    - License: BSD 3-Clause
+    - License: BSD-3-Clause
     - http://pear.php.net/package/PEAR
 - PEAR HTML_AJAX:
     - Current version: 0.5.6
